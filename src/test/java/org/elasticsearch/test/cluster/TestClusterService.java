@@ -215,7 +215,6 @@ public class TestClusterService implements ClusterService {
     @Override
     public List<PendingClusterTask> pendingTasks() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -235,6 +234,11 @@ public class TestClusterService implements ClusterService {
 
     @Override
     public void removeLifecycleListener(LifecycleListener listener) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ClusterService disable() throws ElasticsearchException {
         throw new UnsupportedOperationException();
     }
 
