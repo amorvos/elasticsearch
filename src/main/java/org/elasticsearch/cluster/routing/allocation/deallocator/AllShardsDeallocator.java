@@ -198,9 +198,13 @@ public class AllShardsDeallocator extends AbstractDeallocator implements Cluster
         for (ObjectObjectCursor<String, IndexMetaData> entry : clusterState.metaData().indices()) {
             if (!localNode.shardsWithState(entry.key, ShardRoutingState.STARTED, ShardRoutingState.INITIALIZING, ShardRoutingState.RELOCATING).isEmpty()) {
                 maxReplicas = Math.max(maxReplicas, entry.value.numberOfReplicas());
+                if (numNodes <= entry.value.numberOfReplicas() + 1) {
+                    logger.error("Cannot deallocate table [{}]: Not enough spare nodes available ({}/{}+)", entry.key, numNodes,
+                            entry.value.numberOfReplicas() + 2);
+                }
             }
         }
-        return numNodes > maxReplicas+1;
+        return numNodes > maxReplicas + 1;
     }
 
     /**

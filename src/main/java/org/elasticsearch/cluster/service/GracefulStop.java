@@ -110,7 +110,7 @@ public class GracefulStop implements Closeable {
                     return false;
                 }
             } else {
-                logger.error("cannot deallocate");
+                logger.error("De-allocation failed.");
                 return false;
             }
         } else {
