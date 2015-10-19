@@ -19,7 +19,6 @@
 
 package org.elasticsearch.client.transport;
 
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.support.Headers;
@@ -33,14 +32,13 @@ import org.elasticsearch.transport.*;
 import org.junit.Test;
 
 import java.io.Closeable;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 
 public class TransportClientNodesServiceTests extends ElasticsearchTestCase {
 
@@ -80,6 +78,29 @@ public class TransportClientNodesServiceTests extends ElasticsearchTestCase {
                 throw new AssertionError(e);
             }
         }
+    }
+
+    @Test
+    public void testGetNodeNumberIsRandom() {
+        int first;
+        try(final TestIteration iteration = new TestIteration()) {
+            List<DiscoveryNode> nodes = iteration.transportClientNodesService.listedNodes();
+            first = iteration.transportClientNodesService.getNodeNumber() % nodes.size();
+        }
+        int iters = iterations(100, 1000);
+        int count = 0;
+        for (int i = 0; i < iters; i++) {
+            try(final TestIteration iteration = new TestIteration()) {
+                List<DiscoveryNode> nodes = iteration.transportClientNodesService.listedNodes();
+                int nodeIndex = iteration.transportClientNodesService.getNodeNumber() % nodes.size();
+                if (nodeIndex == first) {
+                    count++;
+                } else {
+                    break;
+                }
+            }
+        }
+        assertThat(count, not(iters));
     }
 
     @Test

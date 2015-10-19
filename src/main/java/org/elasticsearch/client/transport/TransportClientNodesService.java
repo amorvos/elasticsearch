@@ -47,6 +47,7 @@ import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.FutureUtils;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
@@ -89,7 +90,7 @@ public class TransportClientNodesService extends AbstractComponent {
 
     private volatile ScheduledFuture nodesSamplerFuture;
 
-    private final AtomicInteger randomNodeGenerator = new AtomicInteger();
+    private final AtomicInteger randomNodeGenerator = new AtomicInteger(ThreadLocalRandom.current().nextInt());
 
     private final boolean ignoreClusterName;
 
@@ -290,7 +291,10 @@ public class TransportClientNodesService extends AbstractComponent {
         }
     }
 
-    private int getNodeNumber() {
+    protected int getNodeNumber() {
+        if (randomNodeGenerator.get() == Integer.MAX_VALUE) {
+            randomNodeGenerator.set(ThreadLocalRandom.current().nextInt());
+        }
         int index = randomNodeGenerator.incrementAndGet();
         if (index < 0) {
             index = 0;
