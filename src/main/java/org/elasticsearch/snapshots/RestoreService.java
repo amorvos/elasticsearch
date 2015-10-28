@@ -248,8 +248,8 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                             }
                         }
 
-                        // restore templates which matches any restored index
-                        restoreTemplatesMatchingRestoredIndices(mdBuilder);
+                        // restore templates which matches any restored index (but do NOT overwrite existing templates)
+                        restoreTemplatesMatchingRestoredIndices(mdBuilder, currentState);
 
                         shards = shardsBuilder.build();
                         RestoreMetaData.Entry restoreEntry = new RestoreMetaData.Entry(snapshotId, RestoreMetaData.State.INIT, ImmutableList.copyOf(renamedIndices.keySet()), shards);
@@ -260,8 +260,8 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
 
                     checkAliasNameConflicts(renamedIndices, aliases);
 
-                    // Restore global state if needed
-                    restoreGlobalStateIfRequested(mdBuilder);
+                    // Restore global state if needed (but do NOT overwrite existing templates)
+                    restoreGlobalStateIfRequested(mdBuilder, currentState);
 
                     if (completed(shards)) {
                         // We don't have any indices to restore - we are done
@@ -366,11 +366,12 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                     return builder.settings(ImmutableSettings.builder().put(settingsMap)).build();
                 }
 
-                private void restoreTemplatesMatchingRestoredIndices(MetaData.Builder mdBuilder) {
+                private void restoreTemplatesMatchingRestoredIndices(MetaData.Builder mdBuilder, ClusterState currentState) {
                     if (metaData.templates() != null) {
                         for (ObjectCursor<IndexTemplateMetaData> cursor : metaData.templates().values()) {
                             for (String index : filteredIndices) {
-                                if (Regex.simpleMatch(cursor.value.template(), index)) {
+                                if (currentState.metaData().templates().get(cursor.value.name()) == null
+                                        && Regex.simpleMatch(cursor.value.template(), index)) {
                                     mdBuilder.put(cursor.value);
                                     break;
                                 }
@@ -379,7 +380,7 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                     }
                 }
 
-                private void restoreGlobalStateIfRequested(MetaData.Builder mdBuilder) {
+                private void restoreGlobalStateIfRequested(MetaData.Builder mdBuilder, ClusterState currentState) {
                     if (request.includeGlobalState()) {
                         if (metaData.persistentSettings() != null) {
                             boolean changed = false;
@@ -404,7 +405,9 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                         if (metaData.templates() != null) {
                             // TODO: Should all existing templates be deleted first?
                             for (ObjectCursor<IndexTemplateMetaData> cursor : metaData.templates().values()) {
-                                mdBuilder.put(cursor.value);
+                                if (currentState.metaData().templates().get(cursor.value.name()) == null) {
+                                    mdBuilder.put(cursor.value);
+                                }
                             }
                         }
                         if (metaData.customs() != null) {
