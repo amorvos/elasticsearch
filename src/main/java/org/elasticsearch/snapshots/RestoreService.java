@@ -151,7 +151,7 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
             Repository repository = repositoriesService.repository(request.repository());
             final SnapshotId snapshotId = new SnapshotId(request.repository(), request.name());
             final Snapshot snapshot = repository.readSnapshot(snapshotId);
-            ImmutableList<String> filteredIndices = SnapshotUtils.filterIndices(snapshot.indices(), request.indices(), request.indicesOptions());
+            final ImmutableList<String> filteredIndices = SnapshotUtils.filterIndices(snapshot.indices(), request.indices(), request.indicesOptions());
             final MetaData metaData = repository.readSnapshotMetaData(snapshotId, filteredIndices);
 
             // Make sure that we can restore from this snapshot
@@ -247,6 +247,9 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                                 }
                             }
                         }
+
+                        // restore templates which matches any restored index
+                        restoreTemplatesMatchingRestoredIndices(mdBuilder);
 
                         shards = shardsBuilder.build();
                         RestoreMetaData.Entry restoreEntry = new RestoreMetaData.Entry(snapshotId, RestoreMetaData.State.INIT, ImmutableList.copyOf(renamedIndices.keySet()), shards);
@@ -361,6 +364,19 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                     }
 
                     return builder.settings(ImmutableSettings.builder().put(settingsMap)).build();
+                }
+
+                private void restoreTemplatesMatchingRestoredIndices(MetaData.Builder mdBuilder) {
+                    if (metaData.templates() != null) {
+                        for (ObjectCursor<IndexTemplateMetaData> cursor : metaData.templates().values()) {
+                            for (String index : filteredIndices) {
+                                if (Regex.simpleMatch(cursor.value.template(), index)) {
+                                    mdBuilder.put(cursor.value);
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
 
                 private void restoreGlobalStateIfRequested(MetaData.Builder mdBuilder) {

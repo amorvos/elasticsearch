@@ -34,19 +34,20 @@ import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.status.*;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
-import org.elasticsearch.action.admin.cluster.tasks.PendingClusterTasksResponse;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesResponse;
 import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.*;
+import org.elasticsearch.cluster.ClusterService;
+import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.ProcessedClusterStateUpdateTask;
 import org.elasticsearch.cluster.metadata.*;
-import org.elasticsearch.cluster.metadata.SnapshotMetaData.*;
+import org.elasticsearch.cluster.metadata.SnapshotMetaData.Entry;
+import org.elasticsearch.cluster.metadata.SnapshotMetaData.ShardSnapshotStatus;
 import org.elasticsearch.cluster.metadata.SnapshotMetaData.State;
 import org.elasticsearch.cluster.routing.allocation.decider.FilterAllocationDecider;
-import org.elasticsearch.cluster.service.PendingClusterTask;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -70,11 +71,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.elasticsearch.cluster.metadata.IndexMetaData.*;
+import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_REPLICAS;
+import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_SHARDS;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
+import static org.elasticsearch.index.shard.IndexShard.INDEX_REFRESH_INTERVAL;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.*;
-import static org.elasticsearch.index.shard.IndexShard.*;
 import static org.hamcrest.Matchers.*;
 
 @Slow
@@ -425,6 +427,56 @@ public class SharedClusterSnapshotRestoreTests extends AbstractSnapshotTests {
         getIndexTemplatesResponse = client().admin().indices().prepareGetTemplates().get();
         assertIndexTemplateExists(getIndexTemplatesResponse, "test-template");
 
+    }
+
+    /**
+     * Test that templates which matches filtered indices are automatically restored
+     */
+    @Test
+    public void restoreTemplatesImplicitTest() throws Exception {
+        Client client = client();
+
+        logger.info("-->  creating repository");
+        assertAcked(client.admin().cluster().preparePutRepository("test-repo")
+                .setType("fs").setSettings(ImmutableSettings.settingsBuilder().put("location", randomRepoPath())));
+
+        logger.info("--> create test indices");
+        createIndex("test-idx-1", "test-idx-2", "test-idx-3");
+        ensureGreen();
+
+        logger.info("-->  creating test templates");
+        assertThat(client.admin().indices().preparePutTemplate("test-template").setTemplate("te*").addMapping("test-mapping", "{}").get().isAcknowledged(), equalTo(true));
+        assertThat(client.admin().indices().preparePutTemplate("test-template-not-to-be-restored").setTemplate("foo*").addMapping("test-mapping-foo", "{}").get().isAcknowledged(), equalTo(true));
+
+        logger.info("--> snapshot");
+        CreateSnapshotResponse createSnapshotResponse = client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap").setIndices().setWaitForCompletion(true).get();
+        assertThat(createSnapshotResponse.getSnapshotInfo().totalShards(), greaterThan(0));
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), greaterThan(0));
+        assertThat(client.admin().cluster().prepareGetSnapshots("test-repo").setSnapshots("test-snap").get().getSnapshots().get(0).state(), equalTo(SnapshotState.SUCCESS));
+
+        logger.info("-->  delete test template");
+        assertThat(client.admin().indices().prepareDeleteTemplate("test-template").get().isAcknowledged(), equalTo(true));
+        assertThat(client.admin().indices().prepareDeleteTemplate("test-template-not-to-be-restored").get().isAcknowledged(), equalTo(true));
+        GetIndexTemplatesResponse getIndexTemplatesResponse = client().admin().indices().prepareGetTemplates().get();
+        assertIndexTemplateMissing(getIndexTemplatesResponse, "test-template");
+        assertIndexTemplateMissing(getIndexTemplatesResponse, "test-template-not-to-be-restored");
+
+        logger.info("--> delete indices");
+        cluster().wipeIndices("test-idx-1", "test-idx-2", "test-idx-3");
+
+        logger.info("--> restore cluster state");
+        RestoreSnapshotResponse restoreSnapshotResponse = client.admin().cluster().prepareRestoreSnapshot("test-repo", "test-snap")
+                .setIndices("test-idx-1", "test-idx-2", "test-idx-3").setWaitForCompletion(true).setRestoreGlobalState(false).execute().actionGet();
+
+        logger.info("--> check that indices are restored");
+        assertThat(restoreSnapshotResponse.getRestoreInfo().totalShards(), greaterThan(0));
+
+        logger.info("--> check that template is restored");
+        getIndexTemplatesResponse = client().admin().indices().prepareGetTemplates().get();
+        assertIndexTemplateExists(getIndexTemplatesResponse, "test-template");
+
+        logger.info("--> check that 2nd template is NOT restored");
+        assertIndexTemplateMissing(getIndexTemplatesResponse, "test-template-not-to-be-restored");
     }
 
     @Test
