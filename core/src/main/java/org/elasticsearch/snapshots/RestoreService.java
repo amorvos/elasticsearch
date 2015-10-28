@@ -175,7 +175,7 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
             Repository repository = repositoriesService.repository(request.repository());
             final SnapshotId snapshotId = new SnapshotId(request.repository(), request.name());
             final Snapshot snapshot = repository.readSnapshot(snapshotId);
-            List<String> filteredIndices = SnapshotUtils.filterIndices(snapshot.indices(), request.indices(), request.indicesOptions());
+            final List<String> filteredIndices = SnapshotUtils.filterIndices(snapshot.indices(), request.indices(), request.indicesOptions());
             MetaData metaDataIn = repository.readSnapshotMetaData(snapshotId, snapshot, filteredIndices);
 
             final MetaData metaData;
@@ -288,6 +288,9 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                                 }
                             }
                         }
+
+                        // restore templates which matches any restored index
+                        restoreTemplatesMatchingRestoredIndices(mdBuilder);
 
                         shards = shardsBuilder.build();
                         RestoreInProgress.Entry restoreEntry = new RestoreInProgress.Entry(snapshotId, RestoreInProgress.State.INIT, Collections.unmodifiableList(new ArrayList<>(renamedIndices.keySet())), shards);
@@ -405,6 +408,19 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                     }
 
                     return builder.settings(Settings.builder().put(settingsMap)).build();
+                }
+
+                private void restoreTemplatesMatchingRestoredIndices(MetaData.Builder mdBuilder) {
+                    if (metaData.templates() != null) {
+                        for (ObjectCursor<IndexTemplateMetaData> cursor : metaData.templates().values()) {
+                            for (String index : filteredIndices) {
+                                if (Regex.simpleMatch(cursor.value.template(), index)) {
+                                    mdBuilder.put(cursor.value);
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
 
                 private void restoreGlobalStateIfRequested(MetaData.Builder mdBuilder) {
