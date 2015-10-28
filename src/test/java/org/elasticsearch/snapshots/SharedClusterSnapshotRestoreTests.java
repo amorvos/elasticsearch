@@ -480,6 +480,38 @@ public class SharedClusterSnapshotRestoreTests extends AbstractSnapshotTests {
     }
 
     @Test
+    public void restoreTemplatesNotOverwritingExistingOnes() throws Exception {
+        Client client = client();
+
+        logger.info("-->  creating repository");
+        assertAcked(client.admin().cluster().preparePutRepository("test-repo")
+                .setType("fs").setSettings(ImmutableSettings.settingsBuilder().put("location", randomRepoPath())));
+
+        logger.info("-->  creating test template");
+        assertThat(client.admin().indices().preparePutTemplate("test-template").setTemplate("te*").addMapping("test-mapping", "{}").get().isAcknowledged(), equalTo(true));
+
+        logger.info("--> snapshot");
+        CreateSnapshotResponse createSnapshotResponse = client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap").setIndices().setWaitForCompletion(true).get();
+        assertThat(createSnapshotResponse.getSnapshotInfo().totalShards(), equalTo(0));
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), equalTo(0));
+        assertThat(client.admin().cluster().prepareGetSnapshots("test-repo").setSnapshots("test-snap").get().getSnapshots().get(0).state(), equalTo(SnapshotState.SUCCESS));
+
+        logger.info("-->  update test template");
+        assertThat(client.admin().indices().preparePutTemplate("test-template").setTemplate("te*").addMapping("test-mapping", "abcde").get().isAcknowledged(), equalTo(true));
+
+        logger.info("--> restore cluster state");
+        RestoreSnapshotResponse restoreSnapshotResponse = client.admin().cluster().prepareRestoreSnapshot("test-repo", "test-snap").setWaitForCompletion(true).setRestoreGlobalState(true).execute().actionGet();
+        // We don't restore any indices here
+        assertThat(restoreSnapshotResponse.getRestoreInfo().totalShards(), equalTo(0));
+
+        logger.info("--> check that template is NOT restored (already exists)");
+        GetIndexTemplatesResponse getIndexTemplatesResponse = client().admin().indices().prepareGetTemplates("test-template").get();
+        assertThat(getIndexTemplatesResponse.getIndexTemplates(), hasSize(1));
+        assertThat(getIndexTemplatesResponse.getIndexTemplates().get(0).getMappings().size(), equalTo(1));
+        assertThat(getIndexTemplatesResponse.getIndexTemplates().get(0).getMappings().get("test-mapping").string(), equalTo("abcde"));
+    }
+
+    @Test
     public void includeGlobalStateTest() throws Exception {
         Client client = client();
 
