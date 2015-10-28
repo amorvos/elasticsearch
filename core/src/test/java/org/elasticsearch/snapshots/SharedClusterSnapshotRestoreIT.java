@@ -351,6 +351,56 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
 
     }
 
+    /**
+     * Test that templates which matches filtered indices are automatically restored
+     */
+    @Test
+    public void restoreTemplatesImplicitTest() throws Exception {
+        Client client = client();
+
+        logger.info("-->  creating repository");
+        assertAcked(client.admin().cluster().preparePutRepository("test-repo")
+                .setType("fs").setSettings(Settings.settingsBuilder().put("location", randomRepoPath())));
+
+        logger.info("--> create test indices");
+        createIndex("test-idx-1", "test-idx-2", "test-idx-3");
+        ensureGreen();
+
+        logger.info("-->  creating test templates");
+        assertThat(client.admin().indices().preparePutTemplate("test-template").setTemplate("te*").addMapping("test-mapping", "{}").get().isAcknowledged(), equalTo(true));
+        assertThat(client.admin().indices().preparePutTemplate("test-template-not-to-be-restored").setTemplate("foo*").addMapping("test-mapping-foo", "{}").get().isAcknowledged(), equalTo(true));
+
+        logger.info("--> snapshot");
+        CreateSnapshotResponse createSnapshotResponse = client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap").setIndices().setWaitForCompletion(true).get();
+        assertThat(createSnapshotResponse.getSnapshotInfo().totalShards(), greaterThan(0));
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), greaterThan(0));
+        assertThat(client.admin().cluster().prepareGetSnapshots("test-repo").setSnapshots("test-snap").get().getSnapshots().get(0).state(), equalTo(SnapshotState.SUCCESS));
+
+        logger.info("-->  delete test template");
+        assertThat(client.admin().indices().prepareDeleteTemplate("test-template").get().isAcknowledged(), equalTo(true));
+        assertThat(client.admin().indices().prepareDeleteTemplate("test-template-not-to-be-restored").get().isAcknowledged(), equalTo(true));
+        GetIndexTemplatesResponse getIndexTemplatesResponse = client().admin().indices().prepareGetTemplates().get();
+        assertIndexTemplateMissing(getIndexTemplatesResponse, "test-template");
+        assertIndexTemplateMissing(getIndexTemplatesResponse, "test-template-not-to-be-restored");
+
+        logger.info("--> delete indices");
+        cluster().wipeIndices("test-idx-1", "test-idx-2", "test-idx-3");
+
+        logger.info("--> restore cluster state");
+        RestoreSnapshotResponse restoreSnapshotResponse = client.admin().cluster().prepareRestoreSnapshot("test-repo", "test-snap")
+                .setIndices("test-idx-1", "test-idx-2", "test-idx-3").setWaitForCompletion(true).setRestoreGlobalState(false).execute().actionGet();
+
+        logger.info("--> check that indices are restored");
+        assertThat(restoreSnapshotResponse.getRestoreInfo().totalShards(), greaterThan(0));
+
+        logger.info("--> check that template is restored");
+        getIndexTemplatesResponse = client().admin().indices().prepareGetTemplates().get();
+        assertIndexTemplateExists(getIndexTemplatesResponse, "test-template");
+
+        logger.info("--> check that 2nd template is NOT restored");
+        assertIndexTemplateMissing(getIndexTemplatesResponse, "test-template-not-to-be-restored");
+    }
+
     @Test
     public void includeGlobalStateTest() throws Exception {
         Client client = client();
