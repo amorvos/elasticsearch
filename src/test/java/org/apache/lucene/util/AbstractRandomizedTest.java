@@ -41,7 +41,9 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
+import org.junit.runner.Description;
 import org.junit.runner.RunWith;
+import org.junit.runners.model.Statement;
 
 import java.io.Closeable;
 import java.io.File;
@@ -306,7 +308,25 @@ public abstract class AbstractRandomizedTest extends RandomizedTest {
             .outerRule(new TestRuleIgnoreTestSuites())
             .around(ignoreAfterMaxFailures)
             .around(suiteFailureMarker)
-            .around(new TestRuleAssertionsRequired())
+            .around(new TestRule() {
+                @Override
+                public Statement apply(final Statement base, final Description description) {
+                    return new Statement() {
+                        @Override
+                        public void evaluate() throws Throwable {
+                            try {
+                                assert false;
+                                // only warn if assertions are disabled
+                                System.err.println("Assertions not enabled.");
+                            } catch (AssertionError e) {
+                                // Ok, enabled.
+                            }
+
+                            base.evaluate();
+                        }
+                    };
+                }
+            })
             .around(new StaticFieldsInvariantRule(STATIC_LEAK_THRESHOLD, true) {
                 @Override
                 protected boolean accept(java.lang.reflect.Field field) {
