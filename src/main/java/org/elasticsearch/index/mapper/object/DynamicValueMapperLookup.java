@@ -20,8 +20,6 @@
 package org.elasticsearch.index.mapper.object;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.joda.FormatDateTimeFormatter;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperBuilders;
@@ -55,26 +53,6 @@ public class DynamicValueMapperLookup {
                 return null;
             }
 
-            if (!resolved && context.root().dateDetection()) {
-                String text = context.parser().text();
-                // a safe check since "1" gets parsed as well
-                if (Strings.countOccurrencesOf(text, ":") > 1 || Strings.countOccurrencesOf(text, "-") > 1 || Strings.countOccurrencesOf(text, "/") > 1) {
-                    for (FormatDateTimeFormatter dateTimeFormatter : context.root().dynamicDateTimeFormatters()) {
-                        try {
-                            dateTimeFormatter.parser().parseMillis(text);
-                            Mapper.Builder builder = context.root().findTemplateBuilder(context, currentFieldName, "date");
-                            if (builder == null) {
-                                builder = dateField(currentFieldName).dateTimeFormatter(dateTimeFormatter);
-                            }
-                            mapper = builder.build(builderContext);
-                            resolved = true;
-                            break;
-                        } catch (Exception e) {
-                            // failure to parse this, continue
-                        }
-                    }
-                }
-            }
             if (!resolved && context.root().numericDetection()) {
                 String text = context.parser().text();
                 try {
