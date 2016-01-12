@@ -139,16 +139,7 @@ import java.net.UnknownHostException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -589,8 +580,13 @@ public abstract class ESIntegTestCase extends ESTestCase {
                         MetaData metaData = client().admin().cluster().prepareState().execute().actionGet().getState().getMetaData();
                         assertThat("test leaves persistent cluster metadata behind: " + metaData.persistentSettings().getAsMap(), metaData
                                 .persistentSettings().getAsMap().size(), equalTo(0));
-                        assertThat("test leaves transient cluster metadata behind: " + metaData.transientSettings().getAsMap(), metaData
-                                .transientSettings().getAsMap().size(), equalTo(0));
+
+                        // crate has a cluster id that is generated.... remove it here
+                        Map<String, String> transientSettingsMap = new HashMap<>();
+                        transientSettingsMap.putAll(metaData.transientSettings().getAsMap());
+                        transientSettingsMap.remove("cluster_id");
+                        assertThat("test leaves transient cluster metadata behind: " + transientSettingsMap,
+                                transientSettingsMap.size(), equalTo(0));
                     }
                     ensureClusterSizeConsistency();
                     ensureClusterStateConsistency();

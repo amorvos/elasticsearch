@@ -116,7 +116,9 @@ public abstract class BaseFuture<V> implements Future<V> {
      */
     @Override
     public V get() throws InterruptedException, ExecutionException {
-        assert Transports.assertNotTransportThread(BLOCKING_OP_REASON) && ThreadPool.assertNotScheduleThread(BLOCKING_OP_REASON);
+        // CRATE CHANGE blobs require blocking operations:
+        // Transports.assertNotTransportThread(BLOCKING_OP_REASON)
+        assert ThreadPool.assertNotScheduleThread(BLOCKING_OP_REASON);
         return sync.get();
     }
 
