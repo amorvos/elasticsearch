@@ -113,6 +113,11 @@ public class RecoveryTarget extends AbstractComponent {
         });
     }
 
+    public RecoveriesCollection onGoingRecoveries() {
+        return onGoingRecoveries;
+    }
+
+
     /**
      * cancel all ongoing recoveries for the given shard, if their status match a predicate
      *
