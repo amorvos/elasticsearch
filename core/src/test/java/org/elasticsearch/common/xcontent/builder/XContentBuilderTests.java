@@ -19,6 +19,7 @@
 
 package org.elasticsearch.common.xcontent.builder;
 
+import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.io.FastCharArrayWriter;
@@ -364,4 +365,18 @@ public class XContentBuilderTests extends ESTestCase {
                 "}", string.trim());
     }
 
+    @Test
+    public void testBytesRefConversion() throws Exception {
+        XContentBuilder builder = XContentFactory.contentBuilder(XContentType.JSON);
+        builder.startObject().field("test_name", new BytesRef("test")).endObject();
+        assertThat(builder.bytes().toUtf8(), equalTo("{\"test_name\":\"test\"}"));
+    }
+
+    @Test
+    public void testObjectBytesRefConversion() throws Exception {
+        XContentBuilder builder = XContentFactory.contentBuilder(XContentType.JSON);
+        Object value = new BytesRef("test");
+        builder.startObject().field("test_name", value).endObject();
+        assertThat(builder.bytes().toUtf8(), equalTo("{\"test_name\":\"test\"}"));
+    }
 }
