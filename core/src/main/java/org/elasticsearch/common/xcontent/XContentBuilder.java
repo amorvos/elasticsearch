@@ -527,7 +527,7 @@ public final class XContentBuilder implements BytesStream, Releasable {
      */
     public XContentBuilder field(String name, BytesRef value) throws IOException {
         field(name);
-        generator.writeBinary(value.bytes, value.offset, value.length);
+        generator.writeUTF8String(value.bytes, value.offset, value.length);
         return this;
     }
 
@@ -1290,7 +1290,7 @@ public final class XContentBuilder implements BytesStream, Releasable {
             generator.writeBinary(bytes.array(), bytes.arrayOffset(), bytes.length());
         } else if (value instanceof BytesRef) {
             BytesRef bytes = (BytesRef) value;
-            generator.writeBinary(bytes.bytes, bytes.offset, bytes.length);
+            generator.writeUTF8String(bytes.bytes, bytes.offset, bytes.length);
         } else if (value instanceof Text) {
             Text text = (Text) value;
             if (text.hasBytes() && text.bytes().hasArray()) {
