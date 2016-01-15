@@ -393,4 +393,19 @@ public class XContentBuilderTests extends ESTestCase {
             assertThat(e.getMessage(), equalTo("field name cannot be null"));
         }
     }
+
+    @Test
+    public void testBytesRefConversion() throws Exception {
+        XContentBuilder builder = XContentFactory.contentBuilder(XContentType.JSON);
+        builder.startObject().field("test_name", new BytesRef("test")).endObject();
+        assertThat(builder.bytes().toUtf8(), equalTo("{\"test_name\":\"test\"}"));
+    }
+
+    @Test
+    public void testObjectBytesRefConversion() throws Exception {
+        XContentBuilder builder = XContentFactory.contentBuilder(XContentType.JSON);
+        Object value = new BytesRef("test");
+        builder.startObject().field("test_name", value).endObject();
+        assertThat(builder.bytes().toUtf8(), equalTo("{\"test_name\":\"test\"}"));
+    }
 }
