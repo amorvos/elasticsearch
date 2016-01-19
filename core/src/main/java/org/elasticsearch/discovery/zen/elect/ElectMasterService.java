@@ -30,11 +30,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  *
@@ -62,6 +58,8 @@ public class ElectMasterService extends AbstractComponent {
     // This is the minimum version a master needs to be on, otherwise it gets ignored
     // This is based on the minimum compatible version of the current version this node is on
     private final Version minMasterVersion;
+    public static final int DEFAULT_DISCOVERY_ZEN_MINIMUM_MASTER_NODES = -1;
+
     private final NodeComparator nodeComparator = new NodeComparator();
 
     private volatile int minimumMasterNodes;
@@ -70,7 +68,8 @@ public class ElectMasterService extends AbstractComponent {
     public ElectMasterService(Settings settings, Version version) {
         super(settings);
         this.minMasterVersion = version.minimumCompatibilityVersion();
-        this.minimumMasterNodes = settings.getAsInt(DISCOVERY_ZEN_MINIMUM_MASTER_NODES, -1);
+        this.minimumMasterNodes = settings.getAsInt(DISCOVERY_ZEN_MINIMUM_MASTER_NODES,
+                DEFAULT_DISCOVERY_ZEN_MINIMUM_MASTER_NODES);
         logger.debug("using minimum_master_nodes [{}]", minimumMasterNodes);
     }
 

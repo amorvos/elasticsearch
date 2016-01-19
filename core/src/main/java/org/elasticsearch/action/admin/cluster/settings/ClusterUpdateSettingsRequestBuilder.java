@@ -19,11 +19,13 @@
 
 package org.elasticsearch.action.admin.cluster.settings;
 
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.master.AcknowledgedRequestBuilder;
 import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.settings.Settings;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Builder for a cluster update settings request
@@ -95,6 +97,22 @@ public class ClusterUpdateSettingsRequestBuilder extends AcknowledgedRequestBuil
      */
     public ClusterUpdateSettingsRequestBuilder setPersistentSettings(Map settings) {
         request.persistentSettings(settings);
+        return this;
+    }
+
+    /**
+     * Sets a set of transient setting names which should be removed
+     */
+    public ClusterUpdateSettingsRequestBuilder setTransientSettingsToRemove(Set<String> transientSettingsToRemove) {
+        request.transientSettingsToRemove(transientSettingsToRemove);
+        return this;
+    }
+
+    /**
+     * Sets a set of persistent setting names which should be removed
+     */
+    public ClusterUpdateSettingsRequestBuilder setPersistentSettingsToRemove(Set persistentSettingsToRemove) {
+        request.persistentSettingsToRemove(persistentSettingsToRemove);
         return this;
     }
 }

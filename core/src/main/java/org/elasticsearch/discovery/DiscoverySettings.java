@@ -76,12 +76,11 @@ public class DiscoverySettings extends AbstractComponent {
     private class ApplySettings implements NodeSettingsService.Listener {
         @Override
         public void onRefreshSettings(Settings settings) {
-            TimeValue newPublishTimeout = settings.getAsTime(PUBLISH_TIMEOUT, null);
-            if (newPublishTimeout != null) {
-                if (newPublishTimeout.millis() != publishTimeout.millis()) {
-                    logger.info("updating [{}] from [{}] to [{}]", PUBLISH_TIMEOUT, publishTimeout, newPublishTimeout);
-                    publishTimeout = newPublishTimeout;
-                }
+            TimeValue newPublishTimeout = settings.getAsTime(PUBLISH_TIMEOUT,
+                    DiscoverySettings.this.settings.getAsTime(PUBLISH_TIMEOUT, DEFAULT_PUBLISH_TIMEOUT));
+            if (newPublishTimeout.millis() != publishTimeout.millis()) {
+                logger.info("updating [{}] from [{}] to [{}]", PUBLISH_TIMEOUT, publishTimeout, newPublishTimeout);
+                publishTimeout = newPublishTimeout;
             }
             String newNoMasterBlockValue = settings.get(NO_MASTER_BLOCK);
             if (newNoMasterBlockValue != null) {
@@ -90,12 +89,11 @@ public class DiscoverySettings extends AbstractComponent {
                     noMasterBlock = newNoMasterBlock;
                 }
             }
-            Boolean newPublishDiff = settings.getAsBoolean(PUBLISH_DIFF_ENABLE, null);
-            if (newPublishDiff != null) {
-                if (newPublishDiff != publishDiff) {
-                    logger.info("updating [{}] from [{}] to [{}]", PUBLISH_DIFF_ENABLE, publishDiff, newPublishDiff);
-                    publishDiff = newPublishDiff;
-                }
+            Boolean newPublishDiff = settings.getAsBoolean(PUBLISH_DIFF_ENABLE,
+                    DiscoverySettings.this.settings.getAsBoolean(PUBLISH_DIFF_ENABLE, DEFAULT_PUBLISH_DIFF_ENABLE));
+            if (newPublishDiff != publishDiff) {
+                logger.info("updating [{}] from [{}] to [{}]", PUBLISH_DIFF_ENABLE, publishDiff, newPublishDiff);
+                publishDiff = newPublishDiff;
             }
         }
     }
