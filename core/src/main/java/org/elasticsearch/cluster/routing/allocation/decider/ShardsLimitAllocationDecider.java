@@ -24,7 +24,6 @@ import org.elasticsearch.cluster.routing.RoutingNode;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
-import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.settings.NodeSettingsService;
@@ -66,12 +65,15 @@ public class ShardsLimitAllocationDecider extends AllocationDecider {
      */
     public static final String CLUSTER_TOTAL_SHARDS_PER_NODE = "cluster.routing.allocation.total_shards_per_node";
 
+    private static final int DEFAULT_SHARD_LIMIT = -1;
+
     class ApplySettings implements NodeSettingsService.Listener {
         @Override
         public void onRefreshSettings(Settings settings) {
-            Integer newClusterLimit = settings.getAsInt(CLUSTER_TOTAL_SHARDS_PER_NODE, null);
+            Integer newClusterLimit = settings.getAsInt(CLUSTER_TOTAL_SHARDS_PER_NODE,
+                    ShardsLimitAllocationDecider.this.settings.getAsInt(CLUSTER_TOTAL_SHARDS_PER_NODE, DEFAULT_SHARD_LIMIT));
 
-            if (newClusterLimit != null) {
+            if (newClusterLimit != clusterShardLimit) {
                 logger.info("updating [{}] from [{}] to [{}]", CLUSTER_TOTAL_SHARDS_PER_NODE,
                         ShardsLimitAllocationDecider.this.clusterShardLimit, newClusterLimit);
                 ShardsLimitAllocationDecider.this.clusterShardLimit = newClusterLimit;
@@ -82,14 +84,14 @@ public class ShardsLimitAllocationDecider extends AllocationDecider {
     @Inject
     public ShardsLimitAllocationDecider(Settings settings, NodeSettingsService nodeSettingsService) {
         super(settings);
-        this.clusterShardLimit = settings.getAsInt(CLUSTER_TOTAL_SHARDS_PER_NODE, -1);
+        this.clusterShardLimit = settings.getAsInt(CLUSTER_TOTAL_SHARDS_PER_NODE, DEFAULT_SHARD_LIMIT);
         nodeSettingsService.addListener(new ApplySettings());
     }
 
     @Override
     public Decision canAllocate(ShardRouting shardRouting, RoutingNode node, RoutingAllocation allocation) {
         IndexMetaData indexMd = allocation.routingNodes().metaData().index(shardRouting.index());
-        int indexShardLimit = indexMd.getSettings().getAsInt(INDEX_TOTAL_SHARDS_PER_NODE, -1);
+        int indexShardLimit = indexMd.getSettings().getAsInt(INDEX_TOTAL_SHARDS_PER_NODE, DEFAULT_SHARD_LIMIT);
         // Capture the limit here in case it changes during this method's
         // execution
         final int clusterShardLimit = this.clusterShardLimit;

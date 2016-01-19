@@ -21,6 +21,7 @@ package org.elasticsearch.action.support;
 
 import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.settings.NodeSettingsService;
 
@@ -33,12 +34,15 @@ public final class DestructiveOperations extends AbstractComponent implements No
      * Setting which controls whether wildcard usage (*, prefix*, _all) is allowed.
      */
     public static final String REQUIRES_NAME = "action.destructive_requires_name";
+
+    private static final boolean DEFAULT_REQUIRES_NAME = false;
+
     private volatile boolean destructiveRequiresName;
 
     @Inject
     public DestructiveOperations(Settings settings, NodeSettingsService nodeSettingsService) {
         super(settings);
-        destructiveRequiresName = settings.getAsBoolean(DestructiveOperations.REQUIRES_NAME, false);
+        destructiveRequiresName = settings.getAsBoolean(DestructiveOperations.REQUIRES_NAME, DEFAULT_REQUIRES_NAME);
         nodeSettingsService.addListener(this);
     }
 
@@ -67,7 +71,8 @@ public final class DestructiveOperations extends AbstractComponent implements No
 
     @Override
     public void onRefreshSettings(Settings settings) {
-        boolean newValue = settings.getAsBoolean(DestructiveOperations.REQUIRES_NAME, destructiveRequiresName);
+        boolean newValue = settings.getAsBoolean(REQUIRES_NAME,
+                DestructiveOperations.this.settings.getAsBoolean(REQUIRES_NAME, DEFAULT_REQUIRES_NAME));
         if (destructiveRequiresName != newValue) {
             logger.info("updating [action.operate_all_indices] from [{}] to [{}]", destructiveRequiresName, newValue);
             this.destructiveRequiresName = newValue;
