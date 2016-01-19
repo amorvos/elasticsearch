@@ -19,12 +19,15 @@
 
 package org.elasticsearch.cluster.settings;
 
+import com.google.common.collect.Sets;
+import org.apache.lucene.store.StoreRateLimiting;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequestBuilder;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsResponse;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.routing.allocation.decider.DisableAllocationDecider;
+import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
@@ -33,6 +36,8 @@ import org.elasticsearch.indices.store.IndicesStore;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+
+import java.util.Set;
 
 import static org.elasticsearch.common.settings.Settings.settingsBuilder;
 import static org.elasticsearch.test.ESIntegTestCase.ClusterScope;
@@ -43,6 +48,16 @@ import static org.hamcrest.Matchers.*;
 
 @ClusterScope(scope = TEST)
 public class ClusterSettingsIT extends ESIntegTestCase {
+
+    @Override
+    protected Settings nodeSettings(int nodeOrdinal) {
+        Settings.Builder builder = settingsBuilder();
+        builder.put(super.nodeSettings(nodeOrdinal));
+        // getRandomNodeSettings() would randomize this setting but testResetSettings relies on default value
+        // NOTE: if default value changes, this must be changed here in addition to the test
+        builder.put(IndicesStore.INDICES_STORE_THROTTLE_TYPE, StoreRateLimiting.Type.NONE.name());
+        return builder.build();
+    }
 
     @Test
     public void clusterNonExistingSettingsUpdate() {
@@ -219,4 +234,53 @@ public class ClusterSettingsIT extends ESIntegTestCase {
                         .put(settings)
         );
     }
+
+    @Test
+    public void testResetSettings() throws Exception {
+        String setting = IndicesStore.INDICES_STORE_THROTTLE_TYPE;
+
+        Injector injector = internalCluster().getInstance(Injector.class);
+        IndicesStore indicesStore = injector.getProvider(IndicesStore.class).get();
+
+        String initialSetting = indicesStore.rateLimiting().getType().toString();
+        assertThat(initialSetting, is("NONE")); // test should be updated if the default changes (nodeSettings() also)
+
+        Settings transientSettings = Settings.builder().put(setting, "merge").build();
+        Settings persistentSettings = Settings.builder().put(setting, "all").build();
+
+        ClusterUpdateSettingsResponse response = client().admin().cluster()
+                .prepareUpdateSettings()
+                .setTransientSettings(transientSettings)
+                .setPersistentSettings(persistentSettings)
+                .execute()
+                .actionGet();
+
+        assertAcked(response);
+        assertThat(response.getTransientSettings().get(setting), is("merge"));
+        assertThat(response.getPersistentSettings().get(setting), is("all"));
+
+        Set<String> resetSettingNames = Sets.newHashSet();
+        resetSettingNames.add(setting);
+
+        response = client().admin().cluster()
+                .prepareUpdateSettings()
+                .setTransientSettingsToRemove(resetSettingNames)
+                .execute()
+                .actionGet();
+
+        assertAcked(response);
+
+        assertThat(indicesStore.rateLimiting().getType(), is(StoreRateLimiting.Type.ALL));
+
+        response = client().admin().cluster()
+                .prepareUpdateSettings()
+                .setPersistentSettingsToRemove(resetSettingNames)
+                .execute()
+                .actionGet();
+
+        assertAcked(response);
+
+        assertThat(indicesStore.rateLimiting().getType().toString(), is(initialSetting));
+    }
+
 }

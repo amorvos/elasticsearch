@@ -69,12 +69,19 @@ public class BalancedShardsAllocator extends AbstractComponent implements Shards
     private static final float DEFAULT_INDEX_BALANCE_FACTOR = 0.55f;
     private static final float DEFAULT_SHARD_BALANCE_FACTOR = 0.45f;
 
+    private static final float DEFAULT_THRESHOLD = 1.0f;
+
     class ApplySettings implements NodeSettingsService.Listener {
         @Override
         public void onRefreshSettings(Settings settings) {
-            final float indexBalance = settings.getAsFloat(SETTING_INDEX_BALANCE_FACTOR, weightFunction.indexBalance);
-            final float shardBalance = settings.getAsFloat(SETTING_SHARD_BALANCE_FACTOR, weightFunction.shardBalance);
-            float threshold = settings.getAsFloat(SETTING_THRESHOLD, BalancedShardsAllocator.this.threshold);
+            final float indexBalance = settings.getAsFloat(SETTING_INDEX_BALANCE_FACTOR,
+                    BalancedShardsAllocator.this.settings.getAsFloat(SETTING_INDEX_BALANCE_FACTOR,
+                            DEFAULT_INDEX_BALANCE_FACTOR));
+            final float shardBalance = settings.getAsFloat(SETTING_SHARD_BALANCE_FACTOR,
+                    BalancedShardsAllocator.this.settings.getAsFloat(SETTING_SHARD_BALANCE_FACTOR,
+                            DEFAULT_SHARD_BALANCE_FACTOR));
+            float threshold = settings.getAsFloat(SETTING_THRESHOLD,
+                    BalancedShardsAllocator.this.settings.getAsFloat(SETTING_THRESHOLD, DEFAULT_THRESHOLD));
             if (threshold <= 0.0f) {
                 throw new IllegalArgumentException("threshold must be greater than 0.0f but was: " + threshold);
             }
@@ -85,7 +92,7 @@ public class BalancedShardsAllocator extends AbstractComponent implements Shards
 
     private volatile WeightFunction weightFunction = new WeightFunction(DEFAULT_INDEX_BALANCE_FACTOR, DEFAULT_SHARD_BALANCE_FACTOR);
 
-    private volatile float threshold = 1.0f;
+    private volatile float threshold = DEFAULT_THRESHOLD;
 
 
     public BalancedShardsAllocator(Settings settings) {

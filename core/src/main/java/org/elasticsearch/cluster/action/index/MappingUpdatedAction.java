@@ -45,11 +45,18 @@ public class MappingUpdatedAction extends AbstractComponent {
     private IndicesAdminClient client;
     private volatile TimeValue dynamicMappingUpdateTimeout;
 
+    private static final TimeValue DEFAULT_ADDITIONAL_MAPPING_CHANGE_TIME = TimeValue.timeValueSeconds(30);
+
+
     class ApplySettings implements NodeSettingsService.Listener {
         @Override
         public void onRefreshSettings(Settings settings) {
             TimeValue current = MappingUpdatedAction.this.dynamicMappingUpdateTimeout;
-            TimeValue newValue = settings.getAsTime(INDICES_MAPPING_DYNAMIC_TIMEOUT, current);
+            TimeValue newValue = settings.getAsTime(
+                    INDICES_MAPPING_DYNAMIC_TIMEOUT,
+                    MappingUpdatedAction.this.settings.getAsTime(
+                            INDICES_MAPPING_DYNAMIC_TIMEOUT,
+                            DEFAULT_ADDITIONAL_MAPPING_CHANGE_TIME));
             if (!current.equals(newValue)) {
                 logger.info("updating " + INDICES_MAPPING_DYNAMIC_TIMEOUT + " from [{}] to [{}]", current, newValue);
                 MappingUpdatedAction.this.dynamicMappingUpdateTimeout = newValue;
@@ -60,7 +67,7 @@ public class MappingUpdatedAction extends AbstractComponent {
     @Inject
     public MappingUpdatedAction(Settings settings, NodeSettingsService nodeSettingsService) {
         super(settings);
-        this.dynamicMappingUpdateTimeout = settings.getAsTime(INDICES_MAPPING_DYNAMIC_TIMEOUT, TimeValue.timeValueSeconds(30));
+        this.dynamicMappingUpdateTimeout = settings.getAsTime(INDICES_MAPPING_DYNAMIC_TIMEOUT, DEFAULT_ADDITIONAL_MAPPING_CHANGE_TIME);
         nodeSettingsService.addListener(new ApplySettings());
     }
 
