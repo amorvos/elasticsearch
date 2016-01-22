@@ -1051,7 +1051,7 @@ public class SearchQueryIT extends ESIntegTestCase {
 
     @Test
     public void testFuzzyQueryString() {
-        createIndex("test");
+        prepareCreate("test").addMapping("type1", "date", "type=date").execute().actionGet();
         client().prepareIndex("test", "type1", "1").setSource("str", "kimchy", "date", "2012-02-01", "num", 12).get();
         client().prepareIndex("test", "type1", "2").setSource("str", "shay", "date", "2012-02-05", "num", 20).get();
         refresh();

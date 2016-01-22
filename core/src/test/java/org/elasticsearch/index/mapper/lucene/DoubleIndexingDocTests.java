@@ -79,7 +79,8 @@ public class DoubleIndexingDocTests extends ESSingleNodeTestCase {
         topDocs = searcher.search(mapper.mappers().smartNameFieldMapper("field3").fieldType().termQuery("1.1", null), 10);
         assertThat(topDocs.totalHits, equalTo(2));
 
-        topDocs = searcher.search(mapper.mappers().smartNameFieldMapper("field4").fieldType().termQuery("2010-01-01", null), 10);
+        // keyword-analyzer default: search only for 2010 token
+        topDocs = searcher.search(mapper.mappers().smartNameFieldMapper("field4").fieldType().termQuery("2010", null), 10);
         assertThat(topDocs.totalHits, equalTo(2));
 
         topDocs = searcher.search(mapper.mappers().smartNameFieldMapper("field5").fieldType().termQuery("1", null), 10);

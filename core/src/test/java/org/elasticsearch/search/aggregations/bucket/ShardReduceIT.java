@@ -21,6 +21,10 @@ package org.elasticsearch.search.aggregations.bucket;
 import org.apache.lucene.spatial.util.GeoHashUtils;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.mapper.core.DateFieldMapper;
+import org.elasticsearch.index.mapper.geo.GeoPointFieldMapper;
+import org.elasticsearch.index.mapper.ip.IpFieldMapper;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.Aggregator.SubAggCollectionMode;
 import org.elasticsearch.search.aggregations.bucket.filter.Filter;
@@ -78,8 +82,30 @@ public class ShardReduceIT extends ESIntegTestCase {
 
     @Override
     public void setupSuiteScopeCluster() throws Exception {
-        assertAcked(prepareCreate("idx")
-                .addMapping("type", "nested", "type=nested", "ip", "type=ip", "location", "type=geo_point"));
+        String mapping = XContentFactory.jsonBuilder()
+            .startObject().startObject("type")
+            .startObject("properties")
+            .startObject("nested")
+            .field("type", "nested")
+            .startObject("properties")
+            .startObject("date")
+            .field("type", DateFieldMapper.CONTENT_TYPE)
+            .endObject()
+            .endObject()
+            .endObject()
+            .startObject("ip")
+            .field("type", IpFieldMapper.CONTENT_TYPE)
+            .endObject()
+            .startObject("location")
+            .field("type", GeoPointFieldMapper.CONTENT_TYPE)
+            .endObject()
+            .startObject("date")
+            .field("type", DateFieldMapper.CONTENT_TYPE)
+            .endObject()
+            .endObject().endObject().endObject()
+            .string();
+
+        assertAcked(prepareCreate("idx").addMapping("type",mapping));
 
         indexRandom(true,
                 indexDoc("2014-01-01", 1),

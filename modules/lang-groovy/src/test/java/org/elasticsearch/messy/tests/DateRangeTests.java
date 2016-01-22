@@ -23,6 +23,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.groovy.GroovyPlugin;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.mapper.core.DateFieldMapper;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
 import org.elasticsearch.search.aggregations.bucket.range.Range;
 import org.elasticsearch.search.aggregations.bucket.range.Range.Bucket;
@@ -83,8 +85,20 @@ public class DateRangeTests extends ESIntegTestCase {
     private static int numDocs;
     @Override
     public void setupSuiteScopeCluster() throws Exception {
-        createIndex("idx");
         createIndex("idx_unmapped");
+        String mapping = XContentFactory.jsonBuilder()
+                .startObject().startObject("type").startObject("properties")
+                    .startObject("date")
+                        .field("type", DateFieldMapper.CONTENT_TYPE)
+                    .endObject()
+                    .startObject("dates")
+                         .field("type", DateFieldMapper.CONTENT_TYPE)
+                    .endObject()
+                .endObject()
+                .endObject()
+                .endObject()
+                .string();
+        prepareCreate("idx").addMapping("type", mapping).execute().actionGet();
 
         numDocs = randomIntBetween(7, 20);
 
