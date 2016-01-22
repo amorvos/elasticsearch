@@ -26,6 +26,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.joda.DateMathParser;
 import org.elasticsearch.common.joda.Joda;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.mapper.core.DateFieldMapper;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.plugins.Plugin;
@@ -108,7 +109,22 @@ public class DateHistogramIT extends ESIntegTestCase {
 
     @Override
     public void setupSuiteScopeCluster() throws Exception {
-        assertAcked(prepareCreate("idx").addMapping("type", "_timestamp", "enabled=true"));
+        String mapping = XContentFactory.jsonBuilder()
+            .startObject().startObject("type")
+            .startObject("_timestamp")
+            .field("enabled", true)
+            .endObject()
+            .startObject("properties")
+            .startObject("date")
+            .field("type", DateFieldMapper.CONTENT_TYPE)
+            .endObject()
+            .startObject("dates")
+            .field("type", DateFieldMapper.CONTENT_TYPE)
+            .endObject()
+            .endObject().endObject().endObject()
+            .string();
+        assertAcked(prepareCreate("idx").addMapping("type", mapping));
+
         createIndex("idx_unmapped");
         // TODO: would be nice to have more random data here
         assertAcked(prepareCreate("empty_bucket_idx").addMapping("type", "value", "type=integer"));
@@ -1104,6 +1120,7 @@ public class DateHistogramIT extends ESIntegTestCase {
         DateTime baseKey = new DateTime(intervalMillis * (base.getMillis() / intervalMillis), DateTimeZone.UTC);
 
         prepareCreate("idx2")
+                .addMapping("type", "date", "type=date")
                 .setSettings(
                         Settings.builder().put(indexSettings()).put("index.number_of_shards", 1)
                                 .put("index.number_of_replicas", 0)).execute().actionGet();
@@ -1215,7 +1232,8 @@ public class DateHistogramIT extends ESIntegTestCase {
 
         String index = "test12278";
         prepareCreate(index)
-                .setSettings(Settings.builder().put(indexSettings()).put("index.number_of_shards", 1).put("index.number_of_replicas", 0))
+            .addMapping("type", "date", "type=date")
+            .setSettings(Settings.builder().put(indexSettings()).put("index.number_of_shards", 1).put("index.number_of_replicas", 0))
                 .execute().actionGet();
 
         DateMathParser parser = new DateMathParser(Joda.getStrictStandardDateFormatter());

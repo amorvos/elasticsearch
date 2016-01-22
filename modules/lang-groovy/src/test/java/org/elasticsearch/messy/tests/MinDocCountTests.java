@@ -26,6 +26,8 @@ import com.carrotsearch.randomizedtesting.generators.RandomStrings;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.mapper.core.DateFieldMapper;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.plugins.Plugin;
@@ -65,14 +67,23 @@ public class MinDocCountTests extends AbstractTermsTestCase {
     protected Collection<Class<? extends Plugin>> nodePlugins() {
         return pluginList(GroovyPlugin.class);
     }
-    
+
     private static final QueryBuilder QUERY = QueryBuilders.termQuery("match", true);
 
     private static int cardinality;
 
     @Override
     public void setupSuiteScopeCluster() throws Exception {
-        createIndex("idx");
+        String mapping = XContentFactory.jsonBuilder()
+                .startObject().startObject("type").startObject("properties")
+                    .startObject("date")
+                        .field("type", DateFieldMapper.CONTENT_TYPE)
+                    .endObject()
+                .endObject()
+                .endObject()
+                .endObject()
+                .string();
+        prepareCreate("idx").addMapping("type", mapping).execute().actionGet();
 
         cardinality = randomIntBetween(8, 30);
         final List<IndexRequestBuilder> indexRequests = new ArrayList<>();

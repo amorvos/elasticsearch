@@ -523,24 +523,6 @@ class DocumentParser implements Closeable {
                 }
             }
 
-            if (context.root().dateDetection()) {
-                String text = context.parser().text();
-                // a safe check since "1" gets parsed as well
-                if (Strings.countOccurrencesOf(text, ":") > 1 || Strings.countOccurrencesOf(text, "-") > 1 || Strings.countOccurrencesOf(text, "/") > 1) {
-                    for (FormatDateTimeFormatter dateTimeFormatter : context.root().dynamicDateTimeFormatters()) {
-                        try {
-                            dateTimeFormatter.parser().parseMillis(text);
-                            Mapper.Builder builder = context.root().findTemplateBuilder(context, currentFieldName, "date");
-                            if (builder == null) {
-                                builder = MapperBuilders.dateField(currentFieldName).dateTimeFormatter(dateTimeFormatter);
-                            }
-                            return builder;
-                        } catch (Exception e) {
-                            // failure to parse this, continue
-                        }
-                    }
-                }
-            }
             if (context.root().numericDetection()) {
                 String text = context.parser().text();
                 try {
