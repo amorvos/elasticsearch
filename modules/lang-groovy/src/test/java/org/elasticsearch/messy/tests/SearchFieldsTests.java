@@ -172,6 +172,7 @@ public class SearchFieldsTests extends ESIntegTestCase {
 
         String mapping = XContentFactory.jsonBuilder().startObject().startObject("type1").startObject("properties")
                 .startObject("num1").field("type", "double").field("store", "yes").endObject()
+                .startObject("date").field("type", "date").endObject()
                 .endObject().endObject().endObject().string();
 
         client().admin().indices().preparePutMapping().setType("type1").setSource(mapping).execute().actionGet();
