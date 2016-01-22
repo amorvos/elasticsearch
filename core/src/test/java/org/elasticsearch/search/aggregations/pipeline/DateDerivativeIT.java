@@ -21,6 +21,7 @@ package org.elasticsearch.search.aggregations.pipeline;
 
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.mapper.core.DateFieldMapper;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
@@ -46,10 +47,9 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.dateHistogram;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.sum;
 import static org.elasticsearch.search.aggregations.pipeline.PipelineAggregatorBuilders.derivative;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchResponse;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 
@@ -60,6 +60,20 @@ public class DateDerivativeIT extends ESIntegTestCase {
     private static final String IDX_DST_START = "idx_dst_start";
     private static final String IDX_DST_END = "idx_dst_end";
     private static final String IDX_DST_KATHMANDU = "idx_dst_kathmandu";
+
+    private String DATE_MAPPING = XContentFactory.jsonBuilder()
+        .startObject().startObject("type").startObject("properties")
+        .startObject("date")
+        .field("type", DateFieldMapper.CONTENT_TYPE)
+        .endObject()
+        .startObject("dates")
+        .field("type", DateFieldMapper.CONTENT_TYPE)
+        .endObject()
+        .endObject().endObject().endObject()
+        .string();
+
+    public DateDerivativeIT() throws IOException {
+    }
 
     private DateTime date(int month, int day) {
         return new DateTime(2012, month, day, 0, 0, DateTimeZone.UTC);
@@ -86,7 +100,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
 
     @Override
     public void setupSuiteScopeCluster() throws Exception {
-        createIndex("idx");
+        assertAcked(prepareCreate("idx").addMapping("type", DATE_MAPPING));
         createIndex("idx_unmapped");
         // TODO: would be nice to have more random data here
         prepareCreate("empty_bucket_idx").addMapping("type", "value", "type=integer").execute().actionGet();
@@ -203,7 +217,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
      * Do a derivative on a date histogram with time zone CET at DST start
      */
     public void testSingleValuedFieldNormalised_timeZone_CET_DstStart() throws Exception {
-        createIndex(IDX_DST_START);
+        assertAcked(prepareCreate(IDX_DST_START).addMapping("type", DATE_MAPPING));
         List<IndexRequestBuilder> builders = new ArrayList<>();
 
         DateTimeZone timezone = DateTimeZone.forID("CET");
@@ -241,7 +255,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
      * Do a derivative on a date histogram with time zone CET at DST end
      */
     public void testSingleValuedFieldNormalised_timeZone_CET_DstEnd() throws Exception {
-        createIndex(IDX_DST_END);
+        assertAcked(prepareCreate(IDX_DST_END).addMapping("type", DATE_MAPPING));
         DateTimeZone timezone = DateTimeZone.forID("CET");
         List<IndexRequestBuilder> builders = new ArrayList<>();
 
@@ -280,7 +294,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
      * "Asia/Kathmandu, 1 Jan 1986 - Time Zone Change (IST → NPT), at 00:00:00 clocks were turned forward 00:15 minutes
      */
     public void testSingleValuedFieldNormalised_timeZone_AsiaKathmandu() throws Exception {
-        createIndex(IDX_DST_KATHMANDU);
+        assertAcked(prepareCreate(IDX_DST_KATHMANDU).addMapping("type", DATE_MAPPING));
         DateTimeZone timezone = DateTimeZone.forID("Asia/Kathmandu");
         List<IndexRequestBuilder> builders = new ArrayList<>();
 
