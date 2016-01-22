@@ -21,6 +21,7 @@ package org.elasticsearch.search.aggregations.pipeline;
 
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.mapper.core.DateFieldMapper;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
@@ -45,6 +46,7 @@ import static org.elasticsearch.search.aggregations.pipeline.PipelineAggregatorB
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.dateHistogram;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.sum;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchResponse;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
@@ -81,7 +83,17 @@ public class DateDerivativeIT extends ESIntegTestCase {
 
     @Override
     public void setupSuiteScopeCluster() throws Exception {
-        createIndex("idx");
+        String mapping = XContentFactory.jsonBuilder()
+            .startObject().startObject("type").startObject("properties")
+            .startObject("date")
+            .field("type", DateFieldMapper.CONTENT_TYPE)
+            .endObject()
+            .startObject("dates")
+            .field("type", DateFieldMapper.CONTENT_TYPE)
+            .endObject()
+            .endObject().endObject().endObject()
+            .string();
+        assertAcked(prepareCreate("idx").addMapping("type", mapping));
         createIndex("idx_unmapped");
         // TODO: would be nice to have more random data here
         prepareCreate("empty_bucket_idx").addMapping("type", "value", "type=integer").execute().actionGet();

@@ -123,7 +123,8 @@ public class SimpleValidateQueryIT extends ESIntegTestCase {
     public void explainDateRangeInQueryString() {
         assertAcked(prepareCreate("test").setSettings(Settings.settingsBuilder()
                 .put(indexSettings())
-                .put("index.number_of_shards", 1)));
+                .put("index.number_of_shards", 1))
+                .addMapping("type", "past", "type=date", "future", "type=date"));
 
         String aMonthAgo = ISODateTimeFormat.yearMonthDay().print(new DateTime(DateTimeZone.UTC).minusMonths(1));
         String aMonthFromNow = ISODateTimeFormat.yearMonthDay().print(new DateTime(DateTimeZone.UTC).plusMonths(1));

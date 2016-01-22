@@ -352,7 +352,6 @@ public class SimpleNumericTests extends ESSingleNodeTestCase {
     public void testPrecisionStepDefaultsDetected() throws Exception {
         String mapping = XContentFactory.jsonBuilder().startObject().startObject("type")
                 .field("numeric_detection", true)
-                .field("date_detection", true)
                 .endObject().endObject().string();
 
         DocumentMapper mapper = createIndex("test").mapperService().documentMapperParser().parse(mapping);
@@ -361,7 +360,6 @@ public class SimpleNumericTests extends ESSingleNodeTestCase {
                 .startObject()
                 .field("long",   "100")
                 .field("double", "100.0")
-                .field("date",   "2010-01-01")
                 .endObject()
                 .bytes());
         
@@ -370,7 +368,6 @@ public class SimpleNumericTests extends ESSingleNodeTestCase {
         
         assertPrecisionStepEquals(NumberFieldMapper.Defaults.PRECISION_STEP_64_BIT, luceneDoc.getField("long"));
         assertPrecisionStepEquals(NumberFieldMapper.Defaults.PRECISION_STEP_64_BIT, luceneDoc.getField("double"));
-        assertPrecisionStepEquals(NumberFieldMapper.Defaults.PRECISION_STEP_64_BIT, luceneDoc.getField("date"));
     }
     
     /** Test default precision step for numeric types */
