@@ -35,13 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -279,12 +273,16 @@ public class JarHell {
                      * cf. https://issues.apache.org/jira/browse/LOG4J2-1560
                      */
                     return;
-                } else if (clazz.startsWith("org.apache.logging.log4j.core.jmx.Server")) {
+                }
+                if (clazz.startsWith("org.apache.logging.log4j.core.jmx.Server")) {
                     /*
                      * deliberate to hack around a bug in Log4j
                      * cf. https://issues.apache.org/jira/browse/LOG4J2-1506
                      */
                     return;
+                }
+                if (clazz.startsWith("org.apache.lucene.index.AssertingLeafReader")) {
+                    return; // overwritten to disable thread-change assertion
                 }
                 throw new IllegalStateException("jar hell!" + System.lineSeparator() +
                         "class: " + clazz + System.lineSeparator() +
