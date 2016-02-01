@@ -271,6 +271,9 @@ public class JarHell {
                         "class: " + clazz + System.lineSeparator() +
                         "exists multiple times in jar: " + jarpath + " !!!!!!!!!");
             } else {
+                if (clazz.startsWith("org.apache.lucene.index.AssertingLeafReader")) {
+                    return; // overwritten to disable thread-change assertion
+                }
                 if (clazz.startsWith("org.apache.log4j")) {
                     return; // go figure, jar hell for what should be System.out.println...
                 }
