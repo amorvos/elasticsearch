@@ -32,6 +32,7 @@ import org.elasticsearch.index.IndexNameModule;
 import org.elasticsearch.index.analysis.AnalysisModule;
 import org.elasticsearch.index.analysis.AnalysisService;
 import org.elasticsearch.index.mapper.MapperService;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.index.settings.IndexSettingsModule;
 import org.elasticsearch.index.similarity.SimilarityLookupService;
 import org.elasticsearch.indices.IndicesModule;
@@ -62,7 +63,8 @@ public class MapperTestUtils {
             newAnalysisService(settings),
             newSimilarityLookupService(settings),
             null,
-            mapperRegistry);
+            mapperRegistry,
+            new DynamicArrayFieldMapperBuilderFactoryProvider());
     }
 
     private static AnalysisService newAnalysisService(Settings indexSettings) {

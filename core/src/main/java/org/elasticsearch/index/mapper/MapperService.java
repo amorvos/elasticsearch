@@ -52,6 +52,8 @@ import org.elasticsearch.index.AbstractIndexComponent;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.analysis.AnalysisService;
 import org.elasticsearch.index.mapper.Mapper.BuilderContext;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactory;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.index.mapper.internal.TypeFieldMapper;
 import org.elasticsearch.index.mapper.object.ObjectMapper;
 import org.elasticsearch.index.settings.IndexSettingsService;
@@ -161,14 +163,16 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
     @Inject
     public MapperService(Index index, IndexSettingsService indexSettingsService, AnalysisService analysisService,
                          SimilarityLookupService similarityLookupService,
-                         ScriptService scriptService, MapperRegistry mapperRegistry) {
+                         ScriptService scriptService, MapperRegistry mapperRegistry,
+                         DynamicArrayFieldMapperBuilderFactoryProvider dynamicArrayFieldMapperBuilderFactoryProvider) {
         super(index, indexSettingsService.getSettings());
         this.indexSettings = indexSettingsService.getSettings();
         this.indexSettingsService = indexSettingsService;
         this.analysisService = analysisService;
         this.mapperRegistry = mapperRegistry;
         this.fieldTypes = new FieldTypeLookup();
-        this.documentParser = new DocumentMapperParser(indexSettings, this, analysisService, similarityLookupService, scriptService, mapperRegistry);
+        this.documentParser = new DocumentMapperParser(indexSettings, this, analysisService, similarityLookupService,
+                scriptService, mapperRegistry, dynamicArrayFieldMapperBuilderFactoryProvider.get());
         this.indexAnalyzer = new MapperAnalyzerWrapper(analysisService.defaultIndexAnalyzer(), INDEX_ANALYZER_EXTRACTOR);
         this.searchAnalyzer = new MapperAnalyzerWrapper(analysisService.defaultSearchAnalyzer(), SEARCH_ANALYZER_EXTRACTOR);
         this.searchQuoteAnalyzer = new MapperAnalyzerWrapper(analysisService.defaultSearchQuoteAnalyzer(), SEARCH_QUOTE_ANALYZER_EXTRACTOR);
@@ -206,8 +210,10 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
 
     public MapperService(Index index, Settings indexSettings, AnalysisService analysisService,
                          SimilarityLookupService similarityLookupService,
-                         ScriptService scriptService, MapperRegistry mapperRegistry) {
-        this(index, new IndexSettingsService(index, indexSettings), analysisService, similarityLookupService, scriptService, mapperRegistry);
+                         ScriptService scriptService, MapperRegistry mapperRegistry,
+                         DynamicArrayFieldMapperBuilderFactoryProvider dynamicArrayFieldMapperBuilderFactoryProvider) {
+        this(index, new IndexSettingsService(index, indexSettings), analysisService, similarityLookupService, scriptService,
+            mapperRegistry, dynamicArrayFieldMapperBuilderFactoryProvider);
     }
 
     public void close() {

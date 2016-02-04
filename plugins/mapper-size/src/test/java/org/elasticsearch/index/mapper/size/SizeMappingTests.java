@@ -19,13 +19,6 @@
 
 package org.elasticsearch.index.mapper.size;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-
-import java.util.Collections;
-
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -33,13 +26,8 @@ import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.IndexService;
-import org.elasticsearch.index.mapper.DocumentMapper;
-import org.elasticsearch.index.mapper.DocumentMapperParser;
-import org.elasticsearch.index.mapper.Mapper;
-import org.elasticsearch.index.mapper.MapperService;
-import org.elasticsearch.index.mapper.MetadataFieldMapper;
-import org.elasticsearch.index.mapper.ParsedDocument;
-import org.elasticsearch.index.mapper.SourceToParse;
+import org.elasticsearch.index.mapper.*;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.indices.IndicesModule;
 import org.elasticsearch.indices.mapper.MapperRegistry;
 import org.elasticsearch.test.ESSingleNodeTestCase;
@@ -49,10 +37,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 
 public class SizeMappingTests extends ESSingleNodeTestCase {
 
@@ -66,7 +51,7 @@ public class SizeMappingTests extends ESSingleNodeTestCase {
         Map<String, MetadataFieldMapper.TypeParser> metadataMappers = new HashMap<>();
         IndicesModule indices = new IndicesModule();
         indices.registerMetadataMapper(SizeFieldMapper.NAME, new SizeFieldMapper.TypeParser());
-        mapperService = new MapperService(indexService.index(), indexService.indexSettings(), indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, indices.getMapperRegistry());
+        mapperService = new MapperService(indexService.index(), indexService.indexSettings(), indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, indices.getMapperRegistry(), new DynamicArrayFieldMapperBuilderFactoryProvider());
         parser = mapperService.documentMapperParser();
     }
 
@@ -86,7 +71,7 @@ public class SizeMappingTests extends ESSingleNodeTestCase {
         assertThat(doc.rootDoc().getField("_size").fieldType().stored(), equalTo(true));
         assertThat(doc.rootDoc().getField("_size").tokenStream(docMapper.mappers().indexAnalyzer(), null), notNullValue());
     }
-    
+
     public void testSizeEnabledAndStoredBackcompat() throws Exception {
         String mapping = XContentFactory.jsonBuilder().startObject().startObject("type")
                 .startObject("_size").field("enabled", true).field("store", "yes").endObject()
@@ -98,7 +83,7 @@ public class SizeMappingTests extends ESSingleNodeTestCase {
                 Collections.<String, Mapper.TypeParser>emptyMap(),
                 Collections.<String, MetadataFieldMapper.TypeParser>singletonMap(SizeFieldMapper.NAME, new SizeFieldMapper.TypeParser()));
         parser = new DocumentMapperParser(indexService.indexSettings(), indexService.mapperService(),
-                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry);
+                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry, null);
         DocumentMapper docMapper = parser.parse("type", new CompressedXContent(mapping));
 
         BytesReference source = XContentFactory.jsonBuilder()
@@ -111,7 +96,7 @@ public class SizeMappingTests extends ESSingleNodeTestCase {
         assertThat(doc.rootDoc().getField("_size").fieldType().stored(), equalTo(true));
         assertThat(doc.rootDoc().getField("_size").tokenStream(docMapper.mappers().indexAnalyzer(), null), notNullValue());
     }
-    
+
     public void testSizeDisabled() throws Exception {
         String mapping = XContentFactory.jsonBuilder().startObject().startObject("type")
                 .startObject("_size").field("enabled", false).endObject()
@@ -127,7 +112,7 @@ public class SizeMappingTests extends ESSingleNodeTestCase {
 
         assertThat(doc.rootDoc().getField("_size"), nullValue());
     }
-    
+
     public void testSizeNotSet() throws Exception {
         String mapping = XContentFactory.jsonBuilder().startObject().startObject("type")
                 .endObject().endObject().string();
@@ -142,7 +127,7 @@ public class SizeMappingTests extends ESSingleNodeTestCase {
 
         assertThat(doc.rootDoc().getField("_size"), nullValue());
     }
-    
+
     public void testThatDisablingWorksWhenMerging() throws Exception {
         String enabledMapping = XContentFactory.jsonBuilder().startObject().startObject("type")
                 .startObject("_size").field("enabled", true).endObject()
