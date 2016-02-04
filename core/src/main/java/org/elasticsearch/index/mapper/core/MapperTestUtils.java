@@ -63,7 +63,8 @@ public class MapperTestUtils {
                 newAnalysisService(finalSettings),
                 newSimilarityLookupService(finalSettings),
                 new ScriptService(finalSettings, environment, new HashSet<ScriptEngineService>(), resourceWatcherService, ScriptContextRegistry.EMPTY),
-                new IndicesModule().getMapperRegistry());
+                new IndicesModule().getMapperRegistry(),
+                null);
     }
 
     private static AnalysisService newAnalysisService(Settings indexSettings) {
