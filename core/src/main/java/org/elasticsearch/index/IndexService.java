@@ -48,6 +48,7 @@ import org.elasticsearch.index.engine.EngineFactory;
 import org.elasticsearch.index.fielddata.IndexFieldDataCache;
 import org.elasticsearch.index.fielddata.IndexFieldDataService;
 import org.elasticsearch.index.mapper.MapperService;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.index.query.QueryShardContext;
 import org.elasticsearch.index.shard.IndexEventListener;
 import org.elasticsearch.index.shard.IndexSearcherWrapper;
@@ -137,7 +138,8 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                         MapperRegistry mapperRegistry,
                         IndicesFieldDataCache indicesFieldDataCache,
                         List<SearchOperationListener> searchOperationListeners,
-                        List<IndexingOperationListener> indexingOperationListeners) throws IOException {
+                        List<IndexingOperationListener> indexingOperationListeners,
+                        DynamicArrayFieldMapperBuilderFactoryProvider dynamicArrayFieldMapperBuilderFactoryProvider) throws IOException {
         super(indexSettings);
         this.indexSettings = indexSettings;
         this.xContentRegistry = xContentRegistry;
@@ -147,7 +149,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
             // we parse all percolator queries as they would be parsed on shard 0
             () -> newQueryShardContext(0, null, () -> {
                 throw new IllegalArgumentException("Percolator queries are not allowed to use the current timestamp");
-            }));
+            }), dynamicArrayFieldMapperBuilderFactoryProvider);
         this.indexFieldData = new IndexFieldDataService(indexSettings, indicesFieldDataCache, circuitBreakerService, mapperService);
         this.shardStoreDeleter = shardStoreDeleter;
         this.bigArrays = bigArrays;

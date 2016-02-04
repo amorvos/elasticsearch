@@ -87,6 +87,7 @@ import org.elasticsearch.index.flush.FlushStats;
 import org.elasticsearch.index.get.GetStats;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.MapperService;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.index.merge.MergeStats;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryParseContext;
@@ -178,6 +179,8 @@ public class IndicesService extends AbstractLifecycleComponent
     private final IndicesRequestCache indicesRequestCache;
     private final IndicesQueryCache indicesQueryCache;
     private final MetaStateService metaStateService;
+    private final DynamicArrayFieldMapperBuilderFactoryProvider dynamicArrayFieldMapperBuilderFactoryProvider;
+
 
     @Override
     protected void doStart() {
@@ -191,7 +194,7 @@ public class IndicesService extends AbstractLifecycleComponent
                           MapperRegistry mapperRegistry, NamedWriteableRegistry namedWriteableRegistry,
                           ThreadPool threadPool, IndexScopedSettings indexScopedSettings, CircuitBreakerService circuitBreakerService,
                           BigArrays bigArrays, ScriptService scriptService, ClusterService clusterService, Client client,
-                          MetaStateService metaStateService) {
+                          MetaStateService metaStateService, DynamicArrayFieldMapperBuilderFactoryProvider dynamicArrayFieldMapperBuilderFactoryProvider) {
         super(settings);
         this.threadPool = threadPool;
         this.pluginsService = pluginsService;
@@ -226,6 +229,7 @@ public class IndicesService extends AbstractLifecycleComponent
         this.cleanInterval = INDICES_CACHE_CLEAN_INTERVAL_SETTING.get(settings);
         this.cacheCleaner = new CacheCleaner(indicesFieldDataCache, indicesRequestCache,  logger, threadPool, this.cleanInterval);
         this.metaStateService = metaStateService;
+        this.dynamicArrayFieldMapperBuilderFactoryProvider = dynamicArrayFieldMapperBuilderFactoryProvider;
     }
 
     @Override
@@ -425,7 +429,7 @@ public class IndicesService extends AbstractLifecycleComponent
             indexModule.addIndexEventListener(listener);
         }
         return indexModule.newIndexService(nodeEnv, xContentRegistry, this, circuitBreakerService, bigArrays, threadPool, scriptService,
-                clusterService, client, indicesQueryCache, mapperRegistry, indicesFieldDataCache);
+                clusterService, client, indicesQueryCache, mapperRegistry, indicesFieldDataCache, dynamicArrayFieldMapperBuilderFactoryProvider);
     }
 
     /**
@@ -440,7 +444,7 @@ public class IndicesService extends AbstractLifecycleComponent
         final IndexSettings idxSettings = new IndexSettings(indexMetaData, this.settings, indexNameMatcher, indexScopeSetting);
         final IndexModule indexModule = new IndexModule(idxSettings, indexStoreConfig, analysisRegistry);
         pluginsService.onIndexModule(indexModule);
-        return indexModule.newIndexMapperService(xContentRegistry, mapperRegistry);
+        return indexModule.newIndexMapperService(xContentRegistry, mapperRegistry, dynamicArrayFieldMapperBuilderFactoryProvider);
     }
 
     /**

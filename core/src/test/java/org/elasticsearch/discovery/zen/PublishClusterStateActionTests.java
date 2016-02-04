@@ -169,7 +169,7 @@ public class PublishClusterStateActionTests extends ESTestCase {
 
         MockTransportService service = buildTransportService(settings, threadPool);
         DiscoveryNode discoveryNode = DiscoveryNode.createLocal(settings, service.boundAddress().publishAddress(),
-            NodeEnvironment.generateNodeId(settings));
+            NodeEnvironment.generateNodeId(settings), null);
         MockNode node = new MockNode(discoveryNode, service, listener, logger);
         node.action = buildPublishClusterStateAction(settings, service, () -> node.clusterState, node);
         final CountDownLatch latch = new CountDownLatch(nodes.size() * 2 + 1);

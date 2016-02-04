@@ -51,6 +51,8 @@ import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.engine.InternalEngineTests;
 import org.elasticsearch.index.fielddata.IndexFieldDataCache;
 import org.elasticsearch.index.mapper.ParsedDocument;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactory;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.index.shard.IndexEventListener;
 import org.elasticsearch.index.shard.IndexSearcherWrapper;
 import org.elasticsearch.index.shard.IndexingOperationListener;
@@ -113,6 +115,8 @@ public class IndexModuleTests extends ESTestCase {
     private BigArrays bigArrays;
     private ScriptService scriptService;
     private ClusterService clusterService;
+    private DynamicArrayFieldMapperBuilderFactoryProvider dynamicArrayFieldMapperBuilderFactoryProvider;
+
 
     @Override
     public void setUp() throws Exception {
@@ -132,8 +136,10 @@ public class IndexModuleTests extends ESTestCase {
         scriptService = new ScriptService(settings, environment, new ResourceWatcherService(settings, threadPool), scriptEngineRegistry,
                 scriptContextRegistry, scriptSettings);
         clusterService = ClusterServiceUtils.createClusterService(threadPool);
+        dynamicArrayFieldMapperBuilderFactoryProvider = new DynamicArrayFieldMapperBuilderFactoryProvider();
         nodeEnvironment = new NodeEnvironment(settings, environment);
         mapperRegistry = new IndicesModule(Collections.emptyList()).getMapperRegistry();
+        dynamicArrayFieldMapperBuilderFactoryProvider = new DynamicArrayFieldMapperBuilderFactoryProvider();
     }
 
     @Override
@@ -146,7 +152,7 @@ public class IndexModuleTests extends ESTestCase {
     private IndexService newIndexService(IndexModule module) throws IOException {
         return module.newIndexService(nodeEnvironment, xContentRegistry(), deleter, circuitBreakerService, bigArrays, threadPool,
                 scriptService, clusterService, null, indicesQueryCache, mapperRegistry,
-                new IndicesFieldDataCache(settings, listener));
+                new IndicesFieldDataCache(settings, listener), dynamicArrayFieldMapperBuilderFactoryProvider);
     }
 
     public void testWrapperIsBound() throws IOException {
