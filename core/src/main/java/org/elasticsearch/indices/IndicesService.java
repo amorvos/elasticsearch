@@ -1283,4 +1283,8 @@ public class IndicesService extends AbstractLifecycleComponent
         return new AliasFilter(ShardSearchRequest.parseAliasFilter(factory, indexMetaData, aliases), aliases);
     }
 
+    public MapperRegistry getMapperRegistry() {
+        return mapperRegistry;
+    }
+
 }
