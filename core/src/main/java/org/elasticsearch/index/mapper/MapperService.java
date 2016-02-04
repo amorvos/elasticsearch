@@ -40,6 +40,7 @@ import org.elasticsearch.index.analysis.AnalysisService;
 import org.elasticsearch.index.mapper.Mapper.BuilderContext;
 import org.elasticsearch.index.query.QueryShardContext;
 import org.elasticsearch.index.similarity.SimilarityService;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.indices.InvalidTypeNameException;
 import org.elasticsearch.indices.TypeMissingException;
 import org.elasticsearch.indices.mapper.MapperRegistry;
@@ -129,11 +130,14 @@ public class MapperService extends AbstractIndexComponent {
 
     public MapperService(IndexSettings indexSettings, AnalysisService analysisService,
                          SimilarityService similarityService, MapperRegistry mapperRegistry,
-                         Supplier<QueryShardContext> queryShardContextSupplier) {
+                         Supplier<QueryShardContext> queryShardContextSupplier,
+                         DynamicArrayFieldMapperBuilderFactoryProvider dynamicArrayFieldMapperBuilderFactoryProvider) {
         super(indexSettings);
         this.analysisService = analysisService;
         this.fieldTypes = new FieldTypeLookup();
-        this.documentParser = new DocumentMapperParser(indexSettings, this, analysisService, similarityService, mapperRegistry, queryShardContextSupplier);
+        this.documentParser = new DocumentMapperParser(indexSettings, this, analysisService,
+            similarityService, mapperRegistry, queryShardContextSupplier,
+            dynamicArrayFieldMapperBuilderFactoryProvider.get());
         this.indexAnalyzer = new MapperAnalyzerWrapper(analysisService.defaultIndexAnalyzer(), p -> p.indexAnalyzer());
         this.searchAnalyzer = new MapperAnalyzerWrapper(analysisService.defaultSearchAnalyzer(), p -> p.searchAnalyzer());
         this.searchQuoteAnalyzer = new MapperAnalyzerWrapper(analysisService.defaultSearchQuoteAnalyzer(), p -> p.searchQuoteAnalyzer());

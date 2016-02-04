@@ -32,6 +32,7 @@ import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AnalysisService;
 import org.elasticsearch.index.query.QueryShardContext;
 import org.elasticsearch.index.similarity.SimilarityService;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactory;
 import org.elasticsearch.indices.mapper.MapperRegistry;
 
 import java.util.HashMap;
@@ -43,6 +44,7 @@ import static java.util.Collections.unmodifiableMap;
 
 public class DocumentMapperParser {
 
+    private final DynamicArrayFieldMapperBuilderFactory dynamicArrayFieldMapperBuilderFactory;
     final MapperService mapperService;
     final AnalysisService analysisService;
     private final SimilarityService similarityService;
@@ -58,7 +60,8 @@ public class DocumentMapperParser {
 
     public DocumentMapperParser(IndexSettings indexSettings, MapperService mapperService, AnalysisService analysisService,
                                 SimilarityService similarityService, MapperRegistry mapperRegistry,
-                                Supplier<QueryShardContext> queryShardContextSupplier) {
+                                Supplier<QueryShardContext> queryShardContextSupplier,
+                                @Nullable DynamicArrayFieldMapperBuilderFactory dynamicArrayFieldMapperBuilderFactory) {
         this.parseFieldMatcher = new ParseFieldMatcher(indexSettings.getSettings());
         this.mapperService = mapperService;
         this.analysisService = analysisService;
@@ -67,6 +70,12 @@ public class DocumentMapperParser {
         this.typeParsers = mapperRegistry.getMapperParsers();
         this.rootTypeParsers = mapperRegistry.getMetadataMapperParsers();
         indexVersionCreated = indexSettings.getIndexVersionCreated();
+        this.dynamicArrayFieldMapperBuilderFactory = dynamicArrayFieldMapperBuilderFactory;
+    }
+
+    @Nullable
+    public DynamicArrayFieldMapperBuilderFactory dynamicArrayFieldMapperBuilderFactory() {
+        return dynamicArrayFieldMapperBuilderFactory;
     }
 
     public Mapper.TypeParser.ParserContext parserContext(String type) {

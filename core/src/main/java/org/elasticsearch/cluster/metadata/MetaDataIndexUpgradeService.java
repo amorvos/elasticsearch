@@ -33,6 +33,7 @@ import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.similarity.SimilarityService;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.indices.mapper.MapperRegistry;
 
 import java.util.Collections;
@@ -49,12 +50,15 @@ public class MetaDataIndexUpgradeService extends AbstractComponent {
 
     private final MapperRegistry mapperRegistry;
     private final IndexScopedSettings indexScopedSettings;
+    private final DynamicArrayFieldMapperBuilderFactoryProvider dynamicArrayFieldMapperBuilderFactoryProvider;
 
     @Inject
-    public MetaDataIndexUpgradeService(Settings settings, MapperRegistry mapperRegistry, IndexScopedSettings indexScopedSettings) {
+    public MetaDataIndexUpgradeService(Settings settings, MapperRegistry mapperRegistry, IndexScopedSettings indexScopedSettings,
+                                       DynamicArrayFieldMapperBuilderFactoryProvider dynamicArrayFieldMapperBuilderFactoryProvider) {
         super(settings);
         this.mapperRegistry = mapperRegistry;
         this.indexScopedSettings = indexScopedSettings;
+        this.dynamicArrayFieldMapperBuilderFactoryProvider = dynamicArrayFieldMapperBuilderFactoryProvider;
     }
 
     /**
@@ -117,7 +121,8 @@ public class MetaDataIndexUpgradeService extends AbstractComponent {
             SimilarityService similarityService = new SimilarityService(indexSettings, Collections.emptyMap());
 
             try (AnalysisService analysisService = new FakeAnalysisService(indexSettings)) {
-                MapperService mapperService = new MapperService(indexSettings, analysisService, similarityService, mapperRegistry, () -> null);
+                MapperService mapperService = new MapperService(indexSettings, analysisService,
+                    similarityService, mapperRegistry, () -> null, dynamicArrayFieldMapperBuilderFactoryProvider);
                 for (ObjectCursor<MappingMetaData> cursor : indexMetaData.getMappings().values()) {
                     MappingMetaData mappingMetaData = cursor.value;
                     mapperService.merge(mappingMetaData.type(), mappingMetaData.source(), MapperService.MergeReason.MAPPING_RECOVERY, false);

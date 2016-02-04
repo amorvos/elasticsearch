@@ -151,14 +151,14 @@ public class ClusterStateChanges extends AbstractComponent {
         // services
         TransportService transportService = new TransportService(settings, transport, threadPool,
             TransportService.NOOP_TRANSPORT_INTERCEPTOR);
-        MetaDataIndexUpgradeService metaDataIndexUpgradeService = new MetaDataIndexUpgradeService(settings, null, null) {
+        MetaDataIndexUpgradeService metaDataIndexUpgradeService = new MetaDataIndexUpgradeService(settings, null, null, null) {
             // metaData upgrader should do nothing
             @Override
             public IndexMetaData upgradeIndexMetaData(IndexMetaData indexMetaData) {
                 return indexMetaData;
             }
         };
-        NodeServicesProvider nodeServicesProvider = new NodeServicesProvider(threadPool, null, null, null, null, null, clusterService);
+        NodeServicesProvider nodeServicesProvider = new NodeServicesProvider(threadPool, null, null, null, null, null, clusterService, null);
         MetaDataIndexStateService indexStateService = new MetaDataIndexStateService(settings, clusterService, allocationService,
             metaDataIndexUpgradeService, nodeServicesProvider, indicesService);
         MetaDataDeleteIndexService deleteIndexService = new MetaDataDeleteIndexService(settings, clusterService, allocationService);

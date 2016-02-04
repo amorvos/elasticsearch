@@ -24,7 +24,6 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.compress.CompressedXContent;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -32,16 +31,8 @@ import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AnalysisService;
-import org.elasticsearch.index.mapper.ContentPath;
-import org.elasticsearch.index.mapper.DocumentMapper;
-import org.elasticsearch.index.mapper.Mapper;
-import org.elasticsearch.index.mapper.MapperParsingException;
-import org.elasticsearch.index.mapper.MapperService;
-import org.elasticsearch.index.mapper.ParentFieldMapper;
 import org.elasticsearch.index.mapper.MapperService.MergeReason;
-import org.elasticsearch.index.mapper.ParseContext;
-import org.elasticsearch.index.mapper.ParsedDocument;
-import org.elasticsearch.index.mapper.SourceToParse;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.index.similarity.SimilarityService;
 import org.elasticsearch.indices.IndicesModule;
 import org.elasticsearch.test.ESSingleNodeTestCase;
@@ -115,7 +106,7 @@ public class ParentFieldMapperTests extends ESSingleNodeTestCase {
             Collections.emptyMap(), Collections.emptyMap());
         SimilarityService similarityService = new SimilarityService(indexSettings, Collections.emptyMap());
         MapperService mapperService = new MapperService(indexSettings, analysisService, similarityService,
-            new IndicesModule(emptyList()).getMapperRegistry(), () -> null);
+            new IndicesModule(emptyList()).getMapperRegistry(), () -> null, new DynamicArrayFieldMapperBuilderFactoryProvider());
         XContentBuilder mappingSource = jsonBuilder().startObject().startObject("some_type")
             .startObject("properties")
             .endObject()

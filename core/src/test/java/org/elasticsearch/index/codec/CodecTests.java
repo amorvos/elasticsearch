@@ -39,6 +39,7 @@ import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AnalysisService;
 import org.elasticsearch.index.mapper.MapperService;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.index.similarity.SimilarityService;
 import org.elasticsearch.indices.mapper.MapperRegistry;
 import org.elasticsearch.test.ESTestCase;
@@ -97,7 +98,7 @@ public class CodecTests extends ESTestCase {
         SimilarityService similarityService = new SimilarityService(settings, Collections.emptyMap());
         AnalysisService analysisService = createAnalysisService(settings, nodeSettings);
         MapperRegistry mapperRegistry = new MapperRegistry(Collections.emptyMap(), Collections.emptyMap());
-        MapperService service = new MapperService(settings, analysisService, similarityService, mapperRegistry, () -> null);
+        MapperService service = new MapperService(settings, analysisService, similarityService, mapperRegistry, () -> null, new DynamicArrayFieldMapperBuilderFactoryProvider());
         return new CodecService(service, ESLoggerFactory.getLogger("test"));
     }
 

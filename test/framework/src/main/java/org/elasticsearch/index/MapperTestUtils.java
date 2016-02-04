@@ -21,12 +21,11 @@ package org.elasticsearch.index;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
-import org.elasticsearch.index.analysis.AnalysisRegistry;
 import org.elasticsearch.index.analysis.AnalysisService;
 import org.elasticsearch.index.mapper.MapperService;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.index.similarity.SimilarityService;
 import org.elasticsearch.indices.IndicesModule;
 import org.elasticsearch.indices.mapper.MapperRegistry;
@@ -62,6 +61,7 @@ public class MapperTestUtils {
             analysisService,
             similarityService,
             mapperRegistry,
-            () -> null);
+            () -> null,
+            new DynamicArrayFieldMapperBuilderFactoryProvider());
     }
 }

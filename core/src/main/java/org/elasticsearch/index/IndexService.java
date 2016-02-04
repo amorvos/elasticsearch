@@ -141,7 +141,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         this.analysisService = registry.build(indexSettings);
         this.similarityService = similarityService;
         this.mapperService = new MapperService(indexSettings, analysisService, similarityService, mapperRegistry,
-            IndexService.this::newQueryShardContext);
+            IndexService.this::newQueryShardContext, nodeServicesProvider.getDynamicArrayFieldMapperBuilderFactoryProvider());
         this.indexFieldData = new IndexFieldDataService(indexSettings, indicesFieldDataCache,
             nodeServicesProvider.getCircuitBreakerService(), mapperService);
         this.shardStoreDeleter = shardStoreDeleter;

@@ -89,6 +89,7 @@ import org.elasticsearch.index.mapper.SourceFieldMapper;
 import org.elasticsearch.index.mapper.UidFieldMapper;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.index.shard.IndexSearcherWrapper;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.ShardUtils;
 import org.elasticsearch.index.shard.TranslogRecoveryPerformer;
@@ -2021,7 +2022,7 @@ public class InternalEngineTests extends ESTestCase {
                 Collections.emptyMap(), Collections.emptyMap());
             SimilarityService similarityService = new SimilarityService(indexSettings, Collections.emptyMap());
             MapperRegistry mapperRegistry = new IndicesModule(Collections.emptyList()).getMapperRegistry();
-            this.mapperService = new MapperService(indexSettings, analysisService, similarityService, mapperRegistry, () -> null);
+            this.mapperService = new MapperService(indexSettings, analysisService, similarityService, mapperRegistry, () -> null, new DynamicArrayFieldMapperBuilderFactoryProvider());
             RootObjectMapper.Builder rootBuilder = new RootObjectMapper.Builder("test");
             DocumentMapper.Builder b = new DocumentMapper.Builder(rootBuilder, mapperService);
         }
