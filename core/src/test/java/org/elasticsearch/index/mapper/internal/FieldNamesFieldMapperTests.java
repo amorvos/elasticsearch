@@ -37,6 +37,7 @@ import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.MetadataFieldMapper;
 import org.elasticsearch.index.mapper.ParseContext;
 import org.elasticsearch.index.mapper.ParsedDocument;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.indices.IndicesModule;
 import org.elasticsearch.indices.mapper.MapperRegistry;
 import org.elasticsearch.test.ESSingleNodeTestCase;
@@ -277,9 +278,11 @@ public class FieldNamesFieldMapperTests extends ESSingleNodeTestCase {
         IndicesModule indicesModule = new IndicesModule();
         indicesModule.registerMetadataMapper("_dummy", new DummyMetadataFieldMapper.TypeParser());
         final MapperRegistry mapperRegistry = indicesModule.getMapperRegistry();
-        MapperService mapperService = new MapperService(indexService.index(), indexService.indexSettings(), indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry);
+        MapperService mapperService = new MapperService(indexService.index(), indexService.indexSettings(),
+            indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry,
+            new DynamicArrayFieldMapperBuilderFactoryProvider());
         DocumentMapperParser parser = new DocumentMapperParser(indexService.indexSettings(), mapperService,
-                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry);
+                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry, null);
         String mapping = XContentFactory.jsonBuilder().startObject().startObject("type").endObject().endObject().string();
         DocumentMapper mapper = parser.parse("type", new CompressedXContent(mapping));
         ParsedDocument parsedDocument = mapper.parse("index", "type", "id", new BytesArray("{}"));

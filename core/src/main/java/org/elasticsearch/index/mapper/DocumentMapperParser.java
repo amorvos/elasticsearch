@@ -36,6 +36,7 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.analysis.AnalysisService;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactory;
 import org.elasticsearch.index.mapper.object.RootObjectMapper;
 import org.elasticsearch.index.similarity.SimilarityLookupService;
 import org.elasticsearch.indices.mapper.MapperRegistry;
@@ -50,6 +51,7 @@ import static org.elasticsearch.index.mapper.MapperBuilders.doc;
 
 public class DocumentMapperParser {
 
+    private final DynamicArrayFieldMapperBuilderFactory dynamicArrayFieldMapperBuilderFactory;
     final MapperService mapperService;
     final AnalysisService analysisService;
     private static final ESLogger logger = Loggers.getLogger(DocumentMapperParser.class);
@@ -66,7 +68,10 @@ public class DocumentMapperParser {
     private final Map<String, MetadataFieldMapper.TypeParser> rootTypeParsers;
 
     public DocumentMapperParser(Settings indexSettings, MapperService mapperService, AnalysisService analysisService,
-                                SimilarityLookupService similarityLookupService, ScriptService scriptService, MapperRegistry mapperRegistry) {
+                                SimilarityLookupService similarityLookupService, ScriptService scriptService,
+                                MapperRegistry mapperRegistry,
+                                @Nullable DynamicArrayFieldMapperBuilderFactory dynamicArrayFieldMapperBuilderFactory) {
+        this.dynamicArrayFieldMapperBuilderFactory = dynamicArrayFieldMapperBuilderFactory;
         this.parseFieldMatcher = new ParseFieldMatcher(indexSettings);
         this.scriptService = scriptService;
         this.mapperService = mapperService;
@@ -75,6 +80,11 @@ public class DocumentMapperParser {
         this.typeParsers = mapperRegistry.getMapperParsers();
         this.rootTypeParsers = mapperRegistry.getMetadataMapperParsers();
         indexVersionCreated = Version.indexCreated(indexSettings);
+    }
+
+    @Nullable
+    public DynamicArrayFieldMapperBuilderFactory dynamicArrayFieldMapperBuilderFactory() {
+        return dynamicArrayFieldMapperBuilderFactory;
     }
 
     public Mapper.TypeParser.ParserContext parserContext(String type) {

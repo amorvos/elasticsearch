@@ -67,6 +67,7 @@ import org.elasticsearch.index.indexing.ShardIndexingService;
 import org.elasticsearch.index.mapper.*;
 import org.elasticsearch.index.mapper.Mapper.BuilderContext;
 import org.elasticsearch.index.mapper.ParseContext.Document;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.index.mapper.internal.SourceFieldMapper;
 import org.elasticsearch.index.mapper.internal.UidFieldMapper;
 import org.elasticsearch.index.mapper.object.RootObjectMapper;
@@ -2088,7 +2089,7 @@ public class InternalEngineTests extends ESTestCase {
             AnalysisService analysisService = new AnalysisService(index, settings);
             SimilarityLookupService similarityLookupService = new SimilarityLookupService(index, settings);
             MapperRegistry mapperRegistry = new IndicesModule().getMapperRegistry();
-            MapperService mapperService = new MapperService(index, settings, analysisService, similarityLookupService, null, mapperRegistry);
+            MapperService mapperService = new MapperService(index, settings, analysisService, similarityLookupService, null, mapperRegistry, new DynamicArrayFieldMapperBuilderFactoryProvider());
             DocumentMapper.Builder b = new DocumentMapper.Builder(rootBuilder, mapperService);
             this.docMapper = b.build(mapperService);
         }
