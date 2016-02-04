@@ -62,7 +62,8 @@ public class MapperTestUtils {
             newAnalysisService(settings),
             newSimilarityLookupService(settings),
             null,
-            mapperRegistry);
+            mapperRegistry,
+            null);
     }
 
     private static AnalysisService newAnalysisService(Settings indexSettings) {

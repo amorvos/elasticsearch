@@ -33,7 +33,8 @@ public class MetaDataIndexUpgradeServiceTests extends ESTestCase {
 
     public void testUpgradeStoreSettings() {
         final String type = RandomPicks.randomFrom(random(), Arrays.asList("nio_fs", "mmap_fs", "simple_fs", "default", "fs"));
-        MetaDataIndexUpgradeService metaDataIndexUpgradeService = new MetaDataIndexUpgradeService(Settings.EMPTY, null, new IndicesModule().getMapperRegistry());
+        MetaDataIndexUpgradeService metaDataIndexUpgradeService = new MetaDataIndexUpgradeService(Settings.EMPTY, null,
+                new IndicesModule().getMapperRegistry(), null);
         Settings indexSettings = Settings.builder().put(IndexMetaData.SETTING_VERSION_CREATED, Version.CURRENT)
                 .put(IndexStoreModule.STORE_TYPE, randomBoolean() ? type : type.toUpperCase(Locale.ROOT))
                 .build();
@@ -54,7 +55,8 @@ public class MetaDataIndexUpgradeServiceTests extends ESTestCase {
                 .numberOfShards(1)
                 .numberOfReplicas(1)
                 .build();
-        MetaDataIndexUpgradeService metaDataIndexUpgradeService = new MetaDataIndexUpgradeService(Settings.EMPTY, null, new IndicesModule().getMapperRegistry());
+        MetaDataIndexUpgradeService metaDataIndexUpgradeService = new MetaDataIndexUpgradeService(
+                Settings.EMPTY, null, new IndicesModule().getMapperRegistry(), null);
         IndexMetaData indexMetaData = metaDataIndexUpgradeService.upgradeSettings(test);
         assertSame(indexMetaData, test);
     }

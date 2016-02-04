@@ -56,7 +56,7 @@ public class SizeMappingTests extends ESSingleNodeTestCase {
                 Collections.<String, Mapper.TypeParser>emptyMap(),
                 Collections.<String, MetadataFieldMapper.TypeParser>singletonMap(SizeFieldMapper.NAME, new SizeFieldMapper.TypeParser()));
         parser = new DocumentMapperParser(indexService.indexSettings(), indexService.mapperService(),
-                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry);
+                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry, null);
     }
 
     public void testSizeEnabled() throws Exception {
@@ -87,7 +87,7 @@ public class SizeMappingTests extends ESSingleNodeTestCase {
                 Collections.<String, Mapper.TypeParser>emptyMap(),
                 Collections.<String, MetadataFieldMapper.TypeParser>singletonMap(SizeFieldMapper.NAME, new SizeFieldMapper.TypeParser()));
         parser = new DocumentMapperParser(indexService.indexSettings(), indexService.mapperService(),
-                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry);
+                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry, null);
         DocumentMapper docMapper = parser.parse("type", new CompressedXContent(mapping));
 
         BytesReference source = XContentFactory.jsonBuilder()
