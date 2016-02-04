@@ -50,6 +50,7 @@ import org.elasticsearch.index.cache.query.QueryCache;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.fielddata.IndexFieldDataCache;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.index.shard.IndexEventListener;
 import org.elasticsearch.index.shard.IndexSearcherWrapper;
 import org.elasticsearch.index.shard.IndexingOperationListener;
@@ -86,7 +87,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 import static java.util.Collections.emptyMap;
 
@@ -122,7 +122,7 @@ public class IndexModuleTests extends ESTestCase {
         ScriptService scriptService = new ScriptService(settings, environment, new ResourceWatcherService(settings, threadPool), scriptEngineRegistry, scriptContextRegistry, scriptSettings);
         IndicesQueriesRegistry indicesQueriesRegistry = new IndicesQueriesRegistry();
         ClusterService clusterService = ClusterServiceUtils.createClusterService(threadPool);
-        return new NodeServicesProvider(threadPool, bigArrays, client, scriptService, indicesQueriesRegistry, circuitBreakerService, clusterService);
+        return new NodeServicesProvider(threadPool, bigArrays, client, scriptService, indicesQueriesRegistry, circuitBreakerService, clusterService, new DynamicArrayFieldMapperBuilderFactoryProvider());
     }
 
     @Override

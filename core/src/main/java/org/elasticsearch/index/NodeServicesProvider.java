@@ -23,6 +23,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactoryProvider;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.indices.query.IndicesQueriesRegistry;
 import org.elasticsearch.script.ScriptService;
@@ -42,11 +43,13 @@ public final class NodeServicesProvider {
     private final ScriptService scriptService;
     private final CircuitBreakerService circuitBreakerService;
     private final ClusterService clusterService;
+    private final DynamicArrayFieldMapperBuilderFactoryProvider dynamicArrayFieldMapperBuilderFactoryProvider;
 
     @Inject
     public NodeServicesProvider(ThreadPool threadPool, BigArrays bigArrays, Client client, ScriptService scriptService,
                                 IndicesQueriesRegistry indicesQueriesRegistry, CircuitBreakerService circuitBreakerService,
-                                ClusterService clusterService) {
+                                ClusterService clusterService,
+                                DynamicArrayFieldMapperBuilderFactoryProvider dynamicArrayFieldMapperBuilderFactoryProvider) {
         this.threadPool = threadPool;
         this.bigArrays = bigArrays;
         this.client = client;
@@ -54,6 +57,7 @@ public final class NodeServicesProvider {
         this.scriptService = scriptService;
         this.circuitBreakerService = circuitBreakerService;
         this.clusterService = clusterService;
+        this.dynamicArrayFieldMapperBuilderFactoryProvider = dynamicArrayFieldMapperBuilderFactoryProvider;
     }
 
     public ThreadPool getThreadPool() {
@@ -80,5 +84,9 @@ public final class NodeServicesProvider {
 
     public ClusterService getClusterService() {
         return clusterService;
+    }
+
+    public DynamicArrayFieldMapperBuilderFactoryProvider getDynamicArrayFieldMapperBuilderFactoryProvider() {
+        return dynamicArrayFieldMapperBuilderFactoryProvider;
     }
 }
