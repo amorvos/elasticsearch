@@ -26,11 +26,7 @@ import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.IndexService;
-import org.elasticsearch.index.mapper.DocumentMapper;
-import org.elasticsearch.index.mapper.DocumentMapperParser;
-import org.elasticsearch.index.mapper.Mapper;
-import org.elasticsearch.index.mapper.MetadataFieldMapper;
-import org.elasticsearch.index.mapper.ParsedDocument;
+import org.elasticsearch.index.mapper.*;
 import org.elasticsearch.index.mapper.core.StringFieldMapper;
 import org.elasticsearch.indices.mapper.MapperRegistry;
 import org.elasticsearch.test.ESSingleNodeTestCase;
@@ -58,7 +54,7 @@ public class SimpleExternalMappingTests extends ESSingleNodeTestCase {
                 Collections.<String, MetadataFieldMapper.TypeParser>singletonMap(ExternalMetadataMapper.CONTENT_TYPE, new ExternalMetadataMapper.TypeParser()));
 
         DocumentMapperParser parser = new DocumentMapperParser(indexService.indexSettings(), indexService.mapperService(),
-                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry);
+                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry, null);
         DocumentMapper documentMapper = parser.parse("type", new CompressedXContent(
                 XContentFactory.jsonBuilder().startObject().startObject("type")
                 .startObject(ExternalMetadataMapper.CONTENT_TYPE)
@@ -105,7 +101,7 @@ public class SimpleExternalMappingTests extends ESSingleNodeTestCase {
         MapperRegistry mapperRegistry = new MapperRegistry(mapperParsers, Collections.<String, MetadataFieldMapper.TypeParser>emptyMap());
 
         DocumentMapperParser parser = new DocumentMapperParser(indexService.indexSettings(), indexService.mapperService(),
-                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry);
+                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry, null);
 
         DocumentMapper documentMapper = parser.parse("type", new CompressedXContent(
                 XContentFactory.jsonBuilder().startObject().startObject("type").startObject("properties")
@@ -165,7 +161,7 @@ public class SimpleExternalMappingTests extends ESSingleNodeTestCase {
         MapperRegistry mapperRegistry = new MapperRegistry(mapperParsers, Collections.<String, MetadataFieldMapper.TypeParser>emptyMap());
 
         DocumentMapperParser parser = new DocumentMapperParser(indexService.indexSettings(), indexService.mapperService(),
-                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry);
+                indexService.analysisService(), indexService.similarityService().similarityLookupService(), null, mapperRegistry, null);
 
         DocumentMapper documentMapper = parser.parse("type", new CompressedXContent(
                 XContentFactory.jsonBuilder().startObject().startObject("type").startObject("properties")
