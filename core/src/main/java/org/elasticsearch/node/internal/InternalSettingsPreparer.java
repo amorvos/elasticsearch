@@ -20,7 +20,6 @@
 package org.elasticsearch.node.internal;
 
 import com.google.common.base.Charsets;
-import com.google.common.collect.Sets;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.common.Booleans;
 import org.elasticsearch.common.Strings;
@@ -116,7 +115,7 @@ public class InternalSettingsPreparer {
      * Initializes the builder with the given input settings, and loads system properties settings if allowed.
      * If loadDefaults is true, system property default settings are loaded.
      */
-    private static void initializeSettings(Settings.Builder output, Settings input, boolean loadDefaults) {
+    static void initializeSettings(Settings.Builder output, Settings input, boolean loadDefaults) {
         output.put(input);
         if (useSystemProperties(input)) {
             if (loadDefaults) {
@@ -136,7 +135,7 @@ public class InternalSettingsPreparer {
      * The provided terminal is used to prompt for settings needing to be replaced.
      * The provided configDir is optional and will be used to lookup names.txt if the node name is not set, if provided.
      */
-    private static void finalizeSettings(Settings.Builder output, Terminal terminal, Path configDir) {
+    static void finalizeSettings(Settings.Builder output, Terminal terminal, Path configDir) {
         // allow to force set properties based on configuration of the settings provided
         List<String> forcedSettings = new ArrayList<>();
         for (String setting : output.internalMap().keySet()) {
