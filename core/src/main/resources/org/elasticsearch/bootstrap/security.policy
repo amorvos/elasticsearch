@@ -47,6 +47,8 @@ grant {
   // Allow executing groovy scripts with codesource of /groovy/script
   permission groovy.security.GroovyCodeSourcePermission "/groovy/script";
 
+  permission javax.net.ssl.SSLPermission "setDefaultSSLContext";
+
   // Allow connecting to the internet anywhere
   permission java.net.SocketPermission "*", "accept,listen,connect,resolve";
 
