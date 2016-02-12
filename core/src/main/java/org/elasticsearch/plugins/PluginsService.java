@@ -45,6 +45,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -298,8 +299,15 @@ public class PluginsService extends AbstractComponent {
                     logger.trace("--- skip hidden plugin file[{}]", plugin.toAbsolutePath());
                     continue;
                 }
+                PluginInfo info;
+                try {
+                    info = PluginInfo.readFromProperties(plugin);
+                } catch (NoSuchFileException e) {
+                    // es plugin descriptor file not found, ignore, could be a Crate plugin
+                    logger.trace("--- plugin descriptor file not found, ignoring plugin [{}]", plugin.toAbsolutePath());
+                    continue;
+                }
                 logger.trace("--- adding plugin [{}]", plugin.toAbsolutePath());
-                PluginInfo info = PluginInfo.readFromProperties(plugin);
                 List<URL> urls = new ArrayList<>();
                 if (info.isJvm()) {
                     // a jvm plugin: gather urls for jar files
