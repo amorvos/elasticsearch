@@ -372,15 +372,15 @@ public class PluginsService extends AbstractComponent {
                     logger.trace("--- skip hidden plugin file[{}]", plugin.toAbsolutePath());
                     continue;
                 }
-                logger.trace("--- adding plugin [{}]", plugin.toAbsolutePath());
-                final PluginInfo info;
+                PluginInfo info;
                 try {
                     info = PluginInfo.readFromProperties(plugin);
-                } catch (IOException e) {
-                    throw new IllegalStateException("Could not load plugin descriptor for existing plugin ["
-                        + plugin.getFileName() + "]. Was the plugin built before 2.0?", e);
+                } catch (NoSuchFileException e) {
+                    // es plugin descriptor file not found, ignore, could be a Crate plugin
+                    logger.trace("--- plugin descriptor file not found, ignoring plugin [{}]", plugin.toAbsolutePath());
+                    continue;
                 }
-
+                logger.trace("--- adding plugin [{}]", plugin.toAbsolutePath());
                 List<URL> urls = new ArrayList<>();
                 if (info.isJvm()) {
                     // a jvm plugin: gather urls for jar files
