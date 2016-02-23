@@ -334,6 +334,10 @@ public abstract class AbstractRandomizedTest extends RandomizedTest {
                     if (STATIC_LEAK_IGNORED_TYPES.contains(field.getType().getName())) {
                         return false;
                     }
+                    // Don't count groovy magic
+                    if (field.getName().startsWith("$staticClassInfo") || field.getName().startsWith("$callSiteArray")) {
+                        return false;
+                    }
                     // Don't count references from ourselves, we're top-level.
                     if (TOP_LEVEL_CLASSES.contains(field.getDeclaringClass())) {
                         return false;
