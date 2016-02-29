@@ -493,7 +493,7 @@ public class UnicastZenPing extends AbstractLifecycleComponent<ZenPing> implemen
     }
 
     private UnicastPingResponse handlePingRequest(final UnicastPingRequest request) {
-        if (!lifecycle.started()) {
+        if (!lifecycle.started() && !lifecycle.disabled()) {
             throw new IllegalStateException("received ping request while not started");
         }
         temporalResponses.add(request.pingResponse);

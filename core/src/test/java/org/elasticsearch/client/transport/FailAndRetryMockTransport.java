@@ -188,6 +188,11 @@ abstract class FailAndRetryMockTransport<Response extends TransportResponse> imp
     }
 
     @Override
+    public Transport disable() {
+        return null;
+    }
+
+    @Override
     public Map<String, BoundTransportAddress> profileBoundAddresses() {
         return Collections.EMPTY_MAP;
     }
