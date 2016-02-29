@@ -146,7 +146,7 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent<Indic
             return;
         }
 
-        if (!lifecycle.started()) {
+        if (!(lifecycle.started() || lifecycle.disabled())) {
             return;
         }
 

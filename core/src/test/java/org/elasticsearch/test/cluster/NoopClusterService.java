@@ -160,6 +160,11 @@ public class NoopClusterService implements ClusterService {
     }
 
     @Override
+    public ClusterService disable() {
+        return null;
+    }
+
+    @Override
     public ClusterService stop() {
         return null;
     }
