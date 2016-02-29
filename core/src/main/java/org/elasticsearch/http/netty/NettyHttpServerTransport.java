@@ -267,7 +267,7 @@ public class NettyHttpServerTransport extends AbstractLifecycleComponent<HttpSer
         }
         this.boundAddress = new BoundTransportAddress(boundAddresses.toArray(new TransportAddress[boundAddresses.size()]), new InetSocketTransportAddress(publishAddress));
     }
-    
+
     private InetSocketTransportAddress bindAddress(final InetAddress hostAddress) {
         PortsRange portsRange = new PortsRange(port);
         final AtomicReference<Exception> lastException = new AtomicReference<>();
@@ -325,6 +325,20 @@ public class NettyHttpServerTransport extends AbstractLifecycleComponent<HttpSer
     }
 
     @Override
+    protected void doDisable() {
+        if (serverOpenChannels != null) {
+            serverOpenChannels.disable();
+        }
+    }
+
+    @Override
+    protected void doEnable() {
+        if (serverOpenChannels != null) {
+            serverOpenChannels.enable();
+        }
+    }
+
+    @Override
     public BoundTransportAddress boundAddress() {
         return this.boundAddress;
     }
@@ -355,7 +369,7 @@ public class NettyHttpServerTransport extends AbstractLifecycleComponent<HttpSer
             }
             ctx.getChannel().close();
         } else {
-            if (!lifecycle.started()) {
+            if (!(lifecycle.started() || lifecycle.disabled())) {
                 // ignore
                 return;
             }

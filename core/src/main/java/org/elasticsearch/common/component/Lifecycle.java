@@ -23,9 +23,10 @@ package org.elasticsearch.common.component;
 /**
  * Lifecycle state. Allows the following transitions:
  * <ul>
- * <li>INITIALIZED -> STARTED, STOPPED, CLOSED</li>
- * <li>STARTED     -> STOPPED</li>
- * <li>STOPPED     -> STARTED, CLOSED</li>
+ * <li>INITIALIZED -> STARTED, DISABLED, STOPPED, CLOSED</li>
+ * <li>STARTED     -> DISABLED, STOPPED</li>
+ * <li>DISABLED    -> STOPPED, STARTED</li>
+ * <li>STOPPED     -> DISABLED, STARTED, CLOSED</li>
  * <li>CLOSED      -> </li>
  * </ul>
  * <p/>
@@ -58,9 +59,11 @@ package org.elasticsearch.common.component;
  */
 public class Lifecycle {
 
+
     public static enum State {
         INITIALIZED,
         STOPPED,
+        DISABLED,
         STARTED,
         CLOSED
     }
@@ -93,6 +96,13 @@ public class Lifecycle {
     }
 
     /**
+     * Returns <tt>true<</tt> if the state is disabled.
+     */
+    public boolean disabled() {
+        return state == State.DISABLED;
+    }
+
+    /**
      * Returns <tt>true</tt> if the state is closed.
      */
     public boolean closed() {
@@ -106,7 +116,7 @@ public class Lifecycle {
 
     public boolean canMoveToStarted() throws IllegalStateException {
         State localState = this.state;
-        if (localState == State.INITIALIZED || localState == State.STOPPED) {
+        if (localState == State.INITIALIZED || localState == State.STOPPED || localState == State.DISABLED) {
             return true;
         }
         if (localState == State.STARTED) {
@@ -121,7 +131,7 @@ public class Lifecycle {
 
     public boolean moveToStarted() throws IllegalStateException {
         State localState = this.state;
-        if (localState == State.INITIALIZED || localState == State.STOPPED) {
+        if (localState == State.INITIALIZED || localState == State.STOPPED || localState == State.DISABLED) {
             state = State.STARTED;
             return true;
         }
@@ -136,7 +146,7 @@ public class Lifecycle {
 
     public boolean canMoveToStopped() throws IllegalStateException {
         State localState = state;
-        if (localState == State.STARTED) {
+        if (localState == State.STARTED || localState == State.DISABLED) {
             return true;
         }
         if (localState == State.INITIALIZED || localState == State.STOPPED) {
@@ -150,7 +160,7 @@ public class Lifecycle {
 
     public boolean moveToStopped() throws IllegalStateException {
         State localState = state;
-        if (localState == State.STARTED) {
+        if (localState == State.STARTED || localState == State.DISABLED) {
             state = State.STOPPED;
             return true;
         }
@@ -180,11 +190,43 @@ public class Lifecycle {
         if (localState == State.CLOSED) {
             return false;
         }
+        if (localState == State.DISABLED) {
+            return false; // need to stop first
+        }
         if (localState == State.STARTED) {
             throw new IllegalStateException("Can't move to closed before moving to stopped mode");
         }
         state = State.CLOSED;
         return true;
+    }
+
+    public boolean moveToDisabled() throws IllegalStateException {
+        State localState = this.state;
+        if (localState == State.INITIALIZED || localState == State.STOPPED || localState == State.STARTED) {
+            state = State.DISABLED;
+            return true;
+        }
+        if (localState == State.DISABLED) {
+            return false;
+        }
+        if (localState == State.CLOSED) {
+            throw new IllegalStateException("Can't move to disabled state when closed");
+        }
+        throw new IllegalStateException("Can't move to disabled with unknown state");
+    }
+
+    public boolean canMoveToDisabled() throws IllegalStateException {
+        State localState = this.state;
+        if (localState == State.INITIALIZED || localState == State.STOPPED || localState == State.STARTED) {
+            return true;
+        }
+        if (localState == State.DISABLED) {
+            return false;
+        }
+        if (localState == State.CLOSED) {
+            throw new IllegalStateException("Can't move to disabled state when closed");
+        }
+        throw new IllegalStateException("Can't move to disabled with unknown state");
     }
 
     @Override
