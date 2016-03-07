@@ -183,9 +183,10 @@ public class DiscoveryNode implements Streamable, ToXContent {
      * Should this node form a connection to the provided node.
      */
     public boolean shouldConnectTo(DiscoveryNode otherNode) {
-        if (clientNode() && otherNode.clientNode()) {
-            return false;
-        }
+        // Crate patch: ALLOW connections between client nodes
+        //if (clientNode() && otherNode.clientNode()) {
+        //    return false;
+        //}
         return true;
     }
 
