@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.settings.Settings;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -36,6 +37,7 @@ public class Deallocators implements Deallocator, Closeable {
 
     public static final String GRACEFUL_STOP_MIN_AVAILABILITY = "cluster.graceful_stop.min_availability";
 
+    private String minAvailability;
 
     public static class MinAvailability {
         public static final String FULL = "full";
@@ -81,10 +83,14 @@ public class Deallocators implements Deallocator, Closeable {
     };
 
     @Inject
-    public Deallocators(ClusterService clusterService, AllShardsDeallocator allShardsDeallocator, PrimariesDeallocator primariesDeallocator) {
+    public Deallocators(ClusterService clusterService,
+                        AllShardsDeallocator allShardsDeallocator,
+                        PrimariesDeallocator primariesDeallocator,
+                        Settings settings) {
         this.clusterService = clusterService;
         this.allShardsDeallocator = allShardsDeallocator;
         this.primariesDeallocator = primariesDeallocator;
+        minAvailability = settings.get(GRACEFUL_STOP_MIN_AVAILABILITY, MinAvailability.PRIMARIES);
     }
 
     @Override
@@ -142,9 +148,9 @@ public class Deallocators implements Deallocator, Closeable {
      * get deallocator according to current min_availability setting.
      * this might not be the one this node is currently deallocating with.
      */
-    private Deallocator deallocator() {
+    Deallocator deallocator() {
         Deallocator deallocator;
-        String minAvailability = clusterService.state().metaData().settings().get(GRACEFUL_STOP_MIN_AVAILABILITY, MinAvailability.PRIMARIES);
+        minAvailability = clusterService.state().metaData().settings().get(GRACEFUL_STOP_MIN_AVAILABILITY, minAvailability);
         switch (minAvailability) {
             case MinAvailability.PRIMARIES:
                 deallocator = primariesDeallocator;

@@ -35,6 +35,8 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
 public class GracefulStopIntegrationTest extends ElasticsearchIntegrationTest {
@@ -69,8 +71,10 @@ public class GracefulStopIntegrationTest extends ElasticsearchIntegrationTest {
 
     @After
     public void cleanUp() {
-        // reset to default
-        setSettings(false, true, "primaries", "2h");
+        client().admin().cluster().prepareUpdateSettings()
+                .setTransientSettingsToRemove(new HashSet<>(Arrays.asList(GracefulStop.SettingNames.FORCE,
+                        GracefulStop.SettingNames.REALLOCATE, Deallocators.GRACEFUL_STOP_MIN_AVAILABILITY,
+                        GracefulStop.SettingNames.TIMEOUT)));
         gracefulStop = null;
         deallocators = null;
     }
@@ -78,10 +82,10 @@ public class GracefulStopIntegrationTest extends ElasticsearchIntegrationTest {
     protected void setSettings(boolean force, boolean reallocate, String minAvailability, String timeOut) {
         client().admin().cluster().prepareUpdateSettings()
                 .setTransientSettings(ImmutableSettings.builder()
-                        .put("cluster.graceful_stop.force", force)
-                        .put("cluster.graceful_stop.reallocate", reallocate)
-                        .put("cluster.graceful_stop.min_availability", minAvailability)
-                        .put("cluster.graceful_stop.timeout", timeOut)).execute().actionGet();
+                        .put(GracefulStop.SettingNames.FORCE, force)
+                        .put(GracefulStop.SettingNames.REALLOCATE, reallocate)
+                        .put(Deallocators.GRACEFUL_STOP_MIN_AVAILABILITY, minAvailability)
+                        .put(GracefulStop.SettingNames.TIMEOUT, timeOut)).execute().actionGet();
     }
 
     /**
