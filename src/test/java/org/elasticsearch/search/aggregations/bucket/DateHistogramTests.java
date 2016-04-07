@@ -24,6 +24,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.joda.Joda;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.mapper.core.DateFieldMapper;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
@@ -48,16 +49,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
-import static org.elasticsearch.search.aggregations.AggregationBuilders.dateHistogram;
-import static org.elasticsearch.search.aggregations.AggregationBuilders.histogram;
-import static org.elasticsearch.search.aggregations.AggregationBuilders.max;
-import static org.elasticsearch.search.aggregations.AggregationBuilders.stats;
-import static org.elasticsearch.search.aggregations.AggregationBuilders.sum;
+import static org.elasticsearch.search.aggregations.AggregationBuilders.*;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchResponse;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
@@ -98,7 +93,17 @@ public class DateHistogramTests extends ElasticsearchIntegrationTest {
 
     @Override
     public void setupSuiteScopeCluster() throws Exception {
-        createIndex("idx");
+        String mapping = XContentFactory.jsonBuilder()
+                .startObject().startObject("type").startObject("properties")
+                    .startObject("date")
+                        .field("type", DateFieldMapper.CONTENT_TYPE)
+                    .endObject()
+                    .startObject("dates")
+                        .field("type", DateFieldMapper.CONTENT_TYPE)
+                    .endObject()
+                .endObject().endObject().endObject()
+                .string();
+        prepareCreate("idx").addMapping("type", mapping).execute().actionGet();
         createIndex("idx_unmapped");
         // TODO: would be nice to have more random data here
         prepareCreate("empty_bucket_idx").addMapping("type", "value", "type=integer").execute().actionGet();
@@ -1109,7 +1114,8 @@ public class DateHistogramTests extends ElasticsearchIntegrationTest {
         prepareCreate("idx2")
                 .setSettings(
                         ImmutableSettings.builder().put(indexSettings()).put("index.number_of_shards", 1)
-                                .put("index.number_of_replicas", 0)).execute().actionGet();
+                                .put("index.number_of_replicas", 0))
+                .addMapping("type", "date", "type=date").execute().actionGet();
         int numOfBuckets = randomIntBetween(3, 6);
         int emptyBucketIndex = randomIntBetween(1, numOfBuckets - 2); // should be in the middle
 

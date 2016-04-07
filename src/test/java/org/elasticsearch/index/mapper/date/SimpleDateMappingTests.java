@@ -21,6 +21,7 @@ package org.elasticsearch.index.mapper.date;
 
 import org.apache.lucene.analysis.NumericTokenStream.NumericTermAttribute;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.NumericRangeFilter;
@@ -73,9 +74,9 @@ public class SimpleDateMappingTests extends ElasticsearchSingleNodeTest {
                 .bytes());
 
         FieldMapper<?> fieldMapper = defaultMapper.mappers().smartNameFieldMapper("date_field1");
-        assertThat(fieldMapper, instanceOf(DateFieldMapper.class));
+        assertThat(fieldMapper, instanceOf(StringFieldMapper.class));
         fieldMapper = defaultMapper.mappers().smartNameFieldMapper("date_field2");
-        assertThat(fieldMapper, instanceOf(DateFieldMapper.class));
+        assertThat(fieldMapper, instanceOf(StringFieldMapper.class));
 
         fieldMapper = defaultMapper.mappers().smartNameFieldMapper("wrong_date1");
         assertThat(fieldMapper, instanceOf(StringFieldMapper.class));

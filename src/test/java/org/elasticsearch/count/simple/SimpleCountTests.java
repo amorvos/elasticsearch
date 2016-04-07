@@ -107,7 +107,7 @@ public class SimpleCountTests extends ElasticsearchIntegrationTest {
 
     @Test
     public void simpleDateMathTests() throws Exception {
-        createIndex("test");
+        prepareCreate("test").addMapping("type1", "field", "type=date").execute().actionGet();
         client().prepareIndex("test", "type1", "1").setSource("field", "2010-01-05T02:00").execute().actionGet();
         client().prepareIndex("test", "type1", "2").setSource("field", "2010-01-06T02:00").execute().actionGet();
         ensureGreen();

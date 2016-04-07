@@ -71,8 +71,9 @@ public class ShardReduceTests extends ElasticsearchIntegrationTest {
 
     @Override
     public void setupSuiteScopeCluster() throws Exception {
+
         assertAcked(prepareCreate("idx")
-                .addMapping("type", "nested", "type=nested", "ip", "type=ip", "location", "type=geo_point"));
+                .addMapping("type", "nested", "type=nested", "nested.date", "type=date", "ip", "type=ip", "location", "type=geo_point", "date", "type=date"));
 
         indexRandom(true,
                 indexDoc("2014-01-01", 1),

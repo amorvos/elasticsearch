@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertExists;
 
 public class SimpleExistsTests extends ElasticsearchIntegrationTest {
@@ -101,7 +102,9 @@ public class SimpleExistsTests extends ElasticsearchIntegrationTest {
 
     @Test
     public void simpleDateMathTests() throws Exception {
-        createIndex("test");
+        assertAcked(
+                prepareCreate("test").addMapping("type1", "field", "type=date")
+        );
         client().prepareIndex("test", "type1", "1").setSource("field", "2010-01-05T02:00").execute().actionGet();
         client().prepareIndex("test", "type1", "2").setSource("field", "2010-01-06T02:00").execute().actionGet();
         ensureGreen();
@@ -115,7 +118,9 @@ public class SimpleExistsTests extends ElasticsearchIntegrationTest {
 
     @Test
     public void simpleNonExistenceTests() throws Exception {
-        createIndex("test");
+        assertAcked(
+                prepareCreate("test").addMapping("type1", "field", "type=date")
+        );
         client().prepareIndex("test", "type1", "1").setSource("field", "2010-01-05T02:00").execute().actionGet();
         client().prepareIndex("test", "type1", "2").setSource("field", "2010-01-06T02:00").execute().actionGet();
         client().prepareIndex("test", "type", "XXX1").setSource("field", "value").execute().actionGet();

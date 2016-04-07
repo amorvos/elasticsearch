@@ -73,7 +73,7 @@ public class DoubleIndexingDocTest extends ElasticsearchSingleNodeLuceneTestCase
         topDocs = searcher.search(mapper.mappers().smartName("field3").mapper().termQuery("1.1", null), 10);
         assertThat(topDocs.totalHits, equalTo(2));
 
-        topDocs = searcher.search(mapper.mappers().smartName("field4").mapper().termQuery("2010-01-01", null), 10);
+        topDocs = searcher.search(mapper.mappers().smartName("field4").mapper().termQuery("2010", null), 10);
         assertThat(topDocs.totalHits, equalTo(2));
 
         topDocs = searcher.search(mapper.mappers().smartName("field5").mapper().termQuery("1", null), 10);

@@ -128,7 +128,7 @@ public class SimpleSearchTests extends ElasticsearchIntegrationTest {
 
     @Test
     public void simpleDateRangeWithUpperInclusiveEnabledTests() throws Exception {
-        createIndex("test");
+        prepareCreate("test").addMapping("type1", "field", "type=date").execute().actionGet();
         client().prepareIndex("test", "type1", "1").setSource("field", "2010-01-05T02:00").execute().actionGet();
         client().prepareIndex("test", "type1", "2").setSource("field", "2010-01-06T02:00").execute().actionGet();
         refresh();
@@ -144,7 +144,8 @@ public class SimpleSearchTests extends ElasticsearchIntegrationTest {
     public void simpleDateRangeWithUpperInclusiveDisabledTests() throws Exception {
         assertAcked(prepareCreate("test").setSettings(ImmutableSettings.settingsBuilder()
                 .put(indexSettings())
-                .put("index.mapping.date.round_ceil", false)));
+                .put("index.mapping.date.round_ceil", false))
+                .addMapping("type1", "field", "type=date"));
         client().prepareIndex("test", "type1", "1").setSource("field", "2010-01-05T02:00").execute().actionGet();
         client().prepareIndex("test", "type1", "2").setSource("field", "2010-01-06T02:00").execute().actionGet();
         ensureGreen();
@@ -159,7 +160,7 @@ public class SimpleSearchTests extends ElasticsearchIntegrationTest {
 
     @Test @TestLogging("action.search.type:TRACE,action.admin.indices.refresh:TRACE")
     public void simpleDateMathTests() throws Exception {
-        createIndex("test");
+        prepareCreate("test").addMapping("type1", "field", "type=date").execute().actionGet();
         client().prepareIndex("test", "type1", "1").setSource("field", "2010-01-05T02:00").execute().actionGet();
         client().prepareIndex("test", "type1", "2").setSource("field", "2010-01-06T02:00").execute().actionGet();
         ensureGreen();

@@ -18,12 +18,10 @@
  */
 package org.elasticsearch.validate;
 
+import com.google.common.base.Charsets;
 import org.apache.lucene.index.Term;
-
-import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefBuilder;
 import org.apache.lucene.util.NumericUtils;
-import com.google.common.base.Charsets;
 import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryResponse;
 import org.elasticsearch.client.Client;
@@ -51,9 +49,7 @@ import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF
 import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 
 /**
  *
@@ -258,7 +254,8 @@ public class SimpleValidateQueryTests extends ElasticsearchIntegrationTest {
     public void explainDateRangeInQueryString() {
         assertAcked(prepareCreate("test").setSettings(ImmutableSettings.settingsBuilder()
                 .put(indexSettings())
-                .put("index.number_of_shards", 1)));
+                .put("index.number_of_shards", 1))
+                .addMapping("type", "past", "type=date", "future", "type=date"));
 
         String aMonthAgo = ISODateTimeFormat.yearMonthDay().print(new DateTime(DateTimeZone.UTC).minusMonths(1));
         String aMonthFromNow = ISODateTimeFormat.yearMonthDay().print(new DateTime(DateTimeZone.UTC).plusMonths(1));
