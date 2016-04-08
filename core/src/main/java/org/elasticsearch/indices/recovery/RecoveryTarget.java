@@ -84,7 +84,7 @@ public class RecoveryTarget extends AbstractComponent {
     private final RecoverySettings recoverySettings;
     private final ClusterService clusterService;
 
-    private final RecoveriesCollection onGoingRecoveries;
+    public final RecoveriesCollection onGoingRecoveries;
 
     @Inject
     public RecoveryTarget(Settings settings, ThreadPool threadPool, TransportService transportService,
