@@ -208,7 +208,7 @@ public class PluginsService extends AbstractComponent {
         this.onModuleReferences = Collections.unmodifiableMap(onModuleReferences);
     }
 
-    private List<Tuple<PluginInfo, Plugin>> plugins() {
+    public List<Tuple<PluginInfo, Plugin>> plugins() {
         return plugins;
     }
 
