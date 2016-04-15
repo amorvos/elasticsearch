@@ -218,7 +218,7 @@ public class TransportClusterUpdateSettingsAction extends TransportMasterNodeOpe
                 }
 
                 for (String settingName : request.transientSettingsToRemove()) {
-                    if (dynamicSettings.hasDynamicSetting(settingName)) {
+                    if (dynamicSettings.isDynamicOrLoggingSetting(settingName)) {
                         transientSettings.remove(settingName);
                         changed = true;
                     } else {
@@ -227,7 +227,7 @@ public class TransportClusterUpdateSettingsAction extends TransportMasterNodeOpe
                 }
 
                 for (String settingName : request.persistentSettingsToRemove()) {
-                    if (dynamicSettings.hasDynamicSetting(settingName)) {
+                    if (dynamicSettings.isDynamicOrLoggingSetting(settingName)) {
                         persistentSettings.remove(settingName);
                         changed = true;
                     } else {
