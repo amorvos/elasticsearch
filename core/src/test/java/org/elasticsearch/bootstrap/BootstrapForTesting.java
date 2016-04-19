@@ -35,6 +35,7 @@ import org.junit.Assert;
 
 import java.io.FilePermission;
 import java.io.InputStream;
+import java.io.SerializablePermission;
 import java.net.SocketPermission;
 import java.net.URL;
 import java.nio.file.Path;
@@ -131,6 +132,14 @@ public class BootstrapForTesting {
                 // screw up all test logging without it!
                 if (System.getProperty("tests.maven") == null) {
                     perms.add(new RuntimePermission("setIO"));
+                }
+
+                // gradle support
+                if (Boolean.getBoolean("tests.gradle")) {
+                    perms.add(new RuntimePermission("setContextClassLoader"));
+                    perms.add(new RuntimePermission("setSecurityManager"));
+                    perms.add(new RuntimePermission("accessClassInPackage.sun.reflect.annotation"));
+                    perms.add(new SerializablePermission("enableSubstitution"));
                 }
 
                 // add bind permissions for testing
