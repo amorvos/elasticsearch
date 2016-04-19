@@ -105,7 +105,7 @@ public abstract class SearchContext extends DelegatingHasContextAndHeaders imple
     }
 
     @Override
-    public final void close() {
+    public void close() {
         if (closed.compareAndSet(false, true)) { // prevent double release
             try {
                 clearReleasables(Lifetime.CONTEXT);
