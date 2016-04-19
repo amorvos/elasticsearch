@@ -139,11 +139,18 @@ public class MulticastZenPing extends AbstractLifecycleComponent<ZenPing> implem
             boolean deferToInterface = settings.getAsBoolean("discovery.zen.ping.multicast.defer_group_to_set_interface", Constants.MAC_OS_X);
             // don't use publish address, the use case for that is e.g. a firewall or proxy and
             // may not even be bound to an interface on this machine! use the first bound address.
-            List<InetAddress> addresses = Arrays.asList(networkService.resolveBindHostAddresses(address == null ? null : new String[] { address }));
-            NetworkUtils.sortAddresses(addresses);
 
-            final MulticastChannel.Config config = new MulticastChannel.Config(port, group, bufferSize, ttl,
-                                                                               addresses.get(0), deferToInterface);
+            String[] addressSetting = address == null ? null : new String[]{address};
+            List<InetAddress> addresses = Arrays.asList(networkService.resolveBindHostAddresses(addressSetting));
+            NetworkUtils.sortAddresses(addresses);
+            InetAddress inetAddress = addresses.get(0);
+
+            if (inetAddress.isAnyLocalAddress()) {
+                inetAddress = networkService.resolvePublishHostAddresses(addressSetting);
+            }
+
+            final MulticastChannel.Config config = new MulticastChannel.Config(
+                port, group, bufferSize, ttl, inetAddress, deferToInterface);
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(new SpecialPermission());
