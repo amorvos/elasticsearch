@@ -228,7 +228,13 @@ public class ClusterSettingsIT extends ESIntegTestCase {
     public void testResetSettings() throws Exception {
         String setting = IndicesStore.INDICES_STORE_THROTTLE_TYPE;
 
-        Settings transientSettings = Settings.builder().put(setting, "none").build();
+        Injector injector = internalCluster().getInstance(Injector.class);
+        IndicesStore indicesStore = injector.getProvider(IndicesStore.class).get();
+
+        String initialSetting = indicesStore.rateLimiting().getType().toString();
+        assertThat(initialSetting, is("NONE")); // test should be updated if the default changes
+
+        Settings transientSettings = Settings.builder().put(setting, "merge").build();
         Settings persistentSettings = Settings.builder().put(setting, "all").build();
 
         ClusterUpdateSettingsResponse response = client().admin().cluster()
@@ -239,7 +245,7 @@ public class ClusterSettingsIT extends ESIntegTestCase {
                 .actionGet();
 
         assertAcked(response);
-        assertThat(response.getTransientSettings().get(setting), is("none"));
+        assertThat(response.getTransientSettings().get(setting), is("merge"));
         assertThat(response.getPersistentSettings().get(setting), is("all"));
 
         Set<String> resetSettingNames = Sets.newHashSet();
@@ -253,8 +259,6 @@ public class ClusterSettingsIT extends ESIntegTestCase {
 
         assertAcked(response);
 
-        Injector injector = internalCluster().getInstance(Injector.class);
-        IndicesStore indicesStore = injector.getProvider(IndicesStore.class).get();
         assertThat(indicesStore.rateLimiting().getType(), is(StoreRateLimiting.Type.ALL));
 
         response = client().admin().cluster()
@@ -265,7 +269,7 @@ public class ClusterSettingsIT extends ESIntegTestCase {
 
         assertAcked(response);
 
-        assertThat(indicesStore.rateLimiting().getType(), is(StoreRateLimiting.Type.MERGE));
+        assertThat(indicesStore.rateLimiting().getType().toString(), is(initialSetting));
     }
 
 }

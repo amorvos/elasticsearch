@@ -66,13 +66,13 @@ public class IndicesStore extends AbstractComponent implements ClusterStateListe
     private static final ByteSizeValue DEFAULT_INDICES_STORE_THROTTLE_MAX_BYTES_PER_SEC = new ByteSizeValue(10240, ByteSizeUnit.MB);
 
     private static final EnumSet<IndexShardState> ACTIVE_STATES = EnumSet.of(IndexShardState.STARTED, IndexShardState.RELOCATED);
+    private static final String DEFAULT_RATE_LIMITING_TYPE = StoreRateLimiting.Type.NONE.name();
 
     class ApplySettings implements NodeSettingsService.Listener {
         @Override
         public void onRefreshSettings(Settings settings) {
             String rateLimitingType = settings.get(INDICES_STORE_THROTTLE_TYPE,
-                    IndicesStore.this.settings.get(INDICES_STORE_THROTTLE_TYPE,
-                            StoreRateLimiting.Type.MERGE.name()));
+                    IndicesStore.this.settings.get(INDICES_STORE_THROTTLE_TYPE, DEFAULT_RATE_LIMITING_TYPE));
             // try and parse the type
             StoreRateLimiting.Type.fromString(rateLimitingType);
             if (!rateLimitingType.equals(IndicesStore.this.rateLimitingType)) {
@@ -120,7 +120,7 @@ public class IndicesStore extends AbstractComponent implements ClusterStateListe
         transportService.registerRequestHandler(ACTION_SHARD_EXISTS, ShardActiveRequest.class, ThreadPool.Names.SAME, new ShardActiveRequestHandler());
 
         // we don't limit by default (we default to CMS's auto throttle instead):
-        this.rateLimitingType = settings.get("indices.store.throttle.type", StoreRateLimiting.Type.NONE.name());
+        this.rateLimitingType = settings.get("indices.store.throttle.type", DEFAULT_RATE_LIMITING_TYPE);
         rateLimiting.setType(rateLimitingType);
         this.rateLimitingThrottle = settings.getAsBytesSize("indices.store.throttle.max_bytes_per_sec", DEFAULT_INDICES_STORE_THROTTLE_MAX_BYTES_PER_SEC);
         rateLimiting.setMaxRate(rateLimitingThrottle);
