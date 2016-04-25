@@ -91,7 +91,6 @@ public class RecoverySettings extends AbstractComponent implements Closeable {
     private static final TimeValue DEFAULT_RETRY_DELAY_STATE_SYNC = TimeValue.timeValueMillis(500);
     private static final TimeValue DEFAULT_RETRY_DELAY_NETWORK = TimeValue.timeValueSeconds(5);
     private static final TimeValue DEFAULT_INTERNAL_ACTION_TIMEOUT = TimeValue.timeValueMinutes(15);
-    private static final TimeValue DEFAULT_INTERNAL_ACTION_LONG_TIMEOUT = new TimeValue(DEFAULT_INTERNAL_ACTION_TIMEOUT.millis() * 2);
 
     private volatile ByteSizeValue fileChunkSize;
 
@@ -128,11 +127,11 @@ public class RecoverySettings extends AbstractComponent implements Closeable {
         this.retryDelayNetwork = settings.getAsTime(INDICES_RECOVERY_RETRY_DELAY_NETWORK, DEFAULT_RETRY_DELAY_NETWORK);
 
         this.internalActionTimeout = settings.getAsTime(INDICES_RECOVERY_INTERNAL_ACTION_TIMEOUT, DEFAULT_INTERNAL_ACTION_TIMEOUT);
-        this.internalActionLongTimeout = settings.getAsTime(INDICES_RECOVERY_INTERNAL_LONG_ACTION_TIMEOUT, DEFAULT_INTERNAL_ACTION_LONG_TIMEOUT);
+        this.internalActionLongTimeout = settings.getAsTime(INDICES_RECOVERY_INTERNAL_LONG_ACTION_TIMEOUT, new TimeValue(internalActionTimeout.millis() * 2));
 
         this.activityTimeout = settings.getAsTime(INDICES_RECOVERY_ACTIVITY_TIMEOUT,
                 // default to the internalActionLongTimeout used as timeouts on RecoverySource
-                DEFAULT_INTERNAL_ACTION_LONG_TIMEOUT
+                internalActionLongTimeout
         );
 
 
@@ -297,18 +296,18 @@ public class RecoverySettings extends AbstractComponent implements Closeable {
                     settings,
                     INDICES_RECOVERY_RETRY_DELAY_STATE_SYNC,
                     DEFAULT_RETRY_DELAY_STATE_SYNC);
+            RecoverySettings.this.internalActionTimeout = maybeUpdate(RecoverySettings.this.internalActionTimeout,
+                settings,
+                INDICES_RECOVERY_INTERNAL_ACTION_TIMEOUT,
+                DEFAULT_INTERNAL_ACTION_TIMEOUT);
+            RecoverySettings.this.internalActionLongTimeout = maybeUpdate(RecoverySettings.this.internalActionLongTimeout,
+                settings,
+                INDICES_RECOVERY_INTERNAL_LONG_ACTION_TIMEOUT,
+                new TimeValue(RecoverySettings.this.internalActionTimeout.millis() * 2));
             RecoverySettings.this.activityTimeout = maybeUpdate(RecoverySettings.this.activityTimeout,
                     settings,
                     INDICES_RECOVERY_ACTIVITY_TIMEOUT,
-                    DEFAULT_INTERNAL_ACTION_TIMEOUT);
-            RecoverySettings.this.internalActionTimeout = maybeUpdate(RecoverySettings.this.internalActionTimeout,
-                    settings,
-                    INDICES_RECOVERY_INTERNAL_ACTION_TIMEOUT,
-                    DEFAULT_INTERNAL_ACTION_TIMEOUT);
-            RecoverySettings.this.internalActionLongTimeout = maybeUpdate(RecoverySettings.this.internalActionLongTimeout,
-                    settings,
-                    INDICES_RECOVERY_INTERNAL_LONG_ACTION_TIMEOUT,
-                    DEFAULT_INTERNAL_ACTION_LONG_TIMEOUT);
+                    RecoverySettings.this.internalActionLongTimeout);
         }
 
         private TimeValue maybeUpdate(final TimeValue currentValue, final Settings settings, final String key, TimeValue defaultValue) {
