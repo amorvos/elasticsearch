@@ -49,7 +49,7 @@ public class ZenPingService extends AbstractLifecycleComponent<ZenPing> implemen
 
     @Override
     public void setPingContextProvider(PingContextProvider contextProvider) {
-        if (lifecycle.started() || lifecycle.disabled()) {
+        if (lifecycle.started()) {
             throw new IllegalStateException("Can't set nodes provider when started");
         }
         for (ZenPing zenPing : zenPings) {

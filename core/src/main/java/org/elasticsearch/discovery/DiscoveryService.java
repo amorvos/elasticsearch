@@ -126,7 +126,7 @@ public class DiscoveryService extends AbstractLifecycleComponent<DiscoveryServic
      * event based on the response gotten from all nodes
      */
     public void publish(ClusterChangedEvent clusterChangedEvent, Discovery.AckListener ackListener) {
-        if (lifecycle.started() || lifecycle.disabled()) {
+        if (lifecycle.started()) {
             discovery.publish(clusterChangedEvent, ackListener);
         }
     }

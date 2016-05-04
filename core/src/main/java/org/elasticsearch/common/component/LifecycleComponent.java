@@ -19,7 +19,10 @@
 
 package org.elasticsearch.common.component;
 
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.lease.Releasable;
+
+import java.io.Closeable;
 
 /**
  *
@@ -32,20 +35,7 @@ public interface LifecycleComponent<T> extends Releasable {
 
     void removeLifecycleListener(LifecycleListener listener);
 
-    /**
-     * Starts a component. <br />
-     * If the component was just disabled it will re-enable the component again but not invoke a full start
-     * so handlers like {@link org.elasticsearch.common.component.LifecycleListener#beforeStart()} aren't called.
-     */
     T start();
 
     T stop();
-
-    /**
-     * Disable a component. <br />
-     * This can be called before {@link #stop()} to put a component into the disabled state.
-     *
-     * In the disabled state a component will reject new operations and wait for all pending operations to complete.
-     */
-    T disable();
 }

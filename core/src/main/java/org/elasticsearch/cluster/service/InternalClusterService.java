@@ -170,7 +170,7 @@ public class InternalClusterService extends AbstractLifecycleComponent<ClusterSe
 
     @Override
     public void addInitialStateBlock(ClusterBlock block) throws IllegalStateException {
-        if (lifecycle.started() || lifecycle.disabled()) {
+        if (lifecycle.started()) {
             throw new IllegalStateException("can't set initial block when started");
         }
         initialBlocks.addGlobalBlock(block);
@@ -178,7 +178,7 @@ public class InternalClusterService extends AbstractLifecycleComponent<ClusterSe
 
     @Override
     public void removeInitialStateBlock(ClusterBlock block) throws IllegalStateException {
-        if (lifecycle.started() || lifecycle.disabled()) {
+        if (lifecycle.started()) {
             throw new IllegalStateException("can't set initial block when started");
         }
         initialBlocks.removeGlobalBlock(block);
@@ -318,7 +318,7 @@ public class InternalClusterService extends AbstractLifecycleComponent<ClusterSe
                                            final ClusterStateTaskConfig config,
                                            final ClusterStateTaskExecutor executor,
                                            final SafeClusterStateTaskListener listener) {
-        if (!(lifecycle.started() || lifecycle.disabled())) {
+        if (!lifecycle.started()) {
             return;
         }
         try {
@@ -435,7 +435,7 @@ public class InternalClusterService extends AbstractLifecycleComponent<ClusterSe
             return;
         }
         final String source = Strings.collectionToCommaDelimitedString(sources);
-        if (!(lifecycle.started() || lifecycle.disabled())) {
+        if (!lifecycle.started()) {
             logger.debug("processing [{}]: ignoring, cluster_service not started", source);
             return;
         }
@@ -847,7 +847,7 @@ public class InternalClusterService extends AbstractLifecycleComponent<ClusterSe
                     failedNodesIt.remove();
                 }
             }
-            if (lifecycle.started() || lifecycle.disabled()) {
+            if (lifecycle.started()) {
                 reconnectToNodes = threadPool.schedule(reconnectInterval, ThreadPool.Names.GENERIC, this);
             }
         }

@@ -107,16 +107,6 @@ public class HttpServer extends AbstractLifecycleComponent<HttpServer> {
         transport.close();
     }
 
-    @Override
-    protected void doDisable() {
-       transport.disable();
-    }
-
-    @Override
-    protected void doEnable() {
-        transport.start();
-    }
-
     public HttpInfo info() {
         return transport.info();
     }
@@ -212,7 +202,7 @@ public class HttpServer extends AbstractLifecycleComponent<HttpServer> {
         final String separator = siteFile.getFileSystem().getSeparator();
         // Convert file separators.
         sitePath = sitePath.replace("/", separator);
-
+        
         Path file = siteFile.resolve(sitePath);
 
         // return not found instead of forbidden to prevent malicious requests to find out if files exist or dont exist

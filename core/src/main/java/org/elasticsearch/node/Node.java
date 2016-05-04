@@ -19,7 +19,6 @@
 
 package org.elasticsearch.node;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.elasticsearch.Build;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionModule;
@@ -31,8 +30,6 @@ import org.elasticsearch.cluster.ClusterNameModule;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.action.index.MappingUpdatedAction;
 import org.elasticsearch.cluster.routing.RoutingService;
-import org.elasticsearch.cluster.routing.allocation.deallocator.DeallocatorModule;
-import org.elasticsearch.cluster.service.GracefulStop;
 import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.component.LifecycleComponent;
@@ -196,7 +193,6 @@ public class Node implements Releasable {
             modules.add(new ResourceWatcherModule());
             modules.add(new RepositoriesModule());
             modules.add(new TribeModule());
-            modules.add(new DeallocatorModule());
 
 
             pluginsService.processModules(modules);
@@ -277,18 +273,13 @@ public class Node implements Releasable {
 
         logger.info("started");
 
-        GracefulStop gracefulStop = injector.getInstance(GracefulStop.class);
-        gracefulStop.cancelDeAllocationIfRunning();
-
         return this;
     }
 
-    @VisibleForTesting
-    Node stop() {
+    private Node stop() {
         if (!lifecycle.moveToStopped()) {
             return this;
         }
-
         ESLogger logger = Loggers.getLogger(Node.class, settings.get("name"));
         logger.info("stopping ...");
 
@@ -325,57 +316,12 @@ public class Node implements Releasable {
         return this;
     }
 
-    public boolean disable() {
-        if (!lifecycle.moveToDisabled()) {
-            return false;
-        }
-
-        ESLogger logger = Loggers.getLogger(Node.class, settings.get("name"));
-        logger.info("disabling...");
-
-        injector.getInstance(TribeService.class).disable();
-        injector.getInstance(ResourceWatcherService.class).disable();
-        if (settings.getAsBoolean("http.enabled", true)) {
-            injector.getInstance(HttpServer.class).disable();
-        }
-
-        injector.getInstance(SnapshotsService.class).disable();
-        injector.getInstance(SnapshotShardsService.class).disable();
-        // stop any changes happening as a result of cluster state changes
-        injector.getInstance(IndicesClusterStateService.class).disable();
-        // we close indices first, so operations won't be allowed on it
-        injector.getInstance(IndexingMemoryController.class).disable();
-        injector.getInstance(IndicesTTLService.class).disable();
-
-        injector.getInstance(IndicesService.class).disable();
-
-        injector.getInstance(RoutingService.class).disable();
-        injector.getInstance(ClusterService.class).disable();
-        injector.getInstance(DiscoveryService.class).disable();
-        injector.getInstance(MonitorService.class).disable();
-        injector.getInstance(GatewayService.class).disable();
-        injector.getInstance(SearchService.class).disable();
-        injector.getInstance(RestController.class).disable();
-        injector.getInstance(TransportService.class).disable();
-
-        for (Class<? extends LifecycleComponent> plugin : pluginsService.nodeServices()) {
-            injector.getInstance(plugin).disable();
-        }
-
-        GracefulStop gracefulStop = injector.getInstance(GracefulStop.class);
-        boolean deallocated = gracefulStop.deallocate();
-        logger.info("disabled");
-
-        return deallocated || gracefulStop.forceStop();
-    }
-
-
     // During concurrent close() calls we want to make sure that all of them return after the node has completed it's shutdown cycle.
     // If not, the hook that is added in Bootstrap#setup() will be useless: close() might not be executed, in case another (for example api) call
     // to close() has already set some lifecycles to stopped. In this case the process will be terminated even if the first call to close() has not finished yet.
     @Override
     public synchronized void close() {
-        if (lifecycle.started() || lifecycle.disabled()) {
+        if (lifecycle.started()) {
             stop();
         }
         if (!lifecycle.moveToClosed()) {
@@ -446,11 +392,6 @@ public class Node implements Releasable {
         } catch (InterruptedException e) {
             // ignore
         }
-        try {
-            injector.getInstance(GracefulStop.class).close();
-        } catch (IOException e) {
-            // ignore
-        }
         stopWatch.stop().start("thread_pool_force_shutdown");
         try {
             injector.getInstance(ThreadPool.class).shutdownNow();
@@ -475,10 +416,6 @@ public class Node implements Releasable {
      */
     public boolean isClosed() {
         return lifecycle.closed();
-    }
-
-    public boolean isDisabled() {
-        return lifecycle.disabled();
     }
 
     public Injector injector() {

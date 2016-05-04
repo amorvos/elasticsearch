@@ -362,20 +362,6 @@ public class NettyHttpServerTransport extends AbstractLifecycleComponent<HttpSer
     }
 
     @Override
-    protected void doDisable() {
-        if (serverOpenChannels != null) {
-            serverOpenChannels.disable();
-        }
-    }
-
-    @Override
-    protected void doEnable() {
-        if (serverOpenChannels != null) {
-            serverOpenChannels.enable();
-        }
-    }
-
-    @Override
     public BoundTransportAddress boundAddress() {
         return this.boundAddress;
     }
@@ -406,7 +392,7 @@ public class NettyHttpServerTransport extends AbstractLifecycleComponent<HttpSer
             }
             ctx.getChannel().close();
         } else {
-            if (!(lifecycle.started() || lifecycle.disabled())) {
+            if (!lifecycle.started()) {
                 // ignore
                 return;
             }
