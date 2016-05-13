@@ -52,7 +52,7 @@ public class HttpServerModule extends AbstractModule {
     public void setHttpServerTransport(Class<? extends HttpServerTransport> httpServerTransport, String source) {
         Preconditions.checkNotNull(httpServerTransport, "Configured http server transport may not be null");
         Preconditions.checkNotNull(source, "Plugin, that changes transport may not be null");
-        logger.info("Using [{}] as http transport, overridden by [{}]", httpServerTransportClass.getName(), source);
+        logger.info("Using [{}] as http transport, overridden by [{}]", httpServerTransport.getName(), source);
         this.httpServerTransportClass = httpServerTransport;
     }
 }
