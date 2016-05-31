@@ -25,6 +25,8 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.*;
 import com.amazonaws.internal.StaticCredentialsProvider;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.retry.RetryPolicy;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -167,38 +169,12 @@ public class AwsEc2ServiceImpl extends AbstractLifecycleComponent<AwsEc2Service>
             String endpoint = settings.get(CLOUD_EC2.ENDPOINT);
             logger.debug("using explicit ec2 endpoint [{}]", endpoint);
             client.setEndpoint(endpoint);
-        } else if (settings.get(CLOUD_AWS.REGION) != null) {
-            String region = settings.get(CLOUD_AWS.REGION).toLowerCase(Locale.ROOT);
-            String endpoint;
-            if (region.equals("us-east-1") || region.equals("us-east")) {
-                endpoint = "ec2.us-east-1.amazonaws.com";
-            } else if (region.equals("us-west") || region.equals("us-west-1")) {
-                endpoint = "ec2.us-west-1.amazonaws.com";
-            } else if (region.equals("us-west-2")) {
-                endpoint = "ec2.us-west-2.amazonaws.com";
-            } else if (region.equals("us-gov-west") || region.equals("us-gov-west-1")) {
-                endpoint = "ec2.us-gov-west-1.amazonaws.com";
-            } else if (region.equals("ap-southeast") || region.equals("ap-southeast-1")) {
-                endpoint = "ec2.ap-southeast-1.amazonaws.com";
-            } else if (region.equals("ap-southeast-2")) {
-                endpoint = "ec2.ap-southeast-2.amazonaws.com";
-            } else if (region.equals("ap-northeast") || region.equals("ap-northeast-1")) {
-                endpoint = "ec2.ap-northeast-1.amazonaws.com";
-            } else if (region.equals("ap-northeast-2")) {
-                endpoint = "ec2.ap-northeast-2.amazonaws.com";
-            } else if (region.equals("eu-west") || region.equals("eu-west-1")) {
-                endpoint = "ec2.eu-west-1.amazonaws.com";
-            } else if (region.equals("eu-central") || region.equals("eu-central-1")) {
-                endpoint = "ec2.eu-central-1.amazonaws.com";
-            } else if (region.equals("sa-east") || region.equals("sa-east-1")) {
-                endpoint = "ec2.sa-east-1.amazonaws.com";
-            } else if (region.equals("cn-north") || region.equals("cn-north-1")) {
-                endpoint = "ec2.cn-north-1.amazonaws.com.cn";
-            } else {
-                throw new IllegalArgumentException("No automatic endpoint could be derived from region [" + region + "]");
+        } else {
+            Region currentRegion = Regions.getCurrentRegion();
+            if (currentRegion != null) {
+                logger.debug("using ec2 region [{}]", currentRegion);
+                client.setRegion(currentRegion);
             }
-            logger.debug("using ec2 region [{}], with endpoint [{}]", region, endpoint);
-            client.setEndpoint(endpoint);
         }
 
         return this.client;
