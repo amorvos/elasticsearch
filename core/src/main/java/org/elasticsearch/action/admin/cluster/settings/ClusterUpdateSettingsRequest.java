@@ -21,6 +21,7 @@ package org.elasticsearch.action.admin.cluster.settings;
 
 import com.google.common.collect.Sets;
 import org.elasticsearch.ElasticsearchGenerationException;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -180,13 +181,16 @@ public class ClusterUpdateSettingsRequest extends AcknowledgedRequest<ClusterUpd
         persistentSettings = readSettingsFromStream(in);
         readTimeout(in);
 
-        int transientToRemoveSize = in.readVInt();
-        for (int i = 0; i < transientToRemoveSize; i++) {
-            transientSettingsToRemove.add(in.readString());
-        }
-        int persistentToRemoveSize = in.readVInt();
-        for (int i = 0; i < persistentToRemoveSize; i++) {
-            persistentSettingsToRemove.add(in.readString());
+        // check for version otherwise ES backward compatibility tests will fail
+        if (in.getVersion().onOrAfter(Version.V_2_3_3)) {
+            int transientToRemoveSize = in.readVInt();
+            for (int i = 0; i < transientToRemoveSize; i++) {
+                transientSettingsToRemove.add(in.readString());
+            }
+            int persistentToRemoveSize = in.readVInt();
+            for (int i = 0; i < persistentToRemoveSize; i++) {
+                persistentSettingsToRemove.add(in.readString());
+            }
         }
     }
 
@@ -197,13 +201,16 @@ public class ClusterUpdateSettingsRequest extends AcknowledgedRequest<ClusterUpd
         writeSettingsToStream(persistentSettings, out);
         writeTimeout(out);
 
-        out.writeVInt(transientSettingsToRemove.size());
-        for (String transientSettingName : transientSettingsToRemove) {
-            out.writeString(transientSettingName);
-        }
-        out.writeVInt(persistentSettingsToRemove.size());
-        for (String persistentSettingName : persistentSettingsToRemove) {
-            out.writeString(persistentSettingName);
+        // check for version otherwise ES backward compatibility tests will fail
+        if (out.getVersion().onOrAfter(Version.V_2_3_3)) {
+            out.writeVInt(transientSettingsToRemove.size());
+            for (String transientSettingName : transientSettingsToRemove) {
+                out.writeString(transientSettingName);
+            }
+            out.writeVInt(persistentSettingsToRemove.size());
+            for (String persistentSettingName : persistentSettingsToRemove) {
+                out.writeString(persistentSettingName);
+            }
         }
     }
 }
