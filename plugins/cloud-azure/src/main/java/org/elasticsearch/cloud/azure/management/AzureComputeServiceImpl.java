@@ -39,20 +39,17 @@ import java.util.ArrayList;
 
 import static org.elasticsearch.cloud.azure.management.AzureComputeService.Management.*;
 
-/**
- *
- */
 public class AzureComputeServiceImpl extends AbstractLifecycleComponent<AzureComputeServiceImpl>
     implements AzureComputeService {
 
     static final class Azure {
         private static final String ENDPOINT = "https://management.core.windows.net/";
+        private static final String AUTH_ENDPOINT = "https://login.windows.net/";
     }
 
     private final ComputeManagementClient computeManagementClient;
     private final String resourceGroupName;
-    // TODO: make final
-    private Configuration configuration;
+    private final Configuration configuration;
 
     @Inject
     public AzureComputeServiceImpl(Settings settings) {
@@ -64,27 +61,28 @@ public class AzureComputeServiceImpl extends AbstractLifecycleComponent<AzureCom
 
         resourceGroupName = settings.get(Management.RESOURCE_GROUP_NAME);
 
-        // Check that we have all needed properties
+        Configuration conf;
         try {
             AuthenticationResult authRes = AuthHelper.getAccessTokenFromServicePrincipalCredentials(
                 Azure.ENDPOINT,
-                "https://login.windows.net/",
+                Azure.AUTH_ENDPOINT,
                 tenantId,
                 appId,
                 appSecret);
-            String baseUri = null;
-            configuration = ManagementConfiguration.configure(
+            conf = ManagementConfiguration.configure(
                 null,
-                baseUri != null ? new URI(baseUri) : null,
+                (URI)null,
                 subscriptionId, // subscription id
                 authRes.getAccessToken()
             );
         } catch (Exception e) {
             logger.error("can not start azure client: {}", e.getMessage());
             computeManagementClient = null;
+            configuration = null;
             return;
         }
         logger.trace("creating new Azure client for [{}], [{}]", subscriptionId, resourceGroupName);
+        configuration = conf;
         computeManagementClient = ComputeManagementService.create(configuration);
 
     }
