@@ -19,11 +19,12 @@
 
 package org.elasticsearch.cloud.azure.management;
 
+import com.microsoft.aad.adal4j.AuthenticationResult;
+import com.microsoft.azure.management.compute.ComputeManagementClient;
+import com.microsoft.azure.management.compute.ComputeManagementService;
+import com.microsoft.azure.management.compute.models.VirtualMachine;
+import com.microsoft.azure.utility.AuthHelper;
 import com.microsoft.windowsazure.Configuration;
-import com.microsoft.windowsazure.core.utils.KeyStoreType;
-import com.microsoft.windowsazure.management.compute.ComputeManagementClient;
-import com.microsoft.windowsazure.management.compute.ComputeManagementService;
-import com.microsoft.windowsazure.management.compute.models.HostedServiceGetDetailedResponse;
 import com.microsoft.windowsazure.management.configuration.ManagementConfiguration;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.cloud.azure.AzureServiceDisableException;
@@ -34,7 +35,7 @@ import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.ArrayList;
 
 import static org.elasticsearch.cloud.azure.management.AzureComputeService.Management.*;
 
@@ -49,51 +50,64 @@ public class AzureComputeServiceImpl extends AbstractLifecycleComponent<AzureCom
     }
 
     private final ComputeManagementClient computeManagementClient;
-    private final String serviceName;
+    private final String resourceGroupName;
+    // TODO: make final
+    private Configuration configuration;
 
     @Inject
     public AzureComputeServiceImpl(Settings settings) {
         super(settings);
         String subscriptionId = settings.get(SUBSCRIPTION_ID);
+        String tenantId = settings.get(TENANT_ID);
+        String appId = settings.get(APP_ID);
+        String appSecret = settings.get(APP_SECRET);
 
-        serviceName = settings.get(Management.SERVICE_NAME);
-        String keystorePath = settings.get(KEYSTORE_PATH);
-        String keystorePassword = settings.get(KEYSTORE_PASSWORD);
-        String strKeyStoreType = settings.get(KEYSTORE_TYPE, KeyStoreType.pkcs12.name());
-        KeyStoreType tmpKeyStoreType = KeyStoreType.pkcs12;
-        try {
-            tmpKeyStoreType = KeyStoreType.fromString(strKeyStoreType);
-        } catch (Exception e) {
-            logger.warn("wrong value for [{}]: [{}]. falling back to [{}]...", KEYSTORE_TYPE,
-                    strKeyStoreType, KeyStoreType.pkcs12.name());
-        }
-        KeyStoreType keystoreType = tmpKeyStoreType;
+        resourceGroupName = settings.get(Management.RESOURCE_GROUP_NAME);
 
         // Check that we have all needed properties
-        Configuration configuration;
         try {
-            configuration = ManagementConfiguration.configure(new URI(Azure.ENDPOINT),
-                    subscriptionId, keystorePath, keystorePassword, keystoreType);
-        } catch (IOException|URISyntaxException e) {
+            AuthenticationResult authRes = AuthHelper.getAccessTokenFromServicePrincipalCredentials(
+                Azure.ENDPOINT,
+                "https://login.windows.net/",
+                tenantId,
+                appId,
+                appSecret);
+            String baseUri = null;
+            configuration = ManagementConfiguration.configure(
+                null,
+                baseUri != null ? new URI(baseUri) : null,
+                subscriptionId, // subscription id
+                authRes.getAccessToken()
+            );
+        } catch (Exception e) {
             logger.error("can not start azure client: {}", e.getMessage());
             computeManagementClient = null;
             return;
         }
-        logger.trace("creating new Azure client for [{}], [{}]", subscriptionId, serviceName);
+        logger.trace("creating new Azure client for [{}], [{}]", subscriptionId, resourceGroupName);
         computeManagementClient = ComputeManagementService.create(configuration);
+
     }
 
     @Override
-    public HostedServiceGetDetailedResponse getServiceDetails() {
+    public Configuration getConfiguration() {
+        return configuration;
+    }
+
+    @Override
+    public ArrayList<VirtualMachine> getVMList() {
         if (computeManagementClient == null) {
             // Azure plugin is disabled
             throw new AzureServiceDisableException("azure plugin is disabled.");
         }
 
         try {
-            return computeManagementClient.getHostedServicesOperations().getDetailed(serviceName);
+            logger.warn("Resource Group name:" + resourceGroupName);
+            return computeManagementClient.getVirtualMachinesOperations().list(resourceGroupName).getVirtualMachines();
         } catch (Exception e) {
-            throw new AzureServiceRemoteException("can not get list of azure nodes", e);
+            logger.error(e.getMessage());
+            e.printStackTrace();
+            throw new AzureServiceRemoteException("can not get list of azure nodes new implementation", e);
         }
     }
 

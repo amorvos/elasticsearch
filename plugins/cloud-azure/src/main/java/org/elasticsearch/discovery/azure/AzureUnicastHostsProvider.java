@@ -19,7 +19,10 @@
 
 package org.elasticsearch.discovery.azure;
 
-import com.microsoft.windowsazure.management.compute.models.*;
+import com.microsoft.azure.management.compute.models.NetworkInterfaceReference;
+import com.microsoft.azure.management.compute.models.VirtualMachine;
+import com.microsoft.azure.management.network.*;
+import com.microsoft.azure.management.network.models.*;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.cloud.azure.AzureServiceDisableException;
@@ -39,7 +42,6 @@ import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.List;
@@ -69,7 +71,8 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
         }
     }
 
-    public static enum Deployment {
+    //TODO: understand why this is used
+    /*public static enum Deployment {
         PRODUCTION("production", DeploymentSlot.Production),
         STAGING("staging", DeploymentSlot.Staging);
 
@@ -89,7 +92,7 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
             }
             return null;
         }
-    }
+    }*/
 
     private final AzureComputeService azureComputeService;
     private TransportService transportService;
@@ -102,7 +105,7 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
     private final HostType hostType;
     private final String publicEndpointName;
     private final String deploymentName;
-    private final DeploymentSlot deploymentSlot;
+   // private final DeploymentSlot deploymentSlot;
 
     @Inject
     public AzureUnicastHostsProvider(Settings settings, AzureComputeService azureComputeService,
@@ -132,14 +135,14 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
         this.deploymentName = settings.get(Discovery.DEPLOYMENT_NAME);
 
         // Reading deployment_slot
-        String strDeployment = settings.get(Discovery.DEPLOYMENT_SLOT, Deployment.PRODUCTION.deployment);
-        Deployment tmpDeployment = Deployment.fromString(strDeployment);
+        //String strDeployment = settings.get(Discovery.DEPLOYMENT_SLOT, Deployment.PRODUCTION.deployment);
+        /*Deployment tmpDeployment = Deployment.fromString(strDeployment);
         if (tmpDeployment == null) {
             logger.warn("wrong value for [{}]: [{}]. falling back to [{}]...", Discovery.DEPLOYMENT_SLOT, strDeployment,
                     Deployment.PRODUCTION.deployment);
             tmpDeployment = Deployment.PRODUCTION;
         }
-        this.deploymentSlot = tmpDeployment.slot;
+        this.deploymentSlot = tmpDeployment.slot;*/
     }
 
     /**
@@ -152,7 +155,8 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
     public List<DiscoveryNode> buildDynamicNodes() {
         if (refreshInterval.millis() != 0) {
             if (cachedDiscoNodes != null &&
-                    (refreshInterval.millis() < 0 || (System.currentTimeMillis() - lastRefresh) < refreshInterval.millis())) {
+                (refreshInterval.millis() < 0 ||
+                 (System.currentTimeMillis() - lastRefresh) < refreshInterval.millis())) {
                 logger.trace("using cache to retrieve node list");
                 return cachedDiscoNodes;
             }
@@ -162,9 +166,10 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
 
         cachedDiscoNodes = new ArrayList<>();
 
-        HostedServiceGetDetailedResponse detailed;
+
+        ArrayList<VirtualMachine> vmList;
         try {
-            detailed = azureComputeService.getServiceDetails();
+            vmList = azureComputeService.getVMList();
         } catch (AzureServiceDisableException e) {
             logger.debug("Azure discovery service has been disabled. Returning empty list of nodes.");
             return cachedDiscoNodes;
@@ -184,89 +189,111 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
             logger.trace("exception while finding ip", e);
         }
 
-        for (HostedServiceGetDetailedResponse.Deployment deployment : detailed.getDeployments()) {
+        for (VirtualMachine vm : vmList) {
             // We check the deployment slot
-            if (deployment.getDeploymentSlot() != deploymentSlot) {
+            /*if (deployment.getDeploymentSlot() != deploymentSlot) {
                 logger.debug("current deployment slot [{}] for [{}] is different from [{}]. skipping...",
-                        deployment.getDeploymentSlot(), deployment.getName(), deploymentSlot);
+                    deployment.getDeploymentSlot(), deployment.getName(), deploymentSlot);
                 continue;
-            }
+            }*/
 
             // If provided, we check the deployment name
-            if (deploymentName != null && !deploymentName.equals(deployment.getName())) {
+            if (deploymentName != null && !deploymentName.equals(vm.getName())) {
                 logger.debug("current deployment name [{}] different from [{}]. skipping...",
-                        deployment.getName(), deploymentName);
+                    vm.getName(), deploymentName);
                 continue;
             }
 
             // We check current deployment status
-            if (deployment.getStatus() != DeploymentStatus.Starting &&
-                    deployment.getStatus() != DeploymentStatus.Deploying &&
-                    deployment.getStatus() != DeploymentStatus.Running) {
+            if (!vm.getProvisioningState().equals(ProvisioningState.DELETING) &&
+                !vm.getProvisioningState().equals(ProvisioningState.FAILED) &&
+                !vm.getProvisioningState().equals(ProvisioningState.UPDATING) &&
+                !vm.getProvisioningState().equals(ProvisioningState.SUCCEEDED)) {
                 logger.debug("[{}] status is [{}]. skipping...",
-                        deployment.getName(), deployment.getStatus());
+                    vm.getName(), vm.getProvisioningState());
                 continue;
             }
 
             // In other case, it should be the right deployment so we can add it to the list of instances
+            String rgName = settings.get(AzureComputeService.Management.RESOURCE_GROUP_NAME);
+            NetworkResourceProviderClient networkResourceProviderClient =
+                NetworkResourceProviderService.create(azureComputeService.getConfiguration());
 
-            for (RoleInstance instance : deployment.getRoleInstances()) {
-                String networkAddress = null;
-                // Let's detect if we want to use public or private IP
-                switch (hostType) {
-                    case PRIVATE_IP:
-                        InetAddress privateIp = instance.getIPAddress();
+            ArrayList<NetworkInterfaceReference> nics = vm.getNetworkProfile().getNetworkInterfaces();
 
-                        if (privateIp != null) {
-                            if (privateIp.equals(ipAddress)) {
-                                logger.trace("adding ourselves {}", NetworkAddress.format(ipAddress));
-                            }
-                            networkAddress = NetworkAddress.formatAddress(privateIp);
-                        } else {
-                            logger.trace("no private ip provided. ignoring [{}]...", instance.getInstanceName());
-                        }
-                        break;
-                    case PUBLIC_IP:
-                        for (InstanceEndpoint endpoint : instance.getInstanceEndpoints()) {
-                            if (!publicEndpointName.equals(endpoint.getName())) {
-                                logger.trace("ignoring endpoint [{}] as different than [{}]",
+            try {
+                for (NetworkInterfaceReference nicReference : nics) {
+                    String[] nicURI = nicReference.getReferenceUri().split("/");
+                    NetworkInterface nic = networkResourceProviderClient.getNetworkInterfacesOperations().
+                        get(rgName, nicURI[nicURI.length - 1]).getNetworkInterface();
+                    ArrayList<NetworkInterfaceIpConfiguration> ips = nic.getIpConfigurations();
+
+                    // find public ip address
+                    for (NetworkInterfaceIpConfiguration ipConfiguration : ips) {
+
+                        String networkAddress = null;
+                        // Let's detect if we want to use public or private IP
+                        switch (hostType) {
+                            case PRIVATE_IP:
+                                InetAddress privateIp = InetAddress.getByName(ipConfiguration.getPrivateIpAddress());
+
+                                if (privateIp != null) {
+                                    if (privateIp.equals(ipAddress)) {
+                                        logger.trace("adding ourselves {}", NetworkAddress.format(ipAddress));
+                                    }
+                                    networkAddress = NetworkAddress.formatAddress(privateIp);
+                                } else {
+                                    logger.trace("no private ip provided. ignoring [{}]...", vm.getName());
+                                }
+                                break;
+                            case PUBLIC_IP:
+                            /*for (InstanceEndpoint endpoint : .getInstanceEndpoints()) {
+                                if (!publicEndpointName.equals(endpoint.getName())) {
+                                    logger.trace("ignoring endpoint [{}] as different than [{}]",
                                         endpoint.getName(), publicEndpointName);
-                                continue;
-                            }
+                                    continue;
+                                }
+                             */
+                                String[] pipID = ipConfiguration.getPublicIpAddress().getId().split("/");
+                                PublicIpAddress pip = networkResourceProviderClient.getPublicIpAddressesOperations()
+                                    .get(rgName, pipID[pipID.length - 1]).getPublicIpAddress();
 
-                            networkAddress = NetworkAddress.formatAddress(new InetSocketAddress(endpoint.getVirtualIPAddress(), endpoint.getPort()));
+                                //networkAddress = NetworkAddress.formatAddress(new InetSocketAddress(endpoint.getVirtualIPAddress(), endpoint.getPort()));
+                                networkAddress = NetworkAddress.formatAddress(InetAddress.getByName(pip.getIpAddress()));
+
+                                if (networkAddress == null) {
+                                    logger.trace("no public ip provided. ignoring [{}]...", vm.getName());
+                                }
+                                break;
+                            default:
+                                // This could never happen!
+                                logger.warn("undefined host_type [{}]. Please check your settings.", hostType);
+                                return cachedDiscoNodes;
                         }
 
                         if (networkAddress == null) {
-                            logger.trace("no public ip provided. ignoring [{}]...", instance.getInstanceName());
+                            // We have a bad parameter here or not enough information from azure
+                            logger.warn("no network address found. ignoring [{}]...", vm.getName());
+                            continue;
                         }
-                        break;
-                    default:
-                        // This could never happen!
-                        logger.warn("undefined host_type [{}]. Please check your settings.", hostType);
-                        return cachedDiscoNodes;
-                }
-
-                if (networkAddress == null) {
-                    // We have a bad parameter here or not enough information from azure
-                    logger.warn("no network address found. ignoring [{}]...", instance.getInstanceName());
-                    continue;
-                }
-
-                try {
-                    // we only limit to 1 port per address, makes no sense to ping 100 ports
-                    TransportAddress[] addresses = transportService.addressesFromString(networkAddress, 1);
-                    for (TransportAddress address : addresses) {
-                        logger.trace("adding {}, transport_address {}", networkAddress, address);
-                        cachedDiscoNodes.add(new DiscoveryNode("#cloud-" + instance.getInstanceName(), address,
-                            version.minimumCompatibilityVersion()));
+                        try {
+                            // we only limit to 1 port per address, makes no sense to ping 100 ports
+                            TransportAddress[] addresses = transportService.addressesFromString(networkAddress, 1);
+                            for (TransportAddress address : addresses) {
+                                logger.trace("adding {}, transport_address {}", networkAddress, address);
+                                cachedDiscoNodes.add(new DiscoveryNode("#cloud-" + vm.getName(), address,
+                                    version.minimumCompatibilityVersion()));
+                            }
+                        } catch (Exception e) {
+                            logger.warn("can not convert [{}] to transport address. skipping. [{}]", networkAddress, e.getMessage());
+                        }
                     }
-                } catch (Exception e) {
-                    logger.warn("can not convert [{}] to transport address. skipping. [{}]", networkAddress, e.getMessage());
                 }
+            } catch (Exception e) {
+                logger.error(e.getMessage());
             }
-        }
 
+        }
         logger.debug("{} node(s) added", cachedDiscoNodes.size());
 
         return cachedDiscoNodes;

@@ -120,14 +120,14 @@ public class AzureModule extends AbstractModule {
         }
 
         if (isPropertyMissing(settings, Management.SUBSCRIPTION_ID) ||
-                isPropertyMissing(settings, Management.SERVICE_NAME) ||
-                isPropertyMissing(settings, Management.KEYSTORE_PATH) ||
-                isPropertyMissing(settings, Management.KEYSTORE_PASSWORD)
+            isPropertyMissing(settings, Management.RESOURCE_GROUP_NAME) ||
+            isPropertyMissing(settings, Management.KEYSTORE_PATH) ||
+            isPropertyMissing(settings, Management.KEYSTORE_PASSWORD)
             ) {
             logger.debug("one or more azure discovery settings are missing. " +
                             "Check elasticsearch.yml file. Should have [{}], [{}], [{}] and [{}].",
                     Management.SUBSCRIPTION_ID,
-                    Management.SERVICE_NAME,
+                    Management.RESOURCE_GROUP_NAME,
                     Management.KEYSTORE_PATH,
                     Management.KEYSTORE_PASSWORD);
             return false;
