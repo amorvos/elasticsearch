@@ -226,9 +226,9 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
         } catch (ServiceException e) {
             logger.error("Error occurred in getting public address of NIC");
         } catch (IOException e) {
-            logger.error(e.getMessage());
+            logger.error("Error occurred in IO operations");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error occurred in retrieving IP addresses");
         }
 
         logger.debug("{} node(s) added", cachedDiscoNodes.size());
