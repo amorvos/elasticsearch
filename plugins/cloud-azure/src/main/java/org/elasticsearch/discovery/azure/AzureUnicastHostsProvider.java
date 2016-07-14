@@ -152,14 +152,13 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
                 for (Subnet subnet : subnets) {
                     ipConfigurations.addAll(subnet.getIpConfigurations());
                 }
-            } else{
-                subnets.removeIf(new Predicate<Subnet>() {
-                    @Override
-                    public boolean test(Subnet subnet) {
-                        return !subnet.getName().equals(networkNameOfCurrentHost.get(AzureDiscovery.SUBNET));
+            } else {
+                for (Subnet subnet : subnets) {
+                    if (subnet.getName().equalsIgnoreCase(networkNameOfCurrentHost.get(AzureDiscovery.SUBNET))) {
+                        ipConfigurations.addAll(subnet.getIpConfigurations());
                     }
-                });
-                ipConfigurations.addAll(subnets.get(0).getIpConfigurations());
+                }
+
             }
 
             for (ResourceId resourceId : ipConfigurations) {
