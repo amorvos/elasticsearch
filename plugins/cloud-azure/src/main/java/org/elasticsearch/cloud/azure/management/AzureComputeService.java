@@ -38,11 +38,6 @@ public interface AzureComputeService {
         public static final String TENANT_ID = "cloud.azure.management.tenant.id";
         public static final String APP_ID = "cloud.azure.management.app.id";
         public static final String APP_SECRET = "cloud.azure.management.app.secret";
-
-        // Keystore settings
-        public static final String KEYSTORE_PATH = "cloud.azure.management.keystore.path";
-        public static final String KEYSTORE_PASSWORD = "cloud.azure.management.keystore.password";
-        public static final String KEYSTORE_TYPE = "cloud.azure.management.keystore.type";
     }
 
     static public final class Discovery {
