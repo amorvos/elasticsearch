@@ -93,23 +93,6 @@ public class AzureComputeServiceImpl extends AbstractLifecycleComponent<AzureCom
     }
 
     @Override
-    public ArrayList<VirtualMachine> getVMList() {
-        if (computeManagementClient == null) {
-            // Azure plugin is disabled
-            throw new AzureServiceDisableException("azure plugin is disabled.");
-        }
-
-        try {
-            logger.warn("Resource Group name:" + resourceGroupName);
-            return computeManagementClient.getVirtualMachinesOperations().list(resourceGroupName).getVirtualMachines();
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            e.printStackTrace();
-            throw new AzureServiceRemoteException("can not get list of azure nodes new implementation", e);
-        }
-    }
-
-    @Override
     protected void doStart() throws ElasticsearchException {
     }
 

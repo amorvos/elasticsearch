@@ -42,13 +42,9 @@ public interface AzureComputeService {
 
     static public final class Discovery {
         public static final String REFRESH = "discovery.azure.refresh_interval";
-
         public static final String HOST_TYPE = "discovery.azure.host.type";
-        public static final String ENDPOINT_NAME = "discovery.azure.endpoint.name";
-        public static final String DEPLOYMENT_NAME = "discovery.azure.deployment.name";
-        public static final String DEPLOYMENT_SLOT = "discovery.azure.deployment.slot";
+        public static final String DISCOVERY_METHOD = "discovery.azure.method";
     }
-    public ArrayList<VirtualMachine> getVMList();
 
     public Configuration getConfiguration();
 }
