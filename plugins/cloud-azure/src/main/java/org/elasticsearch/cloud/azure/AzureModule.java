@@ -39,7 +39,7 @@ import org.elasticsearch.discovery.azure.AzureDiscovery;
 
 /**
  * Azure Module
- *
+ * <p>
  * <ul>
  * <li>If needed this module will bind azure discovery service by default
  * to AzureComputeServiceImpl.</li>
@@ -93,6 +93,7 @@ public class AzureModule extends AbstractModule {
 
     /**
      * Check if discovery is meant to start
+     *
      * @param settings settings to extract cloud enabled parameter from
      * @return true if we can start discovery features
      */
@@ -102,8 +103,9 @@ public class AzureModule extends AbstractModule {
 
     /**
      * Check if discovery is meant to start
+     *
      * @param settings settings to extract cloud enabled parameter from
-     * @param logger the logger to be used
+     * @param logger   the logger to be used
      * @return true if we can start discovery features
      */
     public static boolean isDiscoveryReady(Settings settings, ESLogger logger) {
@@ -123,16 +125,23 @@ public class AzureModule extends AbstractModule {
             isPropertyMissing(settings, Management.RESOURCE_GROUP_NAME) ||
             isPropertyMissing(settings, Management.TENANT_ID) ||
             isPropertyMissing(settings, Management.APP_ID) ||
-            isPropertyMissing(settings, Management.APP_SECRET)
+            isPropertyMissing(settings, Management.APP_SECRET) ||
+            isPropertyMissing(settings, AzureComputeService.Discovery.DISCOVERY_METHOD)
             ) {
             logger.debug("one or more azure discovery settings are missing. " +
-                            "Check elasticsearch.yml file. Should have [{}], [{}], [{}] and [{}].",
-                    Management.SUBSCRIPTION_ID,
-                    Management.RESOURCE_GROUP_NAME,
-                    Management.TENANT_ID,
-                    Management.APP_ID,
-                    Management.APP_SECRET);
+                         "Check elasticsearch.yml file. Should have [{}], [{}], [{}] and [{}].",
+                Management.SUBSCRIPTION_ID,
+                Management.RESOURCE_GROUP_NAME,
+                Management.TENANT_ID,
+                Management.APP_ID,
+                Management.APP_SECRET,
+                AzureComputeService.Discovery.DISCOVERY_METHOD);
             return false;
+        }
+
+        if(!AzureDiscovery.SUBNET.equalsIgnoreCase(settings.get(AzureComputeService.Discovery.DISCOVERY_METHOD)) ||
+           !AzureDiscovery.VNET.equalsIgnoreCase(settings.get(AzureComputeService.Discovery.DISCOVERY_METHOD))){
+            logger.trace("discovery.azure.method must set to {} or {}", AzureDiscovery.VNET, AzureDiscovery.SUBNET);
         }
 
         logger.trace("all required properties for azure discovery are set!");
@@ -142,8 +151,9 @@ public class AzureModule extends AbstractModule {
 
     /**
      * Check if we have repository azure settings available
+     *
      * @param settings settings to extract cloud enabled parameter from
-     * @param logger the logger to be used
+     * @param logger   the logger to be used
      * @return true if we can use snapshot and restore
      */
     public static boolean isSnapshotReady(Settings settings, ESLogger logger) {
@@ -163,7 +173,7 @@ public class AzureModule extends AbstractModule {
         logger.trace("all required properties for azure repository are set!");
 
         return true;
-   }
+    }
 
     public static boolean isPropertyMissing(Settings settings, String name) throws ElasticsearchException {
         if (!Strings.hasText(settings.get(name))) {

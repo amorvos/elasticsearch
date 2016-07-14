@@ -103,7 +103,7 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
             tmpHostType = HostType.PRIVATE_IP;
         }
         this.hostType = tmpHostType;
-        this.discoveryMethod = settings.get(Discovery.DISCOVERY_METHOD, "vnet");
+        this.discoveryMethod = settings.get(Discovery.DISCOVERY_METHOD, AzureDiscovery.VNET);
     }
 
     /**
@@ -147,8 +147,8 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
 
         try {
             final HashMap<String, String> networkNameOfCurrentHost = retrieveNetInfo(rgName, ipAddress.getHostAddress(), networkResourceProviderClient);
-            ArrayList<Subnet> subnets = networkResourceProviderClient.getVirtualNetworksOperations().get(rgName, networkNameOfCurrentHost.get("vnet")).getVirtualNetwork().getSubnets();
-            if (discoveryMethod.equals("vnet")) {
+            ArrayList<Subnet> subnets = networkResourceProviderClient.getVirtualNetworksOperations().get(rgName, networkNameOfCurrentHost.get(AzureDiscovery.VNET)).getVirtualNetwork().getSubnets();
+            if (discoveryMethod.equalsIgnoreCase(AzureDiscovery.VNET)) {
                 for (Subnet subnet : subnets) {
                     ipConfigurations.addAll(subnet.getIpConfigurations());
                 }
@@ -156,7 +156,7 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
                 subnets.removeIf(new Predicate<Subnet>() {
                     @Override
                     public boolean test(Subnet subnet) {
-                        return !subnet.getName().equals(networkNameOfCurrentHost.get("subnet"));
+                        return !subnet.getName().equals(networkNameOfCurrentHost.get(AzureDiscovery.SUBNET));
                     }
                 });
                 ipConfigurations.addAll(subnets.get(0).getIpConfigurations());
@@ -255,8 +255,8 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
                     // find public ip address
                     for (NetworkInterfaceIpConfiguration ipConfiguration : ips) {
                         if (ipAddress.equals(ipConfiguration.getPrivateIpAddress())) {
-                            networkNames.put("vnet", vn.getName());
-                            networkNames.put("subnet", subnet.getName());
+                            networkNames.put(AzureDiscovery.VNET, vn.getName());
+                            networkNames.put(AzureDiscovery.SUBNET, subnet.getName());
                             break;
                         }
 
