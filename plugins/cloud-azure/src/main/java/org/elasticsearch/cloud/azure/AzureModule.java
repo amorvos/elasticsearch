@@ -139,9 +139,10 @@ public class AzureModule extends AbstractModule {
             return false;
         }
 
-        if(!AzureDiscovery.SUBNET.equalsIgnoreCase(settings.get(AzureComputeService.Discovery.DISCOVERY_METHOD)) ||
-           !AzureDiscovery.VNET.equalsIgnoreCase(settings.get(AzureComputeService.Discovery.DISCOVERY_METHOD))){
+        if(!(AzureDiscovery.SUBNET.equalsIgnoreCase(settings.get(AzureComputeService.Discovery.DISCOVERY_METHOD)) ||
+           AzureDiscovery.VNET.equalsIgnoreCase(settings.get(AzureComputeService.Discovery.DISCOVERY_METHOD)))){
             logger.trace("discovery.azure.method must set to {} or {}", AzureDiscovery.VNET, AzureDiscovery.SUBNET);
+            return false;
         }
 
         logger.trace("all required properties for azure discovery are set!");

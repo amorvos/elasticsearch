@@ -145,7 +145,7 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
         ArrayList<ResourceId> ipConfigurations = new ArrayList<>();
 
         try {
-            final HashMap<String, String> networkNameOfCurrentHost = retrieveNetInfo(rgName, ipAddress.getHostAddress(), networkResourceProviderClient);
+            final HashMap<String, String> networkNameOfCurrentHost = retrieveNetInfo(rgName, NetworkAddress.format(ipAddress), networkResourceProviderClient);
             ArrayList<Subnet> subnets = networkResourceProviderClient.getVirtualNetworksOperations().get(rgName, networkNameOfCurrentHost.get(AzureDiscovery.VNET)).getVirtualNetwork().getSubnets();
             if (discoveryMethod.equalsIgnoreCase(AzureDiscovery.VNET)) {
                 for (Subnet subnet : subnets) {
