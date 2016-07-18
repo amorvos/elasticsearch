@@ -94,21 +94,6 @@ public class AzureComputeServiceImpl extends AbstractLifecycleComponent<AzureCom
     }
 
     @Override
-    public List<Subnet> listSubnets(String rgName, String vnetName) {
-        List<Subnet> result = new ArrayList<>();
-        NetworkResourceProviderClient networkResourceProviderClient =
-                NetworkResourceProviderService.create(configuration);
-        try {
-            result = networkResourceProviderClient.getVirtualNetworksOperations().get(rgName, vnetName).getVirtualNetwork().getSubnets();
-        } catch (IOException e) {
-            logger.error("Could not connect to azure endpoint");
-        } catch (ServiceException e) {
-            logger.error("Could not retrieve subnet list from azure");
-        }
-        return result;
-    }
-
-    @Override
     public Configuration getConfiguration() {
         return configuration;
     }

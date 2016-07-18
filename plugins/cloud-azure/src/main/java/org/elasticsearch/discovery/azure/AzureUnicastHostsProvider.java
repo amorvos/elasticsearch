@@ -29,6 +29,8 @@ import org.elasticsearch.cloud.azure.management.AzureComputeService.Discovery;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
@@ -98,7 +100,7 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
         HostType tmpHostType = HostType.fromString(strHostType);
         if (tmpHostType == null) {
             logger.warn("wrong value for [{}]: [{}]. falling back to [{}]...", Discovery.HOST_TYPE,
-                strHostType, HostType.PRIVATE_IP.name().toLowerCase(Locale.ROOT));
+                    strHostType, HostType.PRIVATE_IP.name().toLowerCase(Locale.ROOT));
             tmpHostType = HostType.PRIVATE_IP;
         }
         this.hostType = tmpHostType;
@@ -116,8 +118,8 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
 
         if (refreshInterval.millis() != 0) {
             if (cachedDiscoNodes != null &&
-                (refreshInterval.millis() < 0 ||
-                 (System.currentTimeMillis() - lastRefresh) < refreshInterval.millis())) {
+                    (refreshInterval.millis() < 0 ||
+                            (System.currentTimeMillis() - lastRefresh) < refreshInterval.millis())) {
                 logger.trace("using cache to retrieve node list");
                 return cachedDiscoNodes;
             }
@@ -136,99 +138,32 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
             logger.trace("exception while finding ip", e);
         }
 
-
         // In other case, it should be the right deployment so we can add it to the list of instances
         String rgName = settings.get(AzureComputeService.Management.RESOURCE_GROUP_NAME);
         NetworkResourceProviderClient networkResourceProviderClient =
-            NetworkResourceProviderService.create(azureComputeService.getConfiguration());
-
-        ArrayList<ResourceId> ipConfigurations = new ArrayList<>();
+                NetworkResourceProviderService.create(azureComputeService.getConfiguration());
 
         try {
             final HashMap<String, String> networkNameOfCurrentHost = retrieveNetInfo(rgName, NetworkAddress.format(ipAddress), networkResourceProviderClient);
-            List<Subnet> subnets = azureComputeService.listSubnets(rgName, networkNameOfCurrentHost.get(AzureDiscovery.VNET));
-            if (discoveryMethod.equalsIgnoreCase(AzureDiscovery.VNET)) {
-                for (Subnet subnet : subnets) {
-                    ipConfigurations.addAll(subnet.getIpConfigurations());
-                }
-            } else {
-                for (Subnet subnet : subnets) {
-                    if (subnet.getName().equalsIgnoreCase(networkNameOfCurrentHost.get(AzureDiscovery.SUBNET))) {
-                        ipConfigurations.addAll(subnet.getIpConfigurations());
+            List<String> ipAddresses = listIPAddresses(networkResourceProviderClient, rgName, networkNameOfCurrentHost.get(AzureDiscovery.VNET),
+                    networkNameOfCurrentHost.get(AzureDiscovery.SUBNET), discoveryMethod, hostType, logger);
+            for (String networkAddress : ipAddresses) {
+                try {
+                    // we only limit to 1 port per address, makes no sense to ping 100 ports
+                    TransportAddress[] addresses = transportService.addressesFromString(networkAddress, 1);
+                    for (TransportAddress address : addresses) {
+                        logger.trace("adding {}, transport_address {}", networkAddress, address);
+                        cachedDiscoNodes.add(new DiscoveryNode("#cloud-" + networkAddress, address,
+                                version.minimumCompatibilityVersion()));
                     }
-                }
-
-            }
-
-            for (ResourceId resourceId : ipConfigurations) {
-                String[] nicURI = resourceId.getId().split("/");
-                NetworkInterface nic = networkResourceProviderClient.getNetworkInterfacesOperations().get(rgName, nicURI[
-                    nicURI.length - 3]).getNetworkInterface();
-                ArrayList<NetworkInterfaceIpConfiguration> ips = nic.getIpConfigurations();
-
-                // find public ip address
-                for (NetworkInterfaceIpConfiguration ipConfiguration : ips) {
-                    {
-                        String networkAddress = null;
-                        // Let's detect if we want to use public or private IP
-                        switch (hostType) {
-                            case PRIVATE_IP:
-                                InetAddress privateIp = InetAddress.getByName(ipConfiguration.getPrivateIpAddress());
-
-                                if (privateIp != null) {
-                                    if (privateIp.equals(ipAddress)) {
-                                        logger.trace("adding ourselves {}", NetworkAddress.format(ipAddress));
-                                    }
-                                    networkAddress = NetworkAddress.formatAddress(privateIp);
-                                } else {
-                                    logger.trace("no private ip provided. ignoring [{}]...", nic.getName());
-                                }
-                                break;
-                            case PUBLIC_IP:
-                                String[] pipID = ipConfiguration.getPublicIpAddress().getId().split("/");
-                                PublicIpAddress pip = networkResourceProviderClient.getPublicIpAddressesOperations()
-                                    .get(rgName, pipID[pipID.length - 1]).getPublicIpAddress();
-
-                                networkAddress = NetworkAddress.formatAddress(InetAddress.getByName(pip.getIpAddress()));
-
-                                if (networkAddress == null) {
-                                    logger.trace("no public ip provided. ignoring [{}]...", nic.getName());
-                                }
-                                break;
-                            default:
-                                // This could never happen!
-                                logger.warn("undefined host_type [{}]. Please check your settings.", hostType);
-                                return cachedDiscoNodes;
-                        }
-
-                        if (networkAddress == null) {
-                            // We have a bad parameter here or not enough information from azure
-                            logger.warn("no network address found. ignoring [{}]...", nic.getName());
-                            continue;
-                        }
-                        try {
-                            // we only limit to 1 port per address, makes no sense to ping 100 ports
-                            TransportAddress[] addresses = transportService.addressesFromString(networkAddress, 1);
-                            for (TransportAddress address : addresses) {
-                                logger.trace("adding {}, transport_address {}", networkAddress, address);
-                                cachedDiscoNodes.add(new DiscoveryNode("#cloud-" + nic.getName(), address,
-                                    version.minimumCompatibilityVersion()));
-                            }
-                        } catch (Exception e) {
-                            logger.warn("can not convert [{}] to transport address. skipping. [{}]", networkAddress, e.getMessage());
-                        }
-                    }
-
+                } catch (Exception e) {
+                    logger.warn("can not convert [{}] to transport address. skipping. [{}]", networkAddress, e.getMessage());
                 }
             }
         } catch (UnknownHostException e) {
             logger.error("Error occurred in getting hostname");
-        } catch (ServiceException e) {
-            logger.error("Error occurred in getting public address of NIC");
-        } catch (IOException e) {
-            logger.error("Error occurred in IO operations");
         } catch (Exception e) {
-            logger.error("Error occurred in retrieving IP addresses");
+            logger.error(e.getMessage());
         }
 
         logger.debug("{} node(s) added", cachedDiscoNodes.size());
@@ -247,7 +182,7 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
                 for (ResourceId resourceId : subnet.getIpConfigurations()) {
                     String[] nicURI = resourceId.getId().split("/");
                     NetworkInterface nic = networkResourceProviderClient.getNetworkInterfacesOperations().get(rgName, nicURI[
-                        nicURI.length - 3]).getNetworkInterface();
+                            nicURI.length - 3]).getNetworkInterface();
                     ArrayList<NetworkInterfaceIpConfiguration> ips = nic.getIpConfigurations();
 
                     // find public ip address
@@ -264,5 +199,80 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
         }
 
         return networkNames;
+    }
+
+    public static List<String> listIPAddresses(NetworkResourceProviderClient networkResourceProviderClient, String rgName, String vnetName, String subnetName,
+                                               String discoveryMethod, HostType hostType, ESLogger logger) {
+
+        List<String> ipList = new ArrayList<>();
+        ArrayList<ResourceId> ipConfigurations = new ArrayList<>();
+
+        try {
+            List<Subnet> subnets = networkResourceProviderClient.getVirtualNetworksOperations().get(rgName, vnetName).getVirtualNetwork().getSubnets();
+            if (discoveryMethod.equalsIgnoreCase(AzureDiscovery.VNET)) {
+                for (Subnet subnet : subnets) {
+                    ipConfigurations.addAll(subnet.getIpConfigurations());
+                }
+            } else {
+                for (Subnet subnet : subnets) {
+                    if (subnet.getName().equalsIgnoreCase(subnetName)) {
+                        ipConfigurations.addAll(subnet.getIpConfigurations());
+                    }
+                }
+
+            }
+
+            for (ResourceId resourceId : ipConfigurations) {
+                String[] nicURI = resourceId.getId().split("/");
+                NetworkInterface nic = networkResourceProviderClient.getNetworkInterfacesOperations().get(rgName, nicURI[
+                        nicURI.length - 3]).getNetworkInterface();
+                ArrayList<NetworkInterfaceIpConfiguration> ips = nic.getIpConfigurations();
+
+                // find public ip address
+                for (NetworkInterfaceIpConfiguration ipConfiguration : ips) {
+
+                    String networkAddress = null;
+                    // Let's detect if we want to use public or private IP
+                    switch (hostType) {
+                        case PRIVATE_IP:
+                            InetAddress privateIp = InetAddress.getByName(ipConfiguration.getPrivateIpAddress());
+
+                            if (privateIp != null) {
+                                networkAddress = NetworkAddress.formatAddress(privateIp);
+                            } else {
+                                logger.trace("no private ip provided. ignoring [{}]...", nic.getName());
+                            }
+                            break;
+                        case PUBLIC_IP:
+                            String[] pipID = ipConfiguration.getPublicIpAddress().getId().split("/");
+                            PublicIpAddress pip = networkResourceProviderClient.getPublicIpAddressesOperations()
+                                    .get(rgName, pipID[pipID.length - 1]).getPublicIpAddress();
+
+                            networkAddress = NetworkAddress.formatAddress(InetAddress.getByName(pip.getIpAddress()));
+
+                            if (networkAddress == null) {
+                                logger.trace("no public ip provided. ignoring [{}]...", nic.getName());
+                            }
+                            break;
+                        default:
+                            // This could never happen!
+                            logger.warn("undefined host_type [{}]. Please check your settings.", hostType);
+                            return ipList;
+                    }
+
+                    if (networkAddress == null) {
+                        // We have a bad parameter here or not enough information from azure
+                        logger.warn("no network address found. ignoring [{}]...", nic.getName());
+                        continue;
+                    } else {
+                        ipList.add(networkAddress);
+                    }
+
+                }
+            }
+        } catch (Exception e) {
+           logger.error(e.getMessage());
+        }
+        return ipList;
     }
 }

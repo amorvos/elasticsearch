@@ -48,7 +48,5 @@ public interface AzureComputeService {
         public static final String DISCOVERY_METHOD = "discovery.azure.method";
     }
 
-    public List<Subnet> listSubnets(String rgName, String vnetName);
-
     public Configuration getConfiguration();
 }
