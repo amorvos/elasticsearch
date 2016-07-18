@@ -23,8 +23,12 @@ import com.microsoft.aad.adal4j.AuthenticationResult;
 import com.microsoft.azure.management.compute.ComputeManagementClient;
 import com.microsoft.azure.management.compute.ComputeManagementService;
 import com.microsoft.azure.management.compute.models.VirtualMachine;
+import com.microsoft.azure.management.network.NetworkResourceProviderClient;
+import com.microsoft.azure.management.network.NetworkResourceProviderService;
+import com.microsoft.azure.management.network.models.Subnet;
 import com.microsoft.azure.utility.AuthHelper;
 import com.microsoft.windowsazure.Configuration;
+import com.microsoft.windowsazure.exception.ServiceException;
 import com.microsoft.windowsazure.management.configuration.ManagementConfiguration;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.cloud.azure.AzureServiceDisableException;
@@ -32,15 +36,17 @@ import org.elasticsearch.cloud.azure.AzureServiceRemoteException;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.discovery.azure.AzureDiscovery;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.elasticsearch.cloud.azure.management.AzureComputeService.Management.*;
 
 public class AzureComputeServiceImpl extends AbstractLifecycleComponent<AzureComputeServiceImpl>
-    implements AzureComputeService {
+        implements AzureComputeService {
 
     static final class Azure {
         private static final String ENDPOINT = "https://management.core.windows.net/";
@@ -64,16 +70,16 @@ public class AzureComputeServiceImpl extends AbstractLifecycleComponent<AzureCom
         Configuration conf;
         try {
             AuthenticationResult authRes = AuthHelper.getAccessTokenFromServicePrincipalCredentials(
-                Azure.ENDPOINT,
-                Azure.AUTH_ENDPOINT,
-                tenantId,
-                appId,
-                appSecret);
+                    Azure.ENDPOINT,
+                    Azure.AUTH_ENDPOINT,
+                    tenantId,
+                    appId,
+                    appSecret);
             conf = ManagementConfiguration.configure(
-                null,
-                (URI)null,
-                subscriptionId, // subscription id
-                authRes.getAccessToken()
+                    null,
+                    (URI) null,
+                    subscriptionId, // subscription id
+                    authRes.getAccessToken()
             );
         } catch (Exception e) {
             logger.error("can not start azure client: {}", e.getMessage());
@@ -85,6 +91,21 @@ public class AzureComputeServiceImpl extends AbstractLifecycleComponent<AzureCom
         configuration = conf;
         computeManagementClient = ComputeManagementService.create(configuration);
 
+    }
+
+    @Override
+    public List<Subnet> listSubnets(String rgName, String vnetName) {
+        List<Subnet> result = new ArrayList<>();
+        NetworkResourceProviderClient networkResourceProviderClient =
+                NetworkResourceProviderService.create(configuration);
+        try {
+            result = networkResourceProviderClient.getVirtualNetworksOperations().get(rgName, vnetName).getVirtualNetwork().getSubnets();
+        } catch (IOException e) {
+            logger.error("Could not connect to azure endpoint");
+        } catch (ServiceException e) {
+            logger.error("Could not retrieve subnet list from azure");
+        }
+        return result;
     }
 
     @Override

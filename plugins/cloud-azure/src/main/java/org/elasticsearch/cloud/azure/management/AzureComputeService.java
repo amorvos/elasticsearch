@@ -20,9 +20,11 @@
 package org.elasticsearch.cloud.azure.management;
 
 import com.microsoft.azure.management.compute.models.VirtualMachine;
+import com.microsoft.azure.management.network.models.Subnet;
 import com.microsoft.windowsazure.Configuration;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -45,6 +47,8 @@ public interface AzureComputeService {
         public static final String HOST_TYPE = "discovery.azure.host.type";
         public static final String DISCOVERY_METHOD = "discovery.azure.method";
     }
+
+    public List<Subnet> listSubnets(String rgName, String vnetName);
 
     public Configuration getConfiguration();
 }
