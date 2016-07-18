@@ -145,6 +145,12 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
 
         try {
             final HashMap<String, String> networkNameOfCurrentHost = retrieveNetInfo(rgName, NetworkAddress.format(ipAddress), networkResourceProviderClient);
+
+            if(networkNameOfCurrentHost.size() == 0 ){
+                logger.error("Could not find vnet or subnet of current host");
+                return cachedDiscoNodes;
+            }
+
             List<String> ipAddresses = listIPAddresses(networkResourceProviderClient, rgName, networkNameOfCurrentHost.get(AzureDiscovery.VNET),
                     networkNameOfCurrentHost.get(AzureDiscovery.SUBNET), discoveryMethod, hostType, logger);
             for (String networkAddress : ipAddresses) {
