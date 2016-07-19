@@ -102,5 +102,12 @@ The following are a list of settings that can further control the credential API
 
     your_password for the azure active directory application
 
+`discovery.azure.method`
+
+    Default is ``vnet``, allowed values: ``vnet`` or ``subnet``.
+    Discovery method ``vnet`` means that all vms
+    in the same vnet will be discovered, ``subnet`` means
+    that all virtual machines in the same subnet will be added
+    to the cluster
 
 // AUTOSENSE
