@@ -249,11 +249,13 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
                             }
                             break;
                         case PUBLIC_IP:
-                            String[] pipID = ipConfiguration.getPublicIpAddress().getId().split("/");
-                            PublicIpAddress pip = networkResourceProviderClient.getPublicIpAddressesOperations()
-                                    .get(rgName, pipID[pipID.length - 1]).getPublicIpAddress();
+                            if (ipConfiguration.getPublicIpAddress() != null) {
+                                String[] pipID = ipConfiguration.getPublicIpAddress().getId().split("/");
+                                PublicIpAddress pip = networkResourceProviderClient.getPublicIpAddressesOperations()
+                                        .get(rgName, pipID[pipID.length - 1]).getPublicIpAddress();
 
-                            networkAddress = NetworkAddress.formatAddress(InetAddress.getByName(pip.getIpAddress()));
+                                networkAddress = NetworkAddress.formatAddress(InetAddress.getByName(pip.getIpAddress()));
+                            }
 
                             if (networkAddress == null) {
                                 logger.trace("no public ip provided. ignoring [{}]...", nic.getName());
