@@ -37,7 +37,7 @@ import java.util.List;
  */
 public class AzureComputeServiceSimpleMock extends AzureComputeServiceAbstractMock {
 
-    
+
     public List<Subnet> listSubnets(String rgName, String vnetName) {
 
         Subnet subnet = new Subnet();
