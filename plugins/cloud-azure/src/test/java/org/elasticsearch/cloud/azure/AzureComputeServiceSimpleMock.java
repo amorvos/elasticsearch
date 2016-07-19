@@ -37,27 +37,6 @@ import java.util.List;
  */
 public class AzureComputeServiceSimpleMock extends AzureComputeServiceAbstractMock {
 
-
-    public List<Subnet> listSubnets(String rgName, String vnetName) {
-
-        Subnet subnet = new Subnet();
-        subnet.setName("dummySubnet");
-        String dummyPrivateIP = "10.0.0.1";
-
-        ResourceId resourceId = new ResourceId();
-        resourceId.setId("/subscriptions/xx/resourceGroups/myrg/providers/Microsoft.Network/networkInterfaces/nic_dummy/ipConfigurations/Nic-IP-config");
-
-        NetworkInterfaceIpConfiguration ipConfiguration = new NetworkInterfaceIpConfiguration();
-        ipConfiguration.setPrivateIpAddress(dummyPrivateIP);
-
-        NetworkInterface nic = new NetworkInterface();
-        nic.setName("nic_dummy");
-        nic.setIpConfigurations(CollectionUtils.asArrayList(ipConfiguration));
-        subnet.setIpConfigurations(CollectionUtils.asArrayList(resourceId));
-
-        return CollectionUtils.arrayAsArrayList(subnet);
-    }
-
     public static class TestPlugin extends Plugin {
         @Override
         public String name() {

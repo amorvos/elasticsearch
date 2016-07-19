@@ -24,10 +24,6 @@ import com.microsoft.azure.management.network.models.*;
 import com.microsoft.windowsazure.exception.ServiceException;
 import junit.framework.Assert;
 import org.elasticsearch.cloud.azure.AbstractAzureComputeServiceTestCase;
-import org.elasticsearch.cloud.azure.AzureComputeServiceSimpleMock;
-import org.elasticsearch.cloud.azure.management.AzureComputeService.Discovery;
-import org.elasticsearch.cloud.azure.management.AzureComputeService.Management;
-import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.CollectionUtils;
@@ -40,14 +36,17 @@ import java.util.List;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.when;
 
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.TEST,
         numDataNodes = 0,
         transportClientRatio = 0.0,
         numClientNodes = 0)
-public class AzureUnicastHostsProviderTest {
+public class AzureUnicastHostsProviderTest extends AbstractAzureComputeServiceTestCase{
+
+    public AzureUnicastHostsProviderTest(Class<? extends Plugin> mockPlugin) {
+        super(mockPlugin);
+    }
 
     @Test
     public void testSingleSubnet() throws IOException, ServiceException {

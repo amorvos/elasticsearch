@@ -60,29 +60,7 @@ public class AzureComputeServiceTwoNodesMock extends AzureComputeServiceAbstract
         this.networkService = networkService;
     }
 
-    public List<Subnet> listSubnets(String rgName, String vnetName) {
-        Subnet subnet = new Subnet();
-        String dummyPrivateIP = "10.0.0.1";
-        String dummyPrivateIP2 = "10.0.0.2";
-
-
-        ResourceId resourceId = new ResourceId();
-        resourceId.setId("/subscriptions/xx/resourceGroups/rgName/providers/Microsoft.Network/networkInterfaces/nic_dummy/ipConfigurations/Nic-IP-config");
-
-        NetworkInterfaceIpConfiguration ipConfiguration = new NetworkInterfaceIpConfiguration();
-        ipConfiguration.setPrivateIpAddress(dummyPrivateIP);
-
-        NetworkInterfaceIpConfiguration ipConfiguration2 = new NetworkInterfaceIpConfiguration();
-        ipConfiguration2.setPrivateIpAddress(dummyPrivateIP2);
-
-        NetworkInterface nic = new NetworkInterface();
-        nic.setName("nic_dummy");
-        nic.setIpConfigurations(CollectionUtils.arrayAsArrayList(ipConfiguration, ipConfiguration2));
-        subnet.setIpConfigurations(CollectionUtils.asArrayList(resourceId));
-
-        return CollectionUtils.asArrayList(subnet);
-    }
-
+   
     @Override
     public Configuration getConfiguration() {
         return null;
