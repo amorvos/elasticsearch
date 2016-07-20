@@ -20,6 +20,7 @@
 package org.elasticsearch.discovery.azure;
 
 import org.elasticsearch.cloud.azure.AbstractAzureComputeServiceTestCase;
+import org.elasticsearch.cloud.azure.management.AzureComputeService;
 import org.elasticsearch.cloud.azure.management.AzureComputeService.Discovery;
 import org.elasticsearch.cloud.azure.management.AzureComputeService.Management;
 import org.elasticsearch.cloud.azure.AzureComputeServiceSimpleMock;
@@ -39,11 +40,17 @@ public class AzureSimpleTests extends AbstractAzureComputeServiceTestCase {
         super(AzureComputeServiceSimpleMock.TestPlugin.class);
     }
 
+
     @Test
     public void one_node_should_run_using_private_ip() {
         Settings.Builder settings = Settings.settingsBuilder()
-                .put("servicename", "dummy")
-                .put(Discovery.HOST_TYPE, "private_ip");
+        .put(Management.RESOURCE_GROUP_NAME, "crate-production")
+                .put(Discovery.HOST_TYPE, "private_ip")
+                .put(Management.TENANT_ID, "dee6992a-0894-42a1-b8c0-7fef2c10c7a9")
+                .put(Management.APP_ID, "d11a2859-e0fc-4fa4-b969-9fe186fd6d9b")
+                .put(Management.APP_SECRET, "crate123")
+                .put(Management.SUBSCRIPTION_ID, "db34af54-e3b4-4bbc-9cfa-fbd2934ed541")
+                .put(Discovery.DISCOVERY_METHOD, "subnet");
 
         logger.info("--> start one node");
         internalCluster().startNode(settings);
@@ -56,9 +63,13 @@ public class AzureSimpleTests extends AbstractAzureComputeServiceTestCase {
     @Test
     public void one_node_should_run_using_public_ip() {
         Settings.Builder settings = Settings.settingsBuilder()
-                .put("servicename", "dummy")
-                .put(Discovery.HOST_TYPE, "public_ip");
-
+                .put(Management.RESOURCE_GROUP_NAME, "crate-production")
+                .put(Discovery.HOST_TYPE, "public_ip")
+                .put(Management.TENANT_ID, "dee6992a-0894-42a1-b8c0-7fef2c10c7a9")
+                .put(Management.APP_ID, "d11a2859-e0fc-4fa4-b969-9fe186fd6d9b")
+                .put(Management.APP_SECRET, "crate123")
+                .put(Management.SUBSCRIPTION_ID, "db34af54-e3b4-4bbc-9cfa-fbd2934ed541")
+                .put(Discovery.DISCOVERY_METHOD, "subnet");
         logger.info("--> start one node");
         internalCluster().startNode(settings);
         assertThat(client().admin().cluster().prepareState().setMasterNodeTimeout("1s").execute().actionGet().getState().nodes().masterNodeId(), notNullValue());
@@ -70,8 +81,13 @@ public class AzureSimpleTests extends AbstractAzureComputeServiceTestCase {
     @Test
     public void one_node_should_run_using_wrong_settings() {
         Settings.Builder settings = Settings.settingsBuilder()
-                .put("servicename", "dummy")
-                .put(Discovery.HOST_TYPE, "do_not_exist");
+                .put(Management.RESOURCE_GROUP_NAME, "crate-production")
+                .put(Discovery.HOST_TYPE, "private_ip")
+                .put(Management.TENANT_ID, "dee6992a-0894-42a1-b8c0-7fef2c10c7a9")
+                .put(Management.APP_ID, "d11a2859-e0fc-4fa4-b969-9fe186fd6d9b")
+                .put(Management.APP_SECRET, "crate123")
+                .put(Management.SUBSCRIPTION_ID, "db34af54-e3b4-4bbc-9cfa-fbd2934ed541")
+                .put(Discovery.DISCOVERY_METHOD, "dummy_method");
 
         logger.info("--> start one node");
         internalCluster().startNode(settings);
