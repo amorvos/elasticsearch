@@ -19,19 +19,12 @@
 
 package org.elasticsearch.cloud.azure;
 
-import com.microsoft.azure.management.network.models.NetworkInterface;
-import com.microsoft.azure.management.network.models.NetworkInterfaceIpConfiguration;
-import com.microsoft.azure.management.network.models.ResourceId;
-import com.microsoft.azure.management.network.models.Subnet;
 import com.microsoft.windowsazure.Configuration;
 import org.elasticsearch.cloud.azure.management.AzureComputeServiceAbstractMock;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.plugins.Plugin;
-
-import java.util.List;
 
 /**
  * Mock Azure API with two started nodes
@@ -60,7 +53,7 @@ public class AzureComputeServiceTwoNodesMock extends AzureComputeServiceAbstract
         this.networkService = networkService;
     }
 
-   
+
     @Override
     public Configuration getConfiguration() {
         return null;

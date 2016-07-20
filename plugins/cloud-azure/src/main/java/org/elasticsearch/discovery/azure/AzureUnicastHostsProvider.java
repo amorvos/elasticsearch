@@ -22,7 +22,6 @@ package org.elasticsearch.discovery.azure;
 import com.microsoft.azure.management.network.*;
 import com.microsoft.azure.management.network.models.*;
 
-import com.microsoft.windowsazure.exception.ServiceException;
 import org.elasticsearch.Version;
 import org.elasticsearch.cloud.azure.management.AzureComputeService;
 import org.elasticsearch.cloud.azure.management.AzureComputeService.Discovery;
@@ -30,7 +29,6 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
@@ -154,17 +152,13 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
             List<String> ipAddresses = listIPAddresses(networkResourceProviderClient, rgName, networkNameOfCurrentHost.get(AzureDiscovery.VNET),
                     networkNameOfCurrentHost.get(AzureDiscovery.SUBNET), discoveryMethod, hostType, logger);
             for (String networkAddress : ipAddresses) {
-                try {
-                    // we only limit to 1 port per address, makes no sense to ping 100 ports
+                    // limit to 1 port per address
                     TransportAddress[] addresses = transportService.addressesFromString(networkAddress, 1);
                     for (TransportAddress address : addresses) {
                         logger.trace("adding {}, transport_address {}", networkAddress, address);
                         cachedDiscoNodes.add(new DiscoveryNode("#cloud-" + networkAddress, address,
                                 version.minimumCompatibilityVersion()));
                     }
-                } catch (Exception e) {
-                    logger.warn("can not convert [{}] to transport address. skipping. [{}]", networkAddress, e.getMessage());
-                }
             }
         } catch (UnknownHostException e) {
             logger.error("Error occurred in getting hostname");
@@ -261,10 +255,6 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
                                 logger.trace("no public ip provided. ignoring [{}]...", nic.getName());
                             }
                             break;
-                        default:
-                            // This could never happen!
-                            logger.warn("undefined host_type [{}]. Please check your settings.", hostType);
-                            return ipList;
                     }
 
                     if (networkAddress == null) {

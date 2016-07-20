@@ -23,12 +23,11 @@ import com.microsoft.azure.management.network.*;
 import com.microsoft.azure.management.network.models.*;
 import com.microsoft.windowsazure.exception.ServiceException;
 import junit.framework.Assert;
-import org.elasticsearch.cloud.azure.AbstractAzureComputeServiceTestCase;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.CollectionUtils;
-import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESIntegTestCase;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -42,16 +41,12 @@ import static org.mockito.Mockito.when;
         numDataNodes = 0,
         transportClientRatio = 0.0,
         numClientNodes = 0)
-public class AzureUnicastHostsProviderTest extends AbstractAzureComputeServiceTestCase{
+public class AzureUnicastHostsProviderTest {
 
-    public AzureUnicastHostsProviderTest(Class<? extends Plugin> mockPlugin) {
-        super(mockPlugin);
-    }
+    public NetworkResourceProviderClient providerClient;
 
-    @Test
-    public void testSingleSubnet() throws IOException, ServiceException {
-
-        Settings settings = Settings.builder().build();
+    @Before
+    public void setUp() throws IOException, ServiceException {
 
         String rgName = "my_resourcegroup";
         String vnetName = "myVnet";
@@ -63,7 +58,7 @@ public class AzureUnicastHostsProviderTest extends AbstractAzureComputeServiceTe
         subnet.setIpConfigurations(CollectionUtils.asArrayList(resourceId));
         subnet.setName("mySubnet");
 
-        NetworkResourceProviderClient providerClient = mock(NetworkResourceProviderClient.class);
+        providerClient = mock(NetworkResourceProviderClient.class);
         VirtualNetworkOperations virtualNetworkOperations = mock(VirtualNetworkOperationsImpl.class);
         VirtualNetworkGetResponse virtualNetworkGetResponse = mock(VirtualNetworkGetResponse.class);
         NetworkInterfaceOperations networkInterfaceOperations = mock(NetworkInterfaceOperationsImpl.class);
@@ -81,11 +76,21 @@ public class AzureUnicastHostsProviderTest extends AbstractAzureComputeServiceTe
 
         when(virtualNetworkGetResponse.getVirtualNetwork()).thenReturn(virtualNetwork);
         when(providerClient.getVirtualNetworksOperations()).thenReturn(virtualNetworkOperations);
-        when(virtualNetworkOperations.get("my_resourcegroup", "myVnet")).thenReturn(virtualNetworkGetResponse);
+        when(virtualNetworkOperations.get(rgName, vnetName)).thenReturn(virtualNetworkGetResponse);
 
         when(providerClient.getNetworkInterfacesOperations()).thenReturn(networkInterfaceOperations);
-        when(networkInterfaceOperations.get("my_resourcegroup", "nic_dummy")).thenReturn(networkInterfaceGetResponse);
+        when(networkInterfaceOperations.get(rgName, "nic_dummy")).thenReturn(networkInterfaceGetResponse);
         when(networkInterfaceGetResponse.getNetworkInterface()).thenReturn(nic);
+
+    }
+
+    @Test
+    public void testSingleSubnet() throws IOException, ServiceException {
+
+        Settings settings = Settings.builder().build();
+
+        String rgName = "my_resourcegroup";
+        String vnetName = "myVnet";
 
         List<String> networkAddresses = AzureUnicastHostsProvider.listIPAddresses(providerClient, rgName, vnetName, "", "vnet",
                 AzureUnicastHostsProvider.HostType.PRIVATE_IP, Loggers.getLogger(this.getClass(), settings, new String[0]));
@@ -105,9 +110,6 @@ public class AzureUnicastHostsProviderTest extends AbstractAzureComputeServiceTe
         String vnetName = "myVnet";
         String subnetname = "mySubnet2";
 
-        ResourceId resourceId = new ResourceId();
-        resourceId.setId("/subscriptions/xx/resourceGroups/my_resourcegroup/providers/Microsoft.Network/networkInterfaces/nic_dummy/ipConfigurations/Nic-IP-config");
-
         ResourceId resourceId2 = new ResourceId();
         resourceId2.setId("/subscriptions/xx/resourceGroups/my_resourcegroup/providers/Microsoft.Network/networkInterfaces/nic_dummy2/ipConfigurations/Nic-IP-config");
 
@@ -115,29 +117,13 @@ public class AzureUnicastHostsProviderTest extends AbstractAzureComputeServiceTe
         ResourceId resourceId3 = new ResourceId();
         resourceId3.setId("/subscriptions/xx/resourceGroups/my_resourcegroup/providers/Microsoft.Network/publicIPAddresses/ip_public1");
 
-        Subnet subnet = new Subnet();
-        subnet.setIpConfigurations(CollectionUtils.asArrayList(resourceId));
-        subnet.setName("mySubnet");
-
         Subnet subnet2 = new Subnet();
         subnet2.setIpConfigurations(CollectionUtils.asArrayList(resourceId2));
         subnet2.setName("mySubnet2");
 
-        NetworkResourceProviderClient providerClient = mock(NetworkResourceProviderClient.class);
-        VirtualNetworkOperations virtualNetworkOperations = mock(VirtualNetworkOperationsImpl.class);
-        VirtualNetworkGetResponse virtualNetworkGetResponse = mock(VirtualNetworkGetResponse.class);
-        NetworkInterfaceOperations networkInterfaceOperations = mock(NetworkInterfaceOperationsImpl.class);
-        NetworkInterfaceGetResponse networkInterfaceGetResponse = mock(NetworkInterfaceGetResponse.class);
         NetworkInterfaceGetResponse networkInterfaceGetResponse2 = mock(NetworkInterfaceGetResponse.class);
-        PublicIpAddressOperations  publicIpAddressOperations = mock(PublicIpAddressOperationsImpl.class);
+        PublicIpAddressOperations publicIpAddressOperations = mock(PublicIpAddressOperationsImpl.class);
         PublicIpAddressGetResponse publicIpAddressGetResponse = mock(PublicIpAddressGetResponse.class);
-
-        NetworkInterfaceIpConfiguration ipConfiguration = new NetworkInterfaceIpConfiguration();
-        ipConfiguration.setPrivateIpAddress("10.0.0.4");
-
-        NetworkInterface nic = new NetworkInterface();
-        nic.setName("nic_dummy");
-        nic.setIpConfigurations(CollectionUtils.asArrayList(ipConfiguration));
 
         NetworkInterfaceIpConfiguration ipConfiguration2 = new NetworkInterfaceIpConfiguration();
         ipConfiguration2.setPrivateIpAddress("10.0.0.5");
@@ -151,22 +137,13 @@ public class AzureUnicastHostsProviderTest extends AbstractAzureComputeServiceTe
         nic2.setName("nic_dummy2");
         nic2.setIpConfigurations(CollectionUtils.asArrayList(ipConfiguration2));
 
-        VirtualNetwork virtualNetwork = new VirtualNetwork();
-        virtualNetwork.setSubnets(CollectionUtils.arrayAsArrayList(subnet, subnet2));
+        providerClient.getVirtualNetworksOperations().get(rgName, vnetName).getVirtualNetwork().getSubnets().add(subnet2);
 
-        when(virtualNetworkGetResponse.getVirtualNetwork()).thenReturn(virtualNetwork);
-        when(providerClient.getVirtualNetworksOperations()).thenReturn(virtualNetworkOperations);
-        when(virtualNetworkOperations.get("my_resourcegroup", "myVnet")).thenReturn(virtualNetworkGetResponse);
-
-        when(providerClient.getNetworkInterfacesOperations()).thenReturn(networkInterfaceOperations);
-        when(networkInterfaceOperations.get("my_resourcegroup", "nic_dummy")).thenReturn(networkInterfaceGetResponse);
-        when(networkInterfaceGetResponse.getNetworkInterface()).thenReturn(nic);
-
-        when(networkInterfaceOperations.get("my_resourcegroup", "nic_dummy2")).thenReturn(networkInterfaceGetResponse2);
+        when(providerClient.getNetworkInterfacesOperations().get(rgName, "nic_dummy2")).thenReturn(networkInterfaceGetResponse2);
         when(networkInterfaceGetResponse2.getNetworkInterface()).thenReturn(nic2);
 
         when(providerClient.getPublicIpAddressesOperations()).thenReturn(publicIpAddressOperations);
-        when(publicIpAddressOperations.get("my_resourcegroup", "ip_public1")).thenReturn(publicIpAddressGetResponse);
+        when(publicIpAddressOperations.get(rgName, "ip_public1")).thenReturn(publicIpAddressGetResponse);
         when(publicIpAddressGetResponse.getPublicIpAddress()).thenReturn(publicIpAddress);
 
         List<String> networkAddresses = AzureUnicastHostsProvider.listIPAddresses(providerClient, rgName, vnetName, subnetname, "subnet",

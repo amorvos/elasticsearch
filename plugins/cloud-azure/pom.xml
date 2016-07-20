@@ -28,8 +28,7 @@ governing permissions and limitations under the License. -->
     </description>
 
     <properties>
-        <elasticsearch.plugin.classname>org.elasticsearch.plugin.cloud.azure.CloudAzurePlugin
-        </elasticsearch.plugin.classname>
+        <elasticsearch.plugin.classname>org.elasticsearch.plugin.cloud.azure.CloudAzurePlugin</elasticsearch.plugin.classname>
         <tests.jvms>1</tests.jvms>
         <tests.rest.suite>cloud_azure</tests.rest.suite>
         <tests.rest.load_packaged>false</tests.rest.load_packaged>
