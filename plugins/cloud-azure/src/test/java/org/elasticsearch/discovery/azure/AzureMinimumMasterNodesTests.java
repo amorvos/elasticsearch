@@ -43,7 +43,6 @@ import static org.hamcrest.Matchers.nullValue;
 @AwaitsFix(bugUrl = "https://github.com/elastic/elasticsearch-cloud-azure/issues/89")
 public class AzureMinimumMasterNodesTests extends AbstractAzureComputeServiceTestCase {
 
-
     public AzureMinimumMasterNodesTests() {
         super(AzureComputeServiceTwoNodesMock.TestPlugin.class);
     }

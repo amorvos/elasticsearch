@@ -19,22 +19,11 @@
 
 package org.elasticsearch.cloud.azure;
 
-import com.microsoft.aad.adal4j.AuthenticationResult;
-import com.microsoft.azure.management.network.models.*;
-import com.microsoft.azure.utility.AuthHelper;
 import com.microsoft.windowsazure.Configuration;
-import com.microsoft.windowsazure.management.configuration.ManagementConfiguration;
 import org.elasticsearch.cloud.azure.management.AzureComputeServiceAbstractMock;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.plugins.Plugin;
-
-import java.net.InetAddress;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Mock Azure API with a single started node
@@ -70,23 +59,6 @@ public class AzureComputeServiceSimpleMock extends AzureComputeServiceAbstractMo
 
     @Override
     public Configuration getConfiguration() {
-        try {
-            AuthenticationResult authRes = AuthHelper.getAccessTokenFromServicePrincipalCredentials(
-                    Azure.ENDPOINT,
-                    Azure.AUTH_ENDPOINT,
-                    settings.get(Management.TENANT_ID),
-                    settings.get(Management.APP_ID),
-                    settings.get(Management.APP_SECRET));
-            return ManagementConfiguration.configure(
-                    null,
-                    (URI) null,
-                    settings.get(Management.SUBSCRIPTION_ID), // subscription id
-                    authRes.getAccessToken()
-            );
-        } catch (Exception e) {
-            logger.error("can not start azure client: {}", e.getMessage());
-
-        }
         return null;
     }
 }

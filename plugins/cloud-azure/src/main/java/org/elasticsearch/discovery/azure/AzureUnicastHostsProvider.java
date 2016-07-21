@@ -102,7 +102,7 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
             tmpHostType = HostType.PRIVATE_IP;
         }
         this.hostType = tmpHostType;
-        this.discoveryMethod = settings.get(Discovery.DISCOVERY_METHOD, AzureDiscovery.VNET);
+        this.discoveryMethod = Discovery.DISCOVERY_METHOD.equals(AzureDiscovery.SUBNET) ? AzureDiscovery.SUBNET : AzureDiscovery.VNET;
     }
 
     /**
@@ -138,6 +138,9 @@ public class AzureUnicastHostsProvider extends AbstractComponent implements Unic
 
         // In other case, it should be the right deployment so we can add it to the list of instances
         String rgName = settings.get(AzureComputeService.Management.RESOURCE_GROUP_NAME);
+        if (azureComputeService.getConfiguration() == null) {
+            return cachedDiscoNodes;
+        }
         NetworkResourceProviderClient networkResourceProviderClient =
                 NetworkResourceProviderService.create(azureComputeService.getConfiguration());
 
