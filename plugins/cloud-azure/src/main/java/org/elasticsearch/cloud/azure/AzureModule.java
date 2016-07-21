@@ -55,7 +55,7 @@ public class AzureModule extends AbstractModule {
     private Settings settings;
 
     // pkg private so it is settable by tests
-    static Class<? extends AzureComputeService> computeServiceImpl = AzureComputeServiceImpl.class;
+    public static Class<? extends AzureComputeService> computeServiceImpl = AzureComputeServiceImpl.class;
     static Class<? extends AzureStorageService> storageServiceImpl = AzureStorageServiceImpl.class;
 
     public static Class<? extends AzureComputeService> getComputeServiceImpl() {

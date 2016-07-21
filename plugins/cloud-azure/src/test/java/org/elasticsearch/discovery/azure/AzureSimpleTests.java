@@ -24,20 +24,24 @@ import org.elasticsearch.cloud.azure.management.AzureComputeService;
 import org.elasticsearch.cloud.azure.management.AzureComputeService.Discovery;
 import org.elasticsearch.cloud.azure.management.AzureComputeService.Management;
 import org.elasticsearch.cloud.azure.AzureComputeServiceSimpleMock;
+import org.elasticsearch.cloud.azure.management.AzureComputeServiceImpl;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.junit.Test;
+
+import java.io.IOException;
 
 import static org.hamcrest.Matchers.notNullValue;
 
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.TEST,
         numDataNodes = 0,
-        transportClientRatio = 0.0,
+        maxNumDataNodes = 0,
         numClientNodes = 0)
 public class AzureSimpleTests extends AbstractAzureComputeServiceTestCase {
 
+
     public AzureSimpleTests() {
-        super(AzureComputeServiceSimpleMock.TestPlugin.class);
+        super(AzureComputeServiceImpl.TestPlugin.class);
     }
 
 
@@ -79,7 +83,7 @@ public class AzureSimpleTests extends AbstractAzureComputeServiceTestCase {
     }
 
     @Test
-    public void one_node_should_run_using_wrong_settings() {
+    public void one_node_should_run_using_wrong_settings() throws IOException {
         Settings.Builder settings = Settings.settingsBuilder()
                 .put(Management.RESOURCE_GROUP_NAME, "crate-production")
                 .put(Discovery.HOST_TYPE, "private_ip")

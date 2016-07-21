@@ -26,9 +26,11 @@ import com.microsoft.azure.utility.AuthHelper;
 import com.microsoft.windowsazure.Configuration;
 import com.microsoft.windowsazure.management.configuration.ManagementConfiguration;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.cloud.azure.AzureModule;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.plugins.Plugin;
 
 import java.io.IOException;
 import java.net.URI;
@@ -37,6 +39,22 @@ import static org.elasticsearch.cloud.azure.management.AzureComputeService.Manag
 
 public class AzureComputeServiceImpl extends AbstractLifecycleComponent<AzureComputeServiceImpl>
         implements AzureComputeService {
+
+    public static class TestPlugin extends Plugin {
+        @Override
+        public String name() {
+            return "mock-compute-service";
+        }
+
+        @Override
+        public String description() {
+            return "plugs in a mock compute service for testing";
+        }
+
+        public void onModule(AzureModule azureModule) {
+            azureModule.computeServiceImpl = AzureComputeServiceImpl.class;
+        }
+    }
 
     static final class Azure {
         private static final String ENDPOINT = "https://management.core.windows.net/";

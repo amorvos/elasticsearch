@@ -33,6 +33,7 @@ public abstract class AbstractAzureComputeServiceTestCase extends ESIntegTestCas
 
     private Class<? extends Plugin> mockPlugin;
 
+
     public AbstractAzureComputeServiceTestCase(Class<? extends Plugin> mockPlugin) {
         // We want to inject the Azure API Mock
         this.mockPlugin = mockPlugin;
