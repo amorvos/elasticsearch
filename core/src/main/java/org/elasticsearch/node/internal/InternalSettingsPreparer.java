@@ -196,10 +196,14 @@ public class InternalSettingsPreparer {
         try {
             List<String> names = new ArrayList<>();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, Charsets.UTF_8))) {
-                String name = reader.readLine();
-                while (name != null) {
-                    names.add(name);
-                    name = reader.readLine();
+                String line = reader.readLine();
+                while (line != null) {
+                    String[] fields = line.split("\t");
+                    if (fields.length == 0) {
+                        throw new RuntimeException("Failed to parse the names.txt. Malformed record: " + line);
+                    }
+                    names.add(fields[0]);
+                    line = reader.readLine();
                 }
             }
             int index = ThreadLocalRandom.current().nextInt(names.size());
