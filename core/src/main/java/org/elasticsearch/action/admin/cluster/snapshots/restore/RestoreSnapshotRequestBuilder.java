@@ -214,6 +214,16 @@ public class RestoreSnapshotRequestBuilder extends MasterNodeOperationRequestBui
     }
 
     /**
+     *
+     * @param checkForTemplates
+     * @return
+     */
+    public RestoreSnapshotRequestBuilder setCheckForTemplates(boolean checkForTemplates) {
+        request.checkForTemplates(checkForTemplates);
+        return this;
+    }
+
+    /**
      * If set to true the restore procedure will restore aliases
      *
      * @param restoreAliases true if aliases should be restored from the snapshot

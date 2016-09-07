@@ -73,13 +73,14 @@ public class TransportRestoreSnapshotAction extends TransportMasterNodeAction<Re
 
     @Override
     protected void masterOperation(final RestoreSnapshotRequest request, ClusterState state, final ActionListener<RestoreSnapshotResponse> listener) {
-        RestoreService.RestoreRequest restoreRequest = new RestoreService.RestoreRequest(
+        final RestoreService.RestoreRequest restoreRequest = new RestoreService.RestoreRequest(
                 "restore_snapshot[" + request.snapshot() + "]", request.repository(), request.snapshot(),
                 request.indices(), request.indicesOptions(), request.renamePattern(), request.renameReplacement(),
                 request.settings(), request.masterNodeTimeout(), request.includeGlobalState(), request.partial(), request.includeAliases(),
-                request.indexSettings(), request.ignoreIndexSettings());
+                request.checkForTemplates(), request.ignoreIndexSettings(), request.indexSettings());
 
         restoreService.restoreSnapshot(restoreRequest, new ActionListener<RestoreInfo>() {
+
             @Override
             public void onResponse(RestoreInfo restoreInfo) {
                 if (restoreInfo == null && request.waitForCompletion()) {

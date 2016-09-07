@@ -60,6 +60,7 @@ public class RestoreSnapshotRequest extends MasterNodeRequest<RestoreSnapshotReq
     private boolean includeGlobalState = true;
     private boolean partial = false;
     private boolean includeAliases = true;
+    private boolean checkForTemplates = false;
     private Settings settings = EMPTY_SETTINGS;
     private Settings indexSettings = EMPTY_SETTINGS;
     private String[] ignoreIndexSettings = Strings.EMPTY_ARRAY;
@@ -286,6 +287,21 @@ public class RestoreSnapshotRequest extends MasterNodeRequest<RestoreSnapshotReq
      */
     public RestoreSnapshotRequest partial(boolean partial) {
         this.partial = partial;
+        return this;
+    }
+
+    /**
+     *
+     */
+    public boolean checkForTemplates() {
+        return checkForTemplates;
+    }
+
+    /**
+     * Set to true to enforce presence of index templates for aliases.
+     */
+    public RestoreSnapshotRequest checkForTemplates(boolean checkForTemplates) {
+        this.checkForTemplates = checkForTemplates;
         return this;
     }
 
@@ -624,6 +640,7 @@ public class RestoreSnapshotRequest extends MasterNodeRequest<RestoreSnapshotReq
         includeGlobalState = in.readBoolean();
         partial = in.readBoolean();
         includeAliases = in.readBoolean();
+        checkForTemplates = in.readBoolean();
         settings = readSettingsFromStream(in);
         indexSettings = readSettingsFromStream(in);
         ignoreIndexSettings = in.readStringArray();
@@ -642,6 +659,7 @@ public class RestoreSnapshotRequest extends MasterNodeRequest<RestoreSnapshotReq
         out.writeBoolean(includeGlobalState);
         out.writeBoolean(partial);
         out.writeBoolean(includeAliases);
+        out.writeBoolean(checkForTemplates);
         writeSettingsToStream(settings, out);
         writeSettingsToStream(indexSettings, out);
         out.writeStringArray(ignoreIndexSettings);

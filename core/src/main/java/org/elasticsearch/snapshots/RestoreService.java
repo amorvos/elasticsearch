@@ -61,6 +61,7 @@ import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.StoreRecoveryService;
+import org.elasticsearch.indices.IndexTemplateMissingException;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -176,7 +177,7 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
             final SnapshotId snapshotId = new SnapshotId(request.repository(), request.name());
             final Snapshot snapshot = repository.readSnapshot(snapshotId);
             final List<String> filteredIndices = SnapshotUtils.filterIndices(snapshot.indices(), request.indices(), request.indicesOptions());
-            MetaData metaDataIn = repository.readSnapshotMetaData(snapshotId, snapshot, filteredIndices);
+            final MetaData metaDataIn = repository.readSnapshotMetaData(snapshotId, snapshot, filteredIndices);
 
             final MetaData metaData;
             if (snapshot.version().before(Version.V_2_0_0_beta1)) {
@@ -233,6 +234,9 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                             IndexMetaData currentIndexMetaData = currentState.metaData().index(renamedIndex);
                             IntSet ignoreShards = new IntHashSet();
                             if (currentIndexMetaData == null) {
+                                if (snapshotIndexMetaData.getAliases().size() > 0 && request.checkForTemplates()) {
+                                    verifyMatchingIndexTemplateExists(currentState, index);
+                                }
                                 // Index doesn't exist - create it and start recovery
                                 // Make sure that the index we are about to create has a validate name
                                 createIndexService.validateIndexName(renamedIndex, currentState);
@@ -316,6 +320,13 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                             ClusterState.builder(updatedState).routingTable(rt).build(),
                             "restored snapshot [" + snapshotId + "]");
                     return ClusterState.builder(updatedState).routingResult(routingResult).build();
+                }
+
+                private void verifyMatchingIndexTemplateExists(ClusterState currentState, String index) {
+                    if (!templateForIndexExistsInMetaData(index, metaDataIn) &&
+                        !templateForIndexExistsInMetaData(index, currentState.metaData())) {
+                        throw new IndexTemplateMissingException(index);
+                    }
                 }
 
                 private void checkAliasNameConflicts(Map<String, String> renamedIndices, Set<String> aliases) {
@@ -408,6 +419,18 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                     }
 
                     return builder.settings(Settings.builder().put(settingsMap)).build();
+                }
+
+                private boolean templateForIndexExistsInMetaData(String indexName, MetaData meta) {
+                    if (meta.templates() != null && meta.templates().size() > 0) {
+                        for (ObjectCursor<IndexTemplateMetaData> cursor : meta.templates().values()) {
+                            if (!cursor.value.template().equals("*") &&
+                                Regex.simpleMatch(cursor.value.template(), indexName)) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
                 }
 
                 private void restoreTemplatesMatchingRestoredIndices(MetaData.Builder mdBuilder, ClusterState currentState) {
@@ -870,14 +893,15 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
 
         final private boolean includeAliases;
 
+        final private boolean checkForTemplates;
+
         final private Settings indexSettings;
 
         final private String[] ignoreIndexSettings;
 
         /**
          * Constructs new restore request
-         *
-         * @param cause              cause for restoring the snapshot
+         *  @param cause              cause for restoring the snapshot
          * @param repository         repository name
          * @param name               snapshot name
          * @param indices            list of indices to restore
@@ -888,13 +912,14 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
          * @param masterNodeTimeout  master node timeout
          * @param includeGlobalState include global state into restore
          * @param partial            allow partial restore
-         * @param indexSettings      index settings that should be changed on restore
+         * @param checkForTemplates   verify if index templates for aliases exist in both the snapshot and the current metadata
          * @param ignoreIndexSettings index settings that shouldn't be restored
+         * @param indexSettings      index settings that should be changed on restore
          */
         public RestoreRequest(String cause, String repository, String name, String[] indices, IndicesOptions indicesOptions,
                               String renamePattern, String renameReplacement, Settings settings,
                               TimeValue masterNodeTimeout, boolean includeGlobalState, boolean partial, boolean includeAliases,
-                              Settings indexSettings, String[] ignoreIndexSettings ) {
+                              boolean checkForTemplates, String[] ignoreIndexSettings, Settings indexSettings) {
             this.cause = cause;
             this.name = name;
             this.repository = repository;
@@ -907,9 +932,9 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
             this.includeGlobalState = includeGlobalState;
             this.partial = partial;
             this.includeAliases = includeAliases;
+            this.checkForTemplates = checkForTemplates;
             this.indexSettings = indexSettings;
             this.ignoreIndexSettings = ignoreIndexSettings;
-
         }
 
         /**
@@ -1037,6 +1062,14 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
          */
         public TimeValue masterNodeTimeout() {
             return masterNodeTimeout;
+        }
+
+        /**
+         * Return whether the presence of the index templates should be verified.
+         * @return check for templates
+         */
+        public boolean checkForTemplates() {
+            return checkForTemplates;
         }
 
     }
