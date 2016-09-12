@@ -19,6 +19,7 @@
 package org.elasticsearch.search.suggest.phrase;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Splitter;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.Tokenizer;
@@ -47,6 +48,7 @@ import org.junit.Test;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -56,9 +58,10 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
     private final BytesRef space = new BytesRef(" ");
     private final BytesRef preTag = new BytesRef("<em>");
     private final BytesRef postTag = new BytesRef("</em>");
+    private static final Splitter TAB_SPLITTER = Splitter.on("\t");
 
     @Test
-    public void testMarvelHeros() throws IOException {
+    public void testSummits() throws IOException {
         RAMDirectory dir = new RAMDirectory();
         Map<String, Analyzer> mapping = new HashMap<>();
         mapping.put("body_ngram", new Analyzer() {
@@ -89,69 +92,70 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
         BufferedReader reader = new BufferedReader(new InputStreamReader(NoisyChannelSpellCheckerTests.class.getResourceAsStream("/config/names.txt"), Charsets.UTF_8));
         String line = null;
         while ((line = reader.readLine()) != null) {
+            List<String> parts = TAB_SPLITTER.splitToList(line);
             Document doc = new Document();
-            doc.add(new Field("body", line, TextField.TYPE_NOT_STORED));
-            doc.add(new Field("body_ngram", line, TextField.TYPE_NOT_STORED));
+            doc.add(new Field("body", parts.get(0), TextField.TYPE_NOT_STORED));
+            doc.add(new Field("body_ngram", parts.get(0), TextField.TYPE_NOT_STORED));
             writer.addDocument(doc);
         }
 
         DirectoryReader ir = DirectoryReader.open(writer, false);
         WordScorer wordScorer = new LaplaceScorer(ir, MultiFields.getTerms(ir, "body_ngram"), "body_ngram", 0.95d, new BytesRef(" "), 0.5f);
-        
+
         NoisyChannelSpellChecker suggester = new NoisyChannelSpellChecker();
         DirectSpellChecker spellchecker = new DirectSpellChecker();
         spellchecker.setMinQueryLength(1);
         DirectCandidateGenerator generator = new DirectCandidateGenerator(spellchecker, "body", SuggestMode.SUGGEST_MORE_POPULAR, ir, 0.95, 5);
-        Result result = suggester.getCorrections(wrapper, new BytesRef("american ame"), generator, 1, 1, ir, "body", wordScorer, 1, 2);
+        Result result = suggester.getCorrections(wrapper, new BytesRef("mont blaac"), generator, 1, 1, ir, "body", wordScorer, 1, 2);
         Correction[] corrections = result.corrections;
         assertThat(corrections.length, equalTo(1));
-        assertThat(corrections[0].join(space).utf8ToString(), equalTo("american ace"));
-        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("american <em>ace</em>"));
+        assertThat(corrections[0].join(space).utf8ToString(), equalTo("mont blanc"));
+        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("mont <em>blanc</em>"));
         assertThat(result.cutoffScore, greaterThan(0d));
-        
-        result = suggester.getCorrections(wrapper, new BytesRef("american ame"), generator, 1, 1, ir, "body", wordScorer, 0, 1);
+
+        result = suggester.getCorrections(wrapper, new BytesRef("mont blaac"), generator, 1, 1, ir, "body", wordScorer, 0, 1);
         corrections = result.corrections;
         assertThat(corrections.length, equalTo(1));
-        assertThat(corrections[0].join(space).utf8ToString(), equalTo("american ame"));
-        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("american ame"));
+        assertThat(corrections[0].join(space).utf8ToString(), equalTo("mont blaac"));
+        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("mont blaac"));
         assertThat(result.cutoffScore, equalTo(Double.MIN_VALUE));
 
         suggester = new NoisyChannelSpellChecker(0.85);
         wordScorer = new LaplaceScorer(ir, MultiFields.getTerms(ir, "body_ngram"), "body_ngram", 0.85d, new BytesRef(" "), 0.5f);
-        corrections = suggester.getCorrections(wrapper, new BytesRef("Xor the Got-Jewel"), generator, 0.5f, 4, ir, "body", wordScorer, 0, 2).corrections;
+        corrections = suggester.getCorrections(wrapper, new BytesRef("Aiguill de Trioled"), generator, 0.5f, 4, ir, "body", wordScorer, 0, 2).corrections;
         assertThat(corrections.length, equalTo(4));
-        assertThat(corrections[0].join(space).utf8ToString(), equalTo("xorr the god jewel"));
-        assertThat(corrections[1].join(space).utf8ToString(), equalTo("xor the god jewel"));
-        assertThat(corrections[2].join(space).utf8ToString(), equalTo("xorn the god jewel"));
-        assertThat(corrections[3].join(space).utf8ToString(), equalTo("xorr the got jewel"));
-        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("<em>xorr</em> the <em>god</em> jewel"));
-        assertThat(corrections[1].join(space, preTag, postTag).utf8ToString(), equalTo("xor the <em>god</em> jewel"));
-        assertThat(corrections[2].join(space, preTag, postTag).utf8ToString(), equalTo("<em>xorn</em> the <em>god</em> jewel"));
-        assertThat(corrections[3].join(space, preTag, postTag).utf8ToString(), equalTo("<em>xorr</em> the got jewel"));
-        
-        corrections = suggester.getCorrections(wrapper, new BytesRef("Xor the Got-Jewel"), generator, 0.5f, 4, ir, "body", wordScorer, 1, 2).corrections;
+        assertThat(corrections[0].join(space).utf8ToString(), equalTo("aiguille de triolet"));
+        assertThat(corrections[1].join(space).utf8ToString(), equalTo("aiguille de trioled"));
+        assertThat(corrections[2].join(space).utf8ToString(), equalTo("aiguilles de triolet"));
+        assertThat(corrections[3].join(space).utf8ToString(), equalTo("aiguill de triolet"));
+        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("<em>aiguille</em> de <em>triolet</em>"));
+        assertThat(corrections[1].join(space, preTag, postTag).utf8ToString(), equalTo("<em>aiguille</em> de trioled"));
+        assertThat(corrections[2].join(space, preTag, postTag).utf8ToString(), equalTo("<em>aiguilles</em> de <em>triolet</em>"));
+        assertThat(corrections[3].join(space, preTag, postTag).utf8ToString(), equalTo("aiguill de <em>triolet</em>"));
+
+        corrections = suggester.getCorrections(wrapper, new BytesRef("Aiguill de Trioled"), generator, 0.5f, 4, ir, "body", wordScorer, 1, 2).corrections;
         assertThat(corrections.length, equalTo(4));
-        assertThat(corrections[0].join(space).utf8ToString(), equalTo("xorr the god jewel"));
-        assertThat(corrections[1].join(space).utf8ToString(), equalTo("xor the god jewel"));
-        assertThat(corrections[2].join(space).utf8ToString(), equalTo("xorn the god jewel"));
-        assertThat(corrections[3].join(space).utf8ToString(), equalTo("xorr the got jewel"));
-        
+        assertThat(corrections[0].join(space).utf8ToString(), equalTo("aiguille de triolet"));
+        assertThat(corrections[1].join(space).utf8ToString(), equalTo("aiguille de trioled"));
+        assertThat(corrections[2].join(space).utf8ToString(), equalTo("aiguilles de triolet"));
+        assertThat(corrections[3].join(space).utf8ToString(), equalTo("aiguill de triolet"));
+
         // Test some of the highlighting corner cases
         suggester = new NoisyChannelSpellChecker(0.85);
         wordScorer = new LaplaceScorer(ir, MultiFields.getTerms(ir, "body_ngram"), "body_ngram", 0.85d, new BytesRef(" "), 0.5f);
-        corrections = suggester.getCorrections(wrapper, new BytesRef("Xor teh Got-Jewel"), generator, 4f, 4, ir, "body", wordScorer, 1, 2).corrections;
+        corrections = suggester.getCorrections(wrapper, new BytesRef("Aiguill de Trioled"), generator, 4f, 4, ir, "body", wordScorer, 1, 2).corrections;
         assertThat(corrections.length, equalTo(4));
-        assertThat(corrections[0].join(space).utf8ToString(), equalTo("xorr the god jewel"));
-        assertThat(corrections[1].join(space).utf8ToString(), equalTo("xor the god jewel"));
-        assertThat(corrections[2].join(space).utf8ToString(), equalTo("xorn the god jewel"));
-        assertThat(corrections[3].join(space).utf8ToString(), equalTo("xor teh god jewel"));
-        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("<em>xorr the god</em> jewel"));
-        assertThat(corrections[1].join(space, preTag, postTag).utf8ToString(), equalTo("xor <em>the god</em> jewel"));
-        assertThat(corrections[2].join(space, preTag, postTag).utf8ToString(), equalTo("<em>xorn the god</em> jewel"));
-        assertThat(corrections[3].join(space, preTag, postTag).utf8ToString(), equalTo("xor teh <em>god</em> jewel"));
+        assertThat(corrections[0].join(space).utf8ToString(), equalTo("aiguille de triolet"));
+        assertThat(corrections[1].join(space).utf8ToString(), equalTo("aiguille de trioled"));
+        assertThat(corrections[2].join(space).utf8ToString(), equalTo("aiguilles de triolet"));
+        assertThat(corrections[3].join(space).utf8ToString(), equalTo("aiguill de triolet"));
+        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("<em>aiguille</em> de <em>triolet</em>"));
+        assertThat(corrections[1].join(space, preTag, postTag).utf8ToString(), equalTo("<em>aiguille</em> de trioled"));
+        assertThat(corrections[2].join(space, preTag, postTag).utf8ToString(), equalTo("<em>aiguilles</em> de <em>triolet</em>"));
+        assertThat(corrections[3].join(space, preTag, postTag).utf8ToString(), equalTo("aiguill de <em>triolet</em>"));
 
         // test synonyms
-        
+
         Analyzer analyzer = new Analyzer() {
 
             @Override
@@ -160,7 +164,7 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
                 TokenFilter filter = new LowerCaseFilter(t);
                 try {
                     SolrSynonymParser parser = new SolrSynonymParser(true, false, new WhitespaceAnalyzer());
-                    ((SolrSynonymParser) parser).parse(new StringReader("usa => usa, america, american\nursa => usa, america, american"));
+                    ((SolrSynonymParser) parser).parse(new StringReader("piz => piz, bernina"));
                     filter = new SynonymFilter(filter, parser.build(), true);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -168,30 +172,30 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
                 return new TokenStreamComponents(t, filter);
             }
         };
-        
+
         spellchecker.setAccuracy(0.0f);
         spellchecker.setMinPrefix(1);
         spellchecker.setMinQueryLength(1);
         suggester = new NoisyChannelSpellChecker(0.85);
         wordScorer = new LaplaceScorer(ir, MultiFields.getTerms(ir, "body_ngram"), "body_ngram", 0.85d, new BytesRef(" "), 0.5f);
-        corrections = suggester.getCorrections(analyzer, new BytesRef("captian usa"), generator, 2, 4, ir, "body", wordScorer, 1, 2).corrections;
-        assertThat(corrections[0].join(space).utf8ToString(), equalTo("captain america"));
-        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("<em>captain america</em>"));
-        
+        corrections = suggester.getCorrections(analyzer, new BytesRef("piz berina"), generator, 2, 4, ir, "body", wordScorer, 1, 2).corrections;
+        assertThat(corrections[0].join(space).utf8ToString(), equalTo("piz bernina"));
+        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("piz <em>bernina</em>"));
+
         generator = new DirectCandidateGenerator(spellchecker, "body", SuggestMode.SUGGEST_MORE_POPULAR, ir, 0.85, 10, null, analyzer, MultiFields.getTerms(ir, "body"));
-        corrections = suggester.getCorrections(analyzer, new BytesRef("captian usw"), generator, 2, 4, ir, "body", wordScorer, 1, 2).corrections;
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("captain america"));
-        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("<em>captain america</em>"));
+        corrections = suggester.getCorrections(analyzer, new BytesRef("paz berina"), generator, 2, 4, ir, "body", wordScorer, 1, 2).corrections;
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("piz bernina"));
+        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("<em>piz bernina</em>"));
 
         // Make sure that user supplied text is not marked as highlighted in the presence of a synonym filter
         generator = new DirectCandidateGenerator(spellchecker, "body", SuggestMode.SUGGEST_MORE_POPULAR, ir, 0.85, 10, null, analyzer, MultiFields.getTerms(ir, "body"));
-        corrections = suggester.getCorrections(analyzer, new BytesRef("captain usw"), generator, 2, 4, ir, "body", wordScorer, 1, 2).corrections;
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("captain america"));
-        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("captain <em>america</em>"));
+        corrections = suggester.getCorrections(analyzer, new BytesRef("piz berina"), generator, 2, 4, ir, "body", wordScorer, 1, 2).corrections;
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("piz bernina"));
+        assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("piz <em>bernina</em>"));
     }
-    
+
     @Test
-    public void testMarvelHerosMultiGenerator() throws IOException {
+    public void testSummitsMultiGenerator() throws IOException {
         RAMDirectory dir = new RAMDirectory();
         Map<String, Analyzer> mapping = new HashMap<>();
         mapping.put("body_ngram", new Analyzer() {
@@ -231,10 +235,11 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
         BufferedReader reader = new BufferedReader(new InputStreamReader(NoisyChannelSpellCheckerTests.class.getResourceAsStream("/config/names.txt"), Charsets.UTF_8));
         String line = null;
         while ((line = reader.readLine()) != null) {
+            List<String> parts = TAB_SPLITTER.splitToList(line);
             Document doc = new Document();
-            doc.add(new Field("body", line, TextField.TYPE_NOT_STORED));
-            doc.add(new Field("body_reverse", line, TextField.TYPE_NOT_STORED));
-            doc.add(new Field("body_ngram", line, TextField.TYPE_NOT_STORED));
+            doc.add(new Field("body", parts.get(0), TextField.TYPE_NOT_STORED));
+            doc.add(new Field("body_reverse", parts.get(0), TextField.TYPE_NOT_STORED));
+            doc.add(new Field("body_ngram", parts.get(0), TextField.TYPE_NOT_STORED));
             writer.addDocument(doc);
         }
 
@@ -246,48 +251,47 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
         DirectCandidateGenerator forward = new DirectCandidateGenerator(spellchecker, "body", SuggestMode.SUGGEST_ALWAYS, ir, 0.95, 10);
         DirectCandidateGenerator reverse = new DirectCandidateGenerator(spellchecker, "body_reverse", SuggestMode.SUGGEST_ALWAYS, ir, 0.95, 10, wrapper, wrapper,  MultiFields.getTerms(ir, "body_reverse"));
         CandidateGenerator generator = new MultiCandidateGeneratorWrapper(10, forward, reverse);
-        
-        Correction[] corrections = suggester.getCorrections(wrapper, new BytesRef("american cae"), generator, 1, 1, ir, "body", wordScorer, 1, 2).corrections;
+
+        Correction[] corrections = suggester.getCorrections(wrapper, new BytesRef("mont blacn"), generator, 1, 1, ir, "body", wordScorer, 1, 2).corrections;
         assertThat(corrections.length, equalTo(1));
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("american ace"));
-        
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("mont blanc"));
+
         generator = new MultiCandidateGeneratorWrapper(5, forward, reverse);
-        corrections = suggester.getCorrections(wrapper, new BytesRef("american ame"), generator, 1, 1, ir, "body", wordScorer, 1, 2).corrections;
+        corrections = suggester.getCorrections(wrapper, new BytesRef("mont blaac"), generator, 1, 1, ir, "body", wordScorer, 1, 2).corrections;
         assertThat(corrections.length, equalTo(1));
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("american ace"));
-        
-        corrections = suggester.getCorrections(wrapper, new BytesRef("american cae"), forward, 1, 1, ir, "body", wordScorer, 1, 2).corrections;
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("mont blanc"));
+
+        corrections = suggester.getCorrections(wrapper, new BytesRef("mont lacbn"), forward, 1, 1, ir, "body", wordScorer, 1, 2).corrections;
         assertThat(corrections.length, equalTo(0)); // only use forward with constant prefix
-        
-        corrections = suggester.getCorrections(wrapper, new BytesRef("america cae"), generator, 2, 1, ir, "body", wordScorer, 1, 2).corrections;
+
+        corrections = suggester.getCorrections(wrapper, new BytesRef("mont blnac"), generator, 2, 1, ir, "body", wordScorer, 1, 2).corrections;
         assertThat(corrections.length, equalTo(1));
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("american ace"));
-        
-        corrections = suggester.getCorrections(wrapper, new BytesRef("Zorr the Got-Jewel"), generator, 0.5f, 4, ir, "body", wordScorer, 0, 2).corrections;
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("mont blanc"));
+        corrections = suggester.getCorrections(wrapper, new BytesRef("Aaguille de Triolet"), generator, 0.5f, 4, ir, "body", wordScorer, 0, 2).corrections;
         assertThat(corrections.length, equalTo(4));
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("xorr the god jewel"));
-        assertThat(corrections[1].join(new BytesRef(" ")).utf8ToString(), equalTo("zorr the god jewel"));
-        assertThat(corrections[2].join(new BytesRef(" ")).utf8ToString(), equalTo("four the god jewel"));
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguille de triolet"));
+        assertThat(corrections[1].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguille de triboulet"));
+        assertThat(corrections[2].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguilles de triolet"));
 
 
-        corrections = suggester.getCorrections(wrapper, new BytesRef("Zorr the Got-Jewel"), generator, 0.5f, 1, ir, "body", wordScorer, 1.5f, 2).corrections;
+        corrections = suggester.getCorrections(wrapper, new BytesRef("Aaguille de Triolet"), generator, 0.5f, 1, ir, "body", wordScorer, 1.5f, 2).corrections;
         assertThat(corrections.length, equalTo(1));
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("xorr the god jewel"));
-        
-        corrections = suggester.getCorrections(wrapper, new BytesRef("Xor the Got-Jewel"), generator, 0.5f, 1, ir, "body", wordScorer, 1.5f, 2).corrections;
-        assertThat(corrections.length, equalTo(1));
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("xorr the god jewel"));
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguille de triolet"));
 
-        // Test a special case where one of the suggest term is unchanged by the postFilter, 'II' here is unchanged by the reverse analyzer.  
-        corrections = suggester.getCorrections(wrapper, new BytesRef("Quazar II"), generator, 1, 1, ir, "body", wordScorer, 1, 2).corrections;
+        corrections = suggester.getCorrections(wrapper, new BytesRef("Aiguill de Triolet"), generator, 0.5f, 1, ir, "body", wordScorer, 1.5f, 2).corrections;
         assertThat(corrections.length, equalTo(1));
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("quasar ii"));
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguille de triolet"));
+
+        // Test a special case where one of the suggest term is unchanged by the postFilter, 'II' here is unchanged by the reverse analyzer.
+        corrections = suggester.getCorrections(wrapper, new BytesRef("Mont Blaac"), generator, 1, 1, ir, "body", wordScorer, 1, 2).corrections;
+        assertThat(corrections.length, equalTo(1));
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("mont blanc"));
     }
 
     @Test
-    public void testMarvelHerosTrigram() throws IOException {
-        
-      
+    public void testSummitsTrigram() throws IOException {
+
+
         RAMDirectory dir = new RAMDirectory();
         Map<String, Analyzer> mapping = new HashMap<>();
         mapping.put("body_ngram", new Analyzer() {
@@ -331,40 +335,39 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
         DirectSpellChecker spellchecker = new DirectSpellChecker();
         spellchecker.setMinQueryLength(1);
         DirectCandidateGenerator generator = new DirectCandidateGenerator(spellchecker, "body", SuggestMode.SUGGEST_MORE_POPULAR, ir, 0.95, 5);
-        Correction[] corrections = suggester.getCorrections(wrapper, new BytesRef("american ame"), generator, 1, 1, ir, "body", wordScorer, 1, 3).corrections;
+        Correction[] corrections = suggester.getCorrections(wrapper, new BytesRef("mont blaac"), generator, 1, 1, ir, "body", wordScorer, 1, 3).corrections;
         assertThat(corrections.length, equalTo(1));
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("american ace"));
-        
-        corrections = suggester.getCorrections(wrapper, new BytesRef("american ame"), generator, 1, 1, ir, "body", wordScorer, 1, 1).corrections;
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("mont blanc"));
+
+        corrections = suggester.getCorrections(wrapper, new BytesRef("mont blaac"), generator, 1, 1, ir, "body", wordScorer, 1, 1).corrections;
         assertThat(corrections.length, equalTo(0));
-//        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("american ape"));
-        
+
         wordScorer = new LinearInterpoatingScorer(ir, MultiFields.getTerms(ir, "body_ngram"), "body_ngram", 0.85d, new BytesRef(" "), 0.5, 0.4, 0.1);
-        corrections = suggester.getCorrections(wrapper, new BytesRef("Xor the Got-Jewel"), generator, 0.5f, 4, ir, "body", wordScorer, 0, 3).corrections;
+        corrections = suggester.getCorrections(wrapper, new BytesRef("Aiguill de Trioled"), generator, 0.5f, 4, ir, "body", wordScorer, 0, 3).corrections;
         assertThat(corrections.length, equalTo(4));
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("xorr the god jewel"));
-        assertThat(corrections[1].join(new BytesRef(" ")).utf8ToString(), equalTo("xor the god jewel"));
-        assertThat(corrections[2].join(new BytesRef(" ")).utf8ToString(), equalTo("xorn the god jewel"));
-        assertThat(corrections[3].join(new BytesRef(" ")).utf8ToString(), equalTo("xorr the got jewel"));
-        
-      
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguille de triolet"));
+        assertThat(corrections[1].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguilles de triolet"));
+        assertThat(corrections[2].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguille de trioled"));
+        assertThat(corrections[3].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguilles de trioled"));
 
-        
-        corrections = suggester.getCorrections(wrapper, new BytesRef("Xor the Got-Jewel"), generator, 0.5f, 4, ir, "body", wordScorer, 1, 3).corrections;
+
+
+
+        corrections = suggester.getCorrections(wrapper, new BytesRef("Aiguill de Trioled"), generator, 0.5f, 4, ir, "body", wordScorer, 1, 3).corrections;
         assertThat(corrections.length, equalTo(4));
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("xorr the god jewel"));
-        assertThat(corrections[1].join(new BytesRef(" ")).utf8ToString(), equalTo("xor the god jewel"));
-        assertThat(corrections[2].join(new BytesRef(" ")).utf8ToString(), equalTo("xorn the god jewel"));
-        assertThat(corrections[3].join(new BytesRef(" ")).utf8ToString(), equalTo("xorr the got jewel"));
-        
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguille de triolet"));
+        assertThat(corrections[1].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguilles de triolet"));
+        assertThat(corrections[2].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguille de trioled"));
+        assertThat(corrections[3].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguilles de trioled"));
 
-        corrections = suggester.getCorrections(wrapper, new BytesRef("Xor the Got-Jewel"), generator, 0.5f, 1, ir, "body", wordScorer, 100, 3).corrections;
+
+        corrections = suggester.getCorrections(wrapper, new BytesRef("Aiguill de Trioled"), generator, 0.5f, 1, ir, "body", wordScorer, 100, 3).corrections;
         assertThat(corrections.length, equalTo(1));
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("xorr the god jewel"));
-        
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguille de triolet"));
+
 
         // test synonyms
-        
+
         Analyzer analyzer = new Analyzer() {
 
             @Override
@@ -373,7 +376,7 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
                 TokenFilter filter = new LowerCaseFilter(t);
                 try {
                     SolrSynonymParser parser = new SolrSynonymParser(true, false, new WhitespaceAnalyzer());
-                    ((SolrSynonymParser) parser).parse(new StringReader("usa => usa, america, american\nursa => usa, america, american"));
+                    ((SolrSynonymParser) parser).parse(new StringReader("piz => piz, bernina"));
                     filter = new SynonymFilter(filter, parser.build(), true);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -381,24 +384,24 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
                 return new TokenStreamComponents(t, filter);
             }
         };
-        
+
         spellchecker.setAccuracy(0.0f);
         spellchecker.setMinPrefix(1);
         spellchecker.setMinQueryLength(1);
         suggester = new NoisyChannelSpellChecker(0.95);
         wordScorer = new LinearInterpoatingScorer(ir, MultiFields.getTerms(ir, "body_ngram"), "body_ngram", 0.95d, new BytesRef(" "),  0.5, 0.4, 0.1);
-        corrections = suggester.getCorrections(analyzer, new BytesRef("captian usa"), generator, 2, 4, ir, "body", wordScorer, 1, 3).corrections;
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("captain america"));
-        
+        corrections = suggester.getCorrections(analyzer, new BytesRef("piz berina"), generator, 2, 4, ir, "body", wordScorer, 1, 3).corrections;
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("piz bernina"));
+
         generator = new DirectCandidateGenerator(spellchecker, "body", SuggestMode.SUGGEST_MORE_POPULAR, ir, 0.95, 10, null, analyzer, MultiFields.getTerms(ir, "body"));
-        corrections = suggester.getCorrections(analyzer, new BytesRef("captian usw"), generator, 2, 4, ir, "body", wordScorer, 1, 3).corrections;
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("captain america"));
-        
-        
+        corrections = suggester.getCorrections(analyzer, new BytesRef("paz bernina"), generator, 2, 4, ir, "body", wordScorer, 1, 3).corrections;
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("piz bernina"));
+
+
         wordScorer = new StupidBackoffScorer(ir, MultiFields.getTerms(ir, "body_ngram"), "body_ngram", 0.85d, new BytesRef(" "), 0.4);
-        corrections = suggester.getCorrections(wrapper, new BytesRef("Xor the Got-Jewel"), generator, 0.5f, 2, ir, "body", wordScorer, 0, 3).corrections;
+        corrections = suggester.getCorrections(wrapper, new BytesRef("Aiguill de Trioled"), generator, 0.5f, 2, ir, "body", wordScorer, 0, 3).corrections;
         assertThat(corrections.length, equalTo(2));
-        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("xorr the god jewel"));
-        assertThat(corrections[1].join(new BytesRef(" ")).utf8ToString(), equalTo("xor the god jewel"));
+        assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguille de triolet"));
+        assertThat(corrections[1].join(new BytesRef(" ")).utf8ToString(), equalTo("aiguilles de triolet"));
     }
 }
