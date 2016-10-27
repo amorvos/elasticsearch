@@ -31,30 +31,15 @@ import org.elasticsearch.test.ESTestCase;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.script.ScriptService.ScriptType.INLINE;
 import static org.elasticsearch.script.mustache.MustacheScriptEngineService.CONTENT_TYPE_PARAM;
-import static org.elasticsearch.script.mustache.MustacheScriptEngineService.JSON_CONTENT_TYPE;
 import static org.elasticsearch.script.mustache.MustacheScriptEngineService.PLAIN_TEXT_CONTENT_TYPE;
-import static org.hamcrest.Matchers.both;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 
 public class MustacheTests extends ESTestCase {
 
@@ -149,7 +134,6 @@ public class MustacheTests extends ESTestCase {
 
     public void testEscaping() {
         // json string escaping enabled:
-        Map<String, String> params = randomBoolean() ? Collections.EMPTY_MAP: Collections.<String, Object>singletonMap(CONTENT_TYPE_PARAM, JSON_CONTENT_TYPE);
         Mustache mustache = (Mustache) engine.compile("{ \"field1\": \"{{value}}\"}", Collections.EMPTY_MAP);
         CompiledScript compiledScript = new CompiledScript(INLINE, "name", "mustache", mustache);
         ExecutableScript executableScript = engine.executable(compiledScript, Collections.<String, Object>singletonMap("value", "a \"value\""));
