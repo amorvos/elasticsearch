@@ -21,14 +21,9 @@ package org.elasticsearch.common.util.concurrent;
 
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.Transports;
 
 import java.util.Objects;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 public abstract class BaseFuture<V> implements Future<V> {
@@ -60,7 +55,9 @@ public abstract class BaseFuture<V> implements Future<V> {
     public V get(long timeout, TimeUnit unit) throws InterruptedException,
             TimeoutException, ExecutionException {
         assert timeout <= 0 ||
-            (Transports.assertNotTransportThread(BLOCKING_OP_REASON) && ThreadPool.assertNotScheduleThread(BLOCKING_OP_REASON));
+               (// CRATE CHANGE blobs require blocking operations:
+                //Transports.assertNotTransportThread(BLOCKING_OP_REASON) &&
+                ThreadPool.assertNotScheduleThread(BLOCKING_OP_REASON));
         return sync.get(unit.toNanos(timeout));
     }
 
@@ -82,7 +79,9 @@ public abstract class BaseFuture<V> implements Future<V> {
      */
     @Override
     public V get() throws InterruptedException, ExecutionException {
-        assert Transports.assertNotTransportThread(BLOCKING_OP_REASON) && ThreadPool.assertNotScheduleThread(BLOCKING_OP_REASON);
+        // CRATE CHANGE blobs require blocking operations:
+        // Transports.assertNotTransportThread(BLOCKING_OP_REASON) &&
+        assert ThreadPool.assertNotScheduleThread(BLOCKING_OP_REASON);
         return sync.get();
     }
 

@@ -19,10 +19,13 @@
 
 package org.elasticsearch.indices.recovery;
 
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.RateLimiter;
 import org.apache.lucene.store.RateLimiter.SimpleRateLimiter;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
@@ -30,6 +33,12 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.shard.IndexShard;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class RecoverySettings extends AbstractComponent {
 
@@ -74,6 +83,9 @@ public class RecoverySettings extends AbstractComponent {
             Property.Dynamic, Property.NodeScope);
 
     public static final ByteSizeValue DEFAULT_CHUNK_SIZE = new ByteSizeValue(512, ByteSizeUnit.KB);
+
+    // CRATE_PATCH: used to register BlobRecoverySourceHandler
+    private final List<RecoverySourceHandlerProvider> recoverySourceHandlerProviders = new ArrayList<>();
 
     private volatile ByteSizeValue maxBytesPerSec;
     private volatile SimpleRateLimiter rateLimiter;
@@ -180,4 +192,26 @@ public class RecoverySettings extends AbstractComponent {
             rateLimiter = new SimpleRateLimiter(maxBytesPerSec.getMbFrac());
         }
     }
+
+    @Nullable
+    RecoverySourceHandler getCustomRecoverySourceHandler(IndexShard shard,
+                                                         RemoteRecoveryTargetHandler recoveryTarget,
+                                                         StartRecoveryRequest request,
+                                                         Supplier<Long> currentClusterStateVersionSupplier,
+                                                         Function<String, Releasable> delayNewRecoveries,
+                                                         Logger logger){
+        for (RecoverySourceHandlerProvider recoverySourceHandlerProvider : recoverySourceHandlerProviders) {
+            RecoverySourceHandler handler = recoverySourceHandlerProvider.get(
+                shard, request, recoveryTarget, delayNewRecoveries, currentClusterStateVersionSupplier, logger);
+            if (handler != null) {
+                return handler;
+            }
+        }
+        return null;
+    }
+
+    public void registerRecoverySourceHandlerProvider(RecoverySourceHandlerProvider provider){
+        recoverySourceHandlerProviders.add(provider);
+    }
+
 }

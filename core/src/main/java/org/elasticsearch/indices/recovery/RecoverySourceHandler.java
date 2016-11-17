@@ -86,7 +86,7 @@ public class RecoverySourceHandler {
 
     protected final RecoveryResponse response;
 
-    private final CancellableThreads cancellableThreads = new CancellableThreads() {
+    protected final CancellableThreads cancellableThreads = new CancellableThreads() {
         @Override
         protected void onCancel(String reason, @Nullable Exception suppressedException) {
             RuntimeException e;
@@ -174,6 +174,11 @@ public class RecoverySourceHandler {
         return response;
     }
 
+    // CRATE_PATCH: used by BlobRecoveryHandler
+    protected void phase1Hook() throws Exception {
+
+    }
+
     /**
      * Perform phase1 of the recovery operations. Once this {@link IndexCommit}
      * snapshot has been performed no commit operations (files being fsync'd)
@@ -192,6 +197,9 @@ public class RecoverySourceHandler {
         final Store store = shard.store();
         store.incRef();
         try {
+            // CRATE_PATCH
+            phase1Hook();
+
             StopWatch stopWatch = new StopWatch().start();
             final Store.MetadataSnapshot recoverySourceMetadata;
             try {
