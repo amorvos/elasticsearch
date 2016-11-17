@@ -604,6 +604,19 @@ public class Node implements Closeable {
         final TribeService tribeService = injector.getInstance(TribeService.class);
         tribeService.start();
 
+        // CRATE_PATCH: add http publish address to the discovery node
+        String httpAddress;
+        if (NetworkModule.HTTP_ENABLED.get(settings)) {
+            HttpServerTransport httpServer = injector.getInstance(HttpServerTransport.class);
+            httpServer.start();
+            httpAddress = httpServer.info().address().publishAddress().getHost() + ":" + httpServer.info().address().publishAddress().getPort();
+
+        } else  {
+            httpAddress = null;
+        }
+
+        localNodeFactory.setHttpAddress(httpAddress);
+
         // Start the transport service now so the publish address will be added to the local disco node in ClusterService
         TransportService transportService = injector.getInstance(TransportService.class);
         transportService.getTaskManager().setTaskResultsService(injector.getInstance(TaskResultsService.class));
@@ -611,7 +624,9 @@ public class Node implements Closeable {
         validateNodeBeforeAcceptingRequests(settings, transportService.boundAddress(), pluginsService.filterPlugins(Plugin.class).stream()
             .flatMap(p -> p.getBootstrapChecks().stream()).collect(Collectors.toList()));
 
+        transportService.setHttpAddress(httpAddress);
         clusterService.addStateApplier(transportService.getTaskManager());
+
         clusterService.start();
         assert localNodeFactory.getNode() != null;
         assert transportService.getLocalNode().equals(localNodeFactory.getNode())
@@ -654,11 +669,6 @@ public class Node implements Closeable {
                     throw new ElasticsearchTimeoutException("Interrupted while waiting for initial discovery state");
                 }
             }
-        }
-
-
-        if (NetworkModule.HTTP_ENABLED.get(settings)) {
-            injector.getInstance(HttpServerTransport.class).start();
         }
 
         // start nodes now, after the http server, because it may take some time
@@ -931,6 +941,7 @@ public class Node implements Closeable {
         private final SetOnce<DiscoveryNode> localNode = new SetOnce<>();
         private final String persistentNodeId;
         private final Settings settings;
+        private String httpAddress;
 
         private LocalNodeFactory(Settings settings, String persistentNodeId) {
             this.persistentNodeId = persistentNodeId;
@@ -939,8 +950,12 @@ public class Node implements Closeable {
 
         @Override
         public DiscoveryNode apply(BoundTransportAddress boundTransportAddress) {
-            localNode.set(DiscoveryNode.createLocal(settings, boundTransportAddress.publishAddress(), persistentNodeId));
+            localNode.set(DiscoveryNode.createLocal(settings, boundTransportAddress.publishAddress(), persistentNodeId, httpAddress));
             return localNode.get();
+        }
+
+        public void setHttpAddress(String httpAddress) {
+            this.httpAddress = httpAddress;
         }
 
         DiscoveryNode getNode() {

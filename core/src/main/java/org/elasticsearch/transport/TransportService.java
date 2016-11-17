@@ -82,6 +82,7 @@ public class TransportService extends AbstractLifecycleComponent {
     protected final TaskManager taskManager;
     private final TransportInterceptor.AsyncSender asyncSender;
     private final Function<BoundTransportAddress, DiscoveryNode> localNodeFactory;
+    private String httpAddress;
 
     volatile Map<String, RequestHandlerRegistry> requestHandlers = Collections.emptyMap();
     final Object requestHandlerMutex = new Object();
@@ -168,6 +169,10 @@ public class TransportService extends AbstractLifecycleComponent {
         return localNode;
     }
 
+    public void setHttpAddress(String httpAddress) {
+        this.httpAddress = httpAddress;
+    }
+
     public TaskManager getTaskManager() {
         return taskManager;
     }
@@ -201,6 +206,7 @@ public class TransportService extends AbstractLifecycleComponent {
                 logger.info("profile [{}]: {}", entry.getKey(), entry.getValue());
             }
         }
+
         localNode = localNodeFactory.apply(transport.boundAddress());
         registerRequestHandler(
             HANDSHAKE_ACTION_NAME,
