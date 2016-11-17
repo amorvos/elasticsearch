@@ -195,7 +195,21 @@ public class PeerRecoverySourceService extends AbstractComponent implements Inde
                 final RemoteRecoveryTargetHandler recoveryTarget =
                     new RemoteRecoveryTargetHandler(request.recoveryId(), request.shardId(), transportService, request.targetNode(),
                         recoverySettings, throttleTime -> shard.recoveryStats().addThrottleTime(throttleTime));
+
                 Supplier<Long> currentClusterStateVersionSupplier = () -> clusterService.state().getVersion();
+
+                // CRATE_PATCH: used to inject BlobRecoveryHandler
+                handler = recoverySettings.getCustomRecoverySourceHandler(
+                    shard,
+                    recoveryTarget,
+                    request,
+                    currentClusterStateVersionSupplier,
+                    this::delayNewRecoveries,
+                    logger
+                );
+                if (handler != null){
+                    return handler;
+                }
                 if (shard.indexSettings().isOnSharedFilesystem()) {
                     handler = new SharedFSRecoverySourceHandler(shard, recoveryTarget, request, currentClusterStateVersionSupplier,
                         this::delayNewRecoveries, logger);

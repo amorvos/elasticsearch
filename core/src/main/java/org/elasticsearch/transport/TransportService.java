@@ -201,6 +201,7 @@ public class TransportService extends AbstractLifecycleComponent {
                 logger.info("profile [{}]: {}", entry.getKey(), entry.getValue());
             }
         }
+
         localNode = localNodeFactory.apply(transport.boundAddress());
         registerRequestHandler(
             HANDSHAKE_ACTION_NAME,
