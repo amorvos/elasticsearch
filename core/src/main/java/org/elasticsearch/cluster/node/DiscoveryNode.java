@@ -190,8 +190,11 @@ public class DiscoveryNode implements Writeable, ToXContent {
     }
 
     /** Creates a DiscoveryNode representing the local node. */
-    public static DiscoveryNode createLocal(Settings settings, TransportAddress publishAddress, String nodeId) {
+    public static DiscoveryNode createLocal(Settings settings, TransportAddress publishAddress, String nodeId, String httpAddress) {
         Map<String, String> attributes = new HashMap<>(Node.NODE_ATTRIBUTES.get(settings).getAsMap());
+        if (httpAddress != null) {
+            attributes.put("http_address", httpAddress);
+        }
         Set<DiscoveryNode.Role> roles = new HashSet<>();
         if (Node.NODE_INGEST_SETTING.get(settings)) {
             roles.add(DiscoveryNode.Role.INGEST);

@@ -590,8 +590,19 @@ public class Node implements Closeable {
         validateNodeBeforeAcceptingRequests(settings, transportService.boundAddress(), pluginsService.filterPlugins(Plugin.class).stream()
             .flatMap(p -> p.getBootstrapChecks().stream()).collect(Collectors.toList()));
 
+        // CRATE_PATCH: add http publish address to the discovery node
+        String httpAddress;
+        if (NetworkModule.HTTP_ENABLED.get(settings)) {
+            HttpServer httpServer = injector.getInstance(HttpServer.class);
+            httpServer.start();
+            httpAddress = httpServer.info().address().publishAddress().getHost() + ":" + httpServer.info().address().publishAddress().getPort();
+
+        } else  {
+            httpAddress = null;
+        }
+
         DiscoveryNode localNode = DiscoveryNode.createLocal(settings,
-            transportService.boundAddress().publishAddress(), injector.getInstance(NodeEnvironment.class).nodeId());
+            transportService.boundAddress().publishAddress(), injector.getInstance(NodeEnvironment.class).nodeId(), httpAddress);
 
         // TODO: need to find a cleaner way to start/construct a service with some initial parameters,
         // playing nice with the life cycle interfaces
@@ -637,10 +648,6 @@ public class Node implements Closeable {
                     throw new ElasticsearchTimeoutException("Interrupted while waiting for initial discovery state");
                 }
             }
-        }
-
-        if (NetworkModule.HTTP_ENABLED.get(settings)) {
-            injector.getInstance(HttpServer.class).start();
         }
 
         // start nodes now, after the http server, because it may take some time
