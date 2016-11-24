@@ -99,6 +99,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.discovery.Discovery;
+import org.elasticsearch.discovery.DiscoveryModule;
 import org.elasticsearch.discovery.zen.ElectMasterService;
 import org.elasticsearch.discovery.zen.ZenDiscovery;
 import org.elasticsearch.env.Environment;
@@ -547,13 +548,17 @@ public abstract class ESIntegTestCase extends ESTestCase {
                         MetaData metaData = client().admin().cluster().prepareState().execute().actionGet().getState().getMetaData();
                         final Map<String, String> persistent = metaData.persistentSettings().getAsMap();
                         assertThat("test leaves persistent cluster metadata behind: " + persistent, persistent.size(), equalTo(0));
-                        final Map<String, String> transientSettings =  new HashMap<>(metaData.transientSettings().getAsMap());
+
+                        // CRATE_PATCH: crate has a cluster id that is generated upon startup ... remove it here
+                        Map<String, String> strippedSettingsMap = new HashMap<>();
+                        strippedSettingsMap.putAll(metaData.transientSettings().getAsMap());
+                        strippedSettingsMap.remove("cluster_id");
                         if (isInternalCluster() && internalCluster().getAutoManageMinMasterNode()) {
                             // this is set by the test infra
-                            transientSettings.remove(ElectMasterService.DISCOVERY_ZEN_MINIMUM_MASTER_NODES_SETTING.getKey());
+                            strippedSettingsMap.remove(ElectMasterService.DISCOVERY_ZEN_MINIMUM_MASTER_NODES_SETTING.getKey());
                         }
-                        assertThat("test leaves transient cluster metadata behind: " + transientSettings,
-                            transientSettings.keySet(), empty());
+                        assertThat("test leaves transient cluster metadata behind: " +strippedSettingsMap,
+                            strippedSettingsMap.size(), equalTo(0));
                     }
                     ensureClusterSizeConsistency();
                     ensureClusterStateConsistency();
