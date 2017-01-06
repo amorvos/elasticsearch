@@ -245,6 +245,22 @@ public final class AnalysisRegistry implements Closeable {
         }
     }
 
+    public Map<String, AnalysisProvider<CharFilterFactory>> getCharFilters() {
+        return charFilters;
+    }
+
+    public Map<String, AnalysisProvider<TokenFilterFactory>> getTokenFilters() {
+        return tokenFilters;
+    }
+
+    public Map<String, AnalysisProvider<TokenizerFactory>> getTokenizers() {
+        return tokenizers;
+    }
+
+    public Map<String, AnalysisProvider<AnalyzerProvider<?>>> getAnalyzers() {
+        return analyzers;
+    }
+
     private static <T> AnalysisModule.AnalysisProvider<T> requriesAnalysisSettings(AnalysisModule.AnalysisProvider<T> provider) {
         return new AnalysisModule.AnalysisProvider<T>() {
             @Override
