@@ -131,7 +131,7 @@ public class InternalSettingsPreparer {
      * Initializes the builder with the given input settings, and loads system properties settings if allowed.
      * If loadDefaults is true, system property default settings are loaded.
      */
-    private static void initializeSettings(Settings.Builder output, Settings input, Map<String, String> esSettings) {
+    static void initializeSettings(Settings.Builder output, Settings input, Map<String, String> esSettings) {
         output.put(input);
         output.putProperties(esSettings,
             PROPERTY_DEFAULTS_PREDICATE.and(key -> output.get(STRIP_PROPERTY_DEFAULTS_PREFIX.apply(key)) == null),
@@ -144,7 +144,7 @@ public class InternalSettingsPreparer {
      * Finish preparing settings by replacing forced settings, prompts, and any defaults that need to be added.
      * The provided terminal is used to prompt for settings needing to be replaced.
      */
-    private static void finalizeSettings(Settings.Builder output, Terminal terminal) {
+    static void finalizeSettings(Settings.Builder output, Terminal terminal) {
         // allow to force set properties based on configuration of the settings provided
         List<String> forcedSettings = new ArrayList<>();
         for (String setting : output.internalMap().keySet()) {
