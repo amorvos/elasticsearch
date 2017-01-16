@@ -256,43 +256,10 @@ public class Node implements Closeable {
             }
 
             final boolean hadPredefinedNodeName = NODE_NAME_SETTING.exists(tmpSettings);
-            Logger logger = Loggers.getLogger(Node.class, tmpSettings);
             final String nodeId = nodeEnvironment.nodeId();
             tmpSettings = addNodeNameIfNeeded(tmpSettings, nodeId);
             // this must be captured after the node name is possibly added to the settings
             final String nodeName = NODE_NAME_SETTING.get(tmpSettings);
-            if (hadPredefinedNodeName == false) {
-                logger.info("node name [{}] derived from node ID [{}]; set [{}] to override", nodeName, nodeId, NODE_NAME_SETTING.getKey());
-            } else {
-                logger.info("node name [{}], node ID [{}]", nodeName, nodeId);
-            }
-
-            final JvmInfo jvmInfo = JvmInfo.jvmInfo();
-            logger.info(
-                "version[{}], pid[{}], build[{}/{}], OS[{}/{}/{}], JVM[{}/{}/{}/{}]",
-                displayVersion(Version.CURRENT, Build.CURRENT.isSnapshot()),
-                jvmInfo.pid(),
-                Build.CURRENT.shortHash(),
-                Build.CURRENT.date(),
-                Constants.OS_NAME,
-                Constants.OS_VERSION,
-                Constants.OS_ARCH,
-                Constants.JVM_VENDOR,
-                Constants.JVM_NAME,
-                Constants.JAVA_VERSION,
-                Constants.JVM_VERSION);
-            warnIfPreRelease(Version.CURRENT, Build.CURRENT.isSnapshot(), logger);
-
-            if (logger.isDebugEnabled()) {
-                logger.debug("using config [{}], data [{}], logs [{}], plugins [{}]",
-                    environment.configFile(), Arrays.toString(environment.dataFiles()), environment.logsFile(), environment.pluginsFile());
-            }
-            // TODO: Remove this in Elasticsearch 6.0.0
-            if (JsonXContent.unquotedFieldNamesSet) {
-                DeprecationLogger dLogger = new DeprecationLogger(logger);
-                dLogger.deprecated("[{}] has been set, but will be removed in Elasticsearch 6.0.0",
-                    JsonXContent.JSON_ALLOW_UNQUOTED_FIELD_NAMES);
-            }
 
             this.pluginsService = new PluginsService(tmpSettings, environment.modulesFile(), environment.pluginsFile(), classpathPlugins);
             this.settings = pluginsService.updatedSettings();
@@ -300,6 +267,14 @@ public class Node implements Closeable {
             // this is just to makes sure that people get the same settings, no matter where they ask them from
             this.environment = new Environment(this.settings);
             Environment.assertEquivalent(environment, this.environment);
+            Logger logger = Loggers.getLogger(Node.class, tmpSettings);
+            if (hadPredefinedNodeName == false) {
+                logger.info("node name [{}] derived from node ID [{}]; set [{}] to override", nodeName, nodeId, NODE_NAME_SETTING.getKey());
+            } else {
+                logger.info("node name [{}], node ID [{}]", nodeName, nodeId);
+            }
+
+            startUpLogging(logger, tmpSettings, hadPredefinedNodeName);
 
 
             final List<ExecutorBuilder<?>> executorBuilders = pluginsService.getExecutorBuilders(settings);
@@ -485,6 +460,41 @@ public class Node implements Closeable {
             if (!success) {
                 IOUtils.closeWhileHandlingException(resourcesToClose);
             }
+        }
+    }
+
+
+    protected void startUpLogging(Logger logger, Settings tmpSettings, boolean hadPredefinedNodeName) {
+        if (hadPredefinedNodeName == false) {
+            logger.info("node name [{}] derived from node ID; set [{}] to override",
+                NODE_NAME_SETTING.get(tmpSettings), NODE_NAME_SETTING.getKey());
+        }
+
+        final JvmInfo jvmInfo = JvmInfo.jvmInfo();
+        logger.info(
+            "version[{}], pid[{}], build[{}/{}], OS[{}/{}/{}], JVM[{}/{}/{}/{}]",
+            displayVersion(Version.CURRENT, Build.CURRENT.isSnapshot()),
+            jvmInfo.pid(),
+            Build.CURRENT.shortHash(),
+            Build.CURRENT.date(),
+            Constants.OS_NAME,
+            Constants.OS_VERSION,
+            Constants.OS_ARCH,
+            Constants.JVM_VENDOR,
+            Constants.JVM_NAME,
+            Constants.JAVA_VERSION,
+            Constants.JVM_VERSION);
+        warnIfPreRelease(Version.CURRENT, Build.CURRENT.isSnapshot(), logger);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("using config [{}], data [{}], logs [{}], plugins [{}]",
+                environment.configFile(), Arrays.toString(environment.dataFiles()), environment.logsFile(), environment.pluginsFile());
+        }
+        // TODO: Remove this in Elasticsearch 6.0.0
+        if (JsonXContent.unquotedFieldNamesSet) {
+            DeprecationLogger dLogger = new DeprecationLogger(logger);
+            dLogger.deprecated("[{}] has been set, but will be removed in Elasticsearch 6.0.0",
+                JsonXContent.JSON_ALLOW_UNQUOTED_FIELD_NAMES);
         }
     }
 
