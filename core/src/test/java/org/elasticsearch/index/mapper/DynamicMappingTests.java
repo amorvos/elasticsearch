@@ -30,11 +30,13 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.common.SuppressForbidden;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.mapper.BooleanFieldMapper.BooleanFieldType;
 import org.elasticsearch.index.mapper.DateFieldMapper.DateFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper.NumberFieldType;
 import org.elasticsearch.test.ESSingleNodeTestCase;
+import org.junit.Ignore;
 
 import java.io.IOException;
 
@@ -644,6 +646,8 @@ public class DynamicMappingTests extends ESSingleNodeTestCase {
         assertThat(mapper, instanceOf(TextFieldMapper.class));
     }
 
+    @SuppressForbidden(reason = "Want to ignore this specific test case")
+    @Ignore("Ignored due to disabled date detection")
     public void testDateDetectionInheritsFormat() throws Exception {
         String mapping = XContentFactory.jsonBuilder().startObject().startObject("type")
                 .startArray("dynamic_date_formats")
