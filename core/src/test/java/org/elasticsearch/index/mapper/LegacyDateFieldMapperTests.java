@@ -51,20 +51,11 @@ import org.joda.time.DateTimeZone;
 import org.junit.Before;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import static com.carrotsearch.randomizedtesting.RandomizedTest.systemPropertyAsBoolean;
 import static org.elasticsearch.index.mapper.LegacyStringMappingTests.docValuesType;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 
 public class LegacyDateFieldMapperTests extends ESSingleNodeTestCase {
 
@@ -98,12 +89,9 @@ public class LegacyDateFieldMapperTests extends ESSingleNodeTestCase {
 
         defaultMapper = index.mapperService().documentMapper("type");
         FieldMapper fieldMapper = defaultMapper.mappers().smartNameFieldMapper("date_field1");
-        assertThat(fieldMapper, instanceOf(LegacyDateFieldMapper.class));
-        LegacyDateFieldMapper dateFieldMapper = (LegacyDateFieldMapper)fieldMapper;
-        assertEquals("yyyy/MM/dd HH:mm:ss||yyyy/MM/dd||epoch_millis", dateFieldMapper.fieldType().dateTimeFormatter().format());
-        assertEquals(1265587200000L, dateFieldMapper.fieldType().dateTimeFormatter().parser().parseMillis("1265587200000"));
+        assertThat(fieldMapper, instanceOf(StringFieldMapper.class));
         fieldMapper = defaultMapper.mappers().smartNameFieldMapper("date_field2");
-        assertThat(fieldMapper, instanceOf(LegacyDateFieldMapper.class));
+        assertThat(fieldMapper, instanceOf(StringFieldMapper.class));
 
         fieldMapper = defaultMapper.mappers().smartNameFieldMapper("wrong_date1");
         assertThat(fieldMapper, instanceOf(StringFieldMapper.class));

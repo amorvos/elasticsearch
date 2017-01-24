@@ -30,12 +30,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.mapper.DynamicTemplate.XContentFieldType;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.elasticsearch.common.xcontent.support.XContentMapValues.nodeBooleanValue;
 import static org.elasticsearch.index.mapper.TypeParsers.parseDateTimeFormatter;
@@ -51,7 +46,7 @@ public class RootObjectMapper extends ObjectMapper {
                         DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER,
                         Joda.getStrictStandardDateFormatter()
                 };
-        public static final boolean DATE_DETECTION = true;
+        public static final boolean DATE_DETECTION = false;
         public static final boolean NUMERIC_DETECTION = false;
     }
 
