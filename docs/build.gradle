@@ -220,6 +220,11 @@ Closure setupTwitter = { String name, int count ->
         settings:
           number_of_shards: 1
           number_of_replicas: 1
+        mappings:
+          tweet:
+            properties:
+              date:
+                type: date
   - do:
     bulk:
       index: twitter
@@ -272,6 +277,9 @@ buildRestTests.setups['ledger'] = '''
                 type: keyword
               amount:
                 type: double
+              date:
+                type: date
+                format: yyyy/MM/dd HH:mm:ss
   - do:
     bulk:
       index: ledger
@@ -303,6 +311,9 @@ buildRestTests.setups['sales'] = '''
             properties:
               type:
                 type: keyword
+              date:
+                type: date
+                format: yyyy/MM/dd HH:mm:ss
   - do:
     bulk:
       index: sales
