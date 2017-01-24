@@ -44,6 +44,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.dateHistogram;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.sum;
 import static org.elasticsearch.search.aggregations.pipeline.PipelineAggregatorBuilders.derivative;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchResponse;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
@@ -84,7 +85,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
 
     @Override
     public void setupSuiteScopeCluster() throws Exception {
-        createIndex("idx");
+        assertAcked(prepareCreate("idx").addMapping("type", "date", "type=date", "dates", "type=date"));
         createIndex("idx_unmapped");
         // TODO: would be nice to have more random data here
         prepareCreate("empty_bucket_idx").addMapping("type", "value", "type=integer").execute().actionGet();
@@ -199,7 +200,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
      * Do a derivative on a date histogram with time zone CET at DST start
      */
     public void testSingleValuedFieldNormalised_timeZone_CET_DstStart() throws Exception {
-        createIndex(IDX_DST_START);
+        assertAcked(prepareCreate(IDX_DST_START).addMapping("type", "date", "type=date"));
         List<IndexRequestBuilder> builders = new ArrayList<>();
 
         DateTimeZone timezone = DateTimeZone.forID("CET");
@@ -237,7 +238,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
      * Do a derivative on a date histogram with time zone CET at DST end
      */
     public void testSingleValuedFieldNormalised_timeZone_CET_DstEnd() throws Exception {
-        createIndex(IDX_DST_END);
+        assertAcked(prepareCreate(IDX_DST_END).addMapping("type", "date", "type=date"));
         DateTimeZone timezone = DateTimeZone.forID("CET");
         List<IndexRequestBuilder> builders = new ArrayList<>();
 
@@ -276,7 +277,7 @@ public class DateDerivativeIT extends ESIntegTestCase {
      * "Asia/Kathmandu, 1 Jan 1986 - Time Zone Change (IST → NPT), at 00:00:00 clocks were turned forward 00:15 minutes
      */
     public void testSingleValuedFieldNormalised_timeZone_AsiaKathmandu() throws Exception {
-        createIndex(IDX_DST_KATHMANDU);
+        assertAcked(prepareCreate(IDX_DST_KATHMANDU).addMapping("type", "date", "type=date"));
         DateTimeZone timezone = DateTimeZone.forID("Asia/Kathmandu");
         List<IndexRequestBuilder> builders = new ArrayList<>();
 
