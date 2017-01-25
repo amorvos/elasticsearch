@@ -264,9 +264,6 @@ public class Node implements Closeable {
             final boolean hadPredefinedNodeName = NODE_NAME_SETTING.exists(tmpSettings);
             final String nodeId = nodeEnvironment.nodeId();
             tmpSettings = addNodeNameIfNeeded(tmpSettings, nodeId);
-            Logger logger = Loggers.getLogger(this.getClass(), tmpSettings);
-
-            startUpLogging(logger, tmpSettings, hadPredefinedNodeName);
 
             this.pluginsService = new PluginsService(tmpSettings, environment.modulesFile(), environment.pluginsFile(), classpathPlugins);
             this.settings = pluginsService.updatedSettings();
@@ -277,6 +274,8 @@ public class Node implements Closeable {
             this.environment = new Environment(this.settings);
             Environment.assertEquivalent(environment, this.environment);
 
+            Logger logger = Loggers.getLogger(this.getClass(), tmpSettings);
+            startUpLogging(logger, tmpSettings, hadPredefinedNodeName);
 
             final List<ExecutorBuilder<?>> executorBuilders = pluginsService.getExecutorBuilders(settings);
 
