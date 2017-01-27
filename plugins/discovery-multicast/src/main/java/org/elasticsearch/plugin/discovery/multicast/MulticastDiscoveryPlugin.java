@@ -48,7 +48,7 @@ public class MulticastDiscoveryPlugin extends Plugin {
     }
 
     public void onModule(DiscoveryModule module) {
-        deprecationLogger.deprecated("[discovery-multicast] plugin will be removed in the next major version. " +
+        deprecationLogger.deprecated("[discovery-multicast] plugin will be removed in the next CrateDB 1.1 version. " +
             "Use unicast or any cloud discovery plugin.");
         if (settings.getAsBoolean("discovery.zen.ping.multicast.enabled", false)) {
             module.addZenPing(MulticastZenPing.class);
