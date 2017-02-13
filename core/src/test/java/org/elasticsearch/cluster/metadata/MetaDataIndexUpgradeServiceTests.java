@@ -79,24 +79,22 @@ public class MetaDataIndexUpgradeServiceTests extends ESTestCase {
         assertTrue(service.isUpgraded(src));
     }
 
-    public void testFailUpgrade() {
+    public void testIsNotUpgraded() {
         MetaDataIndexUpgradeService service = new MetaDataIndexUpgradeService(Settings.EMPTY, new MapperRegistry(Collections.emptyMap(),
             Collections.emptyMap()), IndexScopedSettings.DEFAULT_SCOPED_SETTINGS);
-        final IndexMetaData metaData = newIndexMeta("foo", Settings.builder()
+        final IndexMetaData metaDataCratedBefore2 = newIndexMeta("foo", Settings.builder()
             .put(IndexMetaData.SETTING_VERSION_UPGRADED, Version.V_2_0_0_beta1)
             .put(IndexMetaData.SETTING_VERSION_CREATED, Version.fromString("1.7.0"))
             .put(IndexMetaData.SETTING_VERSION_MINIMUM_COMPATIBLE,
             Version.CURRENT.luceneVersion.toString()).build());
-        String message = expectThrows(IllegalStateException.class, () -> service.upgradeIndexMetaData(metaData)).getMessage();
-        assertEquals(message, "The index [[foo/BOOM]] was created before v2.0.0.beta1. It should be reindexed in Elasticsearch 2.x " +
-            "before upgrading to " + Version.CURRENT.toString() + ".");
+        assertTrue(service.isUpgraded(service.upgradeIndexMetaData(metaDataCratedBefore2)));
 
-        IndexMetaData goodMeta = newIndexMeta("foo", Settings.builder()
+        IndexMetaData metaDataCratedAfter2 = newIndexMeta("foo", Settings.builder()
             .put(IndexMetaData.SETTING_VERSION_UPGRADED, Version.V_2_0_0_beta1)
             .put(IndexMetaData.SETTING_VERSION_CREATED, Version.fromString("2.1.0"))
             .put(IndexMetaData.SETTING_VERSION_MINIMUM_COMPATIBLE,
                 Version.CURRENT.luceneVersion.toString()).build());
-        service.upgradeIndexMetaData(goodMeta);
+        assertTrue(service.isUpgraded(service.upgradeIndexMetaData(metaDataCratedAfter2)));
     }
 
     public static IndexMetaData newIndexMeta(String name, Settings indexSettings) {
