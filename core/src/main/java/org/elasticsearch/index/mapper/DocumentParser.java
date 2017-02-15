@@ -299,7 +299,7 @@ class DocumentParser implements Closeable {
         if (mapper instanceof ObjectMapper) {
             return parseObject(context, (ObjectMapper) mapper, false);
         } else {
-            FieldMapper fieldMapper = (FieldMapper)mapper;
+            FieldMapper fieldMapper = (FieldMapper) mapper;
             Mapper update = fieldMapper.parse(context);
             if (fieldMapper.copyTo() != null) {
                 parseCopyFields(context, fieldMapper, fieldMapper.copyTo().copyToFields());
@@ -362,7 +362,12 @@ class DocumentParser implements Closeable {
             // expects an array, if so we pass the context straight to the mapper and if not
             // we serialize the array components
             if (mapper instanceof ArrayValueMapperParser) {
-                final Mapper subUpdate = parseObjectOrField(context, mapper);
+                final Mapper subUpdate;
+                if (mapper instanceof ObjectMapper) {
+                    subUpdate = parseObject(context, (ObjectMapper) mapper, false);
+                } else {
+                    subUpdate = ((FieldMapper) mapper).parse(context);
+                }
                 if (subUpdate != null) {
                     // propagate the mapping update
                     return parentMapper.mappingUpdate(subUpdate);
@@ -631,7 +636,7 @@ class DocumentParser implements Closeable {
     }
 
     /** Creates instances of the fields that the current field should be copied to */
-    private static void parseCopyFields(ParseContext context, FieldMapper fieldMapper, List<String> copyToFields) throws IOException {
+    static void parseCopyFields(ParseContext context, FieldMapper fieldMapper, List<String> copyToFields) throws IOException {
         if (!context.isWithinCopyTo() && copyToFields.isEmpty() == false) {
             context = context.createCopyToContext();
             for (String field : copyToFields) {
