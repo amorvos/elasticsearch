@@ -102,6 +102,8 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcke
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 /**
  * Simple unit-test IndexShard related operations.
@@ -438,9 +440,9 @@ public class IndexShardTests extends ESSingleNodeTestCase {
         ensureGreen("test");
         IndicesService indicesService = getInstanceFromNode(IndicesService.class);
         IndexShard test = indicesService.indexService("test").shard(0);
-        assertEquals(versionCreated.luceneVersion, test.minimumCompatibleVersion());
+        assertEquals(Version.CURRENT.luceneVersion, test.minimumCompatibleVersion());
         client().prepareIndex("test", "test").setSource("{}").get();
-        assertEquals(versionCreated.luceneVersion, test.minimumCompatibleVersion());
+        assertEquals(Version.CURRENT.luceneVersion, test.minimumCompatibleVersion());
         test.engine().flush();
         assertEquals(Version.CURRENT.luceneVersion, test.minimumCompatibleVersion());
     }
