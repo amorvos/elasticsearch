@@ -38,6 +38,7 @@ import org.apache.lucene.store.Lock;
 import org.apache.lucene.util.IOUtils;
 import org.apache.lucene.util.ThreadInterruptedException;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
@@ -816,7 +817,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
                 luceneVersion = segment.getVersion();
             }
         }
-        return luceneVersion == null ? indexSettings.getIndexVersionCreated().luceneVersion : luceneVersion;
+        return luceneVersion == null ? Version.CURRENT.luceneVersion : luceneVersion;
     }
 
     /**
