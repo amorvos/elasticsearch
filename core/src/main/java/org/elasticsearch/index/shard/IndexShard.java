@@ -826,7 +826,7 @@ public class IndexShard extends AbstractIndexShardComponent {
                 luceneVersion = segment.getVersion();
             }
         }
-        return luceneVersion == null ? Version.CURRENT.luceneVersion : luceneVersion;
+        return luceneVersion == null ? Version.indexCreated(indexSettings).luceneVersion : luceneVersion;
     }
 
     public SnapshotIndexCommit snapshotIndex(boolean flushFirst) throws EngineException {
