@@ -19,14 +19,13 @@
 
 package org.elasticsearch.gateway;
 
+import com.carrotsearch.hppc.cursors.ObjectCursor;
 import com.google.common.collect.ImmutableSet;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateListener;
-import org.elasticsearch.cluster.metadata.IndexMetaData;
-import org.elasticsearch.cluster.metadata.MetaData;
-import org.elasticsearch.cluster.metadata.MetaDataIndexUpgradeService;
+import org.elasticsearch.cluster.metadata.*;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.RoutingNode;
 import org.elasticsearch.cluster.routing.ShardRouting;
@@ -56,6 +55,7 @@ public class GatewayMetaState extends AbstractComponent implements ClusterStateL
     private final MetaStateService metaStateService;
     private final DanglingIndicesState danglingIndicesState;
     private final MetaDataIndexUpgradeService metaDataIndexUpgradeService;
+    private final CustomUpgradeService customUpgradeService;
 
     @Nullable
     private volatile MetaData previousMetaData;
@@ -65,12 +65,14 @@ public class GatewayMetaState extends AbstractComponent implements ClusterStateL
     @Inject
     public GatewayMetaState(Settings settings, NodeEnvironment nodeEnv, MetaStateService metaStateService,
                             DanglingIndicesState danglingIndicesState, TransportNodesListGatewayMetaState nodesListGatewayMetaState,
-                            MetaDataIndexUpgradeService metaDataIndexUpgradeService) throws Exception {
+                            MetaDataIndexUpgradeService metaDataIndexUpgradeService,
+                            CustomUpgradeServiceProvider customUpgradeServiceProvider) throws Exception {
         super(settings);
         this.nodeEnv = nodeEnv;
         this.metaStateService = metaStateService;
         this.danglingIndicesState = danglingIndicesState;
         this.metaDataIndexUpgradeService = metaDataIndexUpgradeService;
+        this.customUpgradeService = customUpgradeServiceProvider.get();
         nodesListGatewayMetaState.init(this);
 
         if (DiscoveryNode.dataNode(settings)) {
@@ -226,14 +228,35 @@ public class GatewayMetaState extends AbstractComponent implements ClusterStateL
         List<IndexMetaData> updateIndexMetaData = new ArrayList<>();
         for (IndexMetaData indexMetaData : metaData) {
             IndexMetaData newMetaData = metaDataIndexUpgradeService.upgradeIndexMetaData(indexMetaData);
+            // additionally call an injected custom upgrade service
+            newMetaData = customUpgradeService.upgradeIndexMetaData(newMetaData);
             if (indexMetaData != newMetaData) {
                 updateIndexMetaData.add(newMetaData);
             }
         }
+
+        // Upgrade templates if required
+        boolean updateGlobalState = false;
+        MetaData.Builder builder = MetaData.builder(metaData);
+        for (ObjectCursor<IndexTemplateMetaData> cursor : metaData.templates().values()) {
+            IndexTemplateMetaData indexTemplateMetaData = cursor.value;
+            IndexTemplateMetaData newIndexTemplateMetaData = customUpgradeService.upgradeIndexTemplateMetaData(indexTemplateMetaData);
+            if (indexTemplateMetaData != newIndexTemplateMetaData) {
+                builder.remove(indexTemplateMetaData.getName());
+                builder.put(newIndexTemplateMetaData);
+                updateGlobalState = true;
+            }
+        }
+
         // We successfully checked all indices for backward compatibility and found no non-upgradable indices, which
         // means the upgrade can continue. Now it's safe to overwrite index metadata with the new version.
         for (IndexMetaData indexMetaData : updateIndexMetaData) {
             metaStateService.writeIndex("upgrade", indexMetaData, null);
+        }
+
+        // Save a new global state if templates were upgraded
+        if (updateGlobalState) {
+            metaStateService.writeGlobalState("upgrade templates", builder.build());
         }
     }
 

@@ -30,14 +30,7 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.cluster.*;
 import org.elasticsearch.cluster.RestoreInProgress.ShardRestoreStatus;
 import org.elasticsearch.cluster.block.ClusterBlocks;
-import org.elasticsearch.cluster.metadata.AliasMetaData;
-import org.elasticsearch.cluster.metadata.IndexMetaData;
-import org.elasticsearch.cluster.metadata.IndexTemplateMetaData;
-import org.elasticsearch.cluster.metadata.MetaData;
-import org.elasticsearch.cluster.metadata.MetaDataCreateIndexService;
-import org.elasticsearch.cluster.metadata.MetaDataIndexUpgradeService;
-import org.elasticsearch.cluster.metadata.RepositoriesMetaData;
-import org.elasticsearch.cluster.metadata.SnapshotId;
+import org.elasticsearch.cluster.metadata.*;
 import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.cluster.routing.IndexShardRoutingTable;
 import org.elasticsearch.cluster.routing.RestoreSource;
@@ -143,6 +136,8 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
 
     private final MetaDataIndexUpgradeService metaDataIndexUpgradeService;
 
+    private final CustomUpgradeService customUpgradeService;
+
     private final CopyOnWriteArrayList<ActionListener<RestoreCompletionResponse>> listeners = new CopyOnWriteArrayList<>();
 
     private final BlockingQueue<UpdateIndexShardRestoreStatusRequest> updatedSnapshotStateQueue = ConcurrentCollections.newBlockingQueue();
@@ -150,7 +145,7 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
     @Inject
     public RestoreService(Settings settings, ClusterService clusterService, RepositoriesService repositoriesService, TransportService transportService,
                           AllocationService allocationService, MetaDataCreateIndexService createIndexService, @ClusterDynamicSettings DynamicSettings dynamicSettings,
-                          MetaDataIndexUpgradeService metaDataIndexUpgradeService) {
+                          MetaDataIndexUpgradeService metaDataIndexUpgradeService, CustomUpgradeServiceProvider customUpgradeServiceProvider) {
         super(settings);
         this.clusterService = clusterService;
         this.repositoriesService = repositoriesService;
@@ -159,6 +154,7 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
         this.createIndexService = createIndexService;
         this.dynamicSettings = dynamicSettings;
         this.metaDataIndexUpgradeService = metaDataIndexUpgradeService;
+        this.customUpgradeService = customUpgradeServiceProvider.get();
         transportService.registerRequestHandler(UPDATE_RESTORE_ACTION_NAME, UpdateIndexShardRestoreStatusRequest.class, ThreadPool.Names.SAME, new UpdateRestoreStateRequestHandler());
         clusterService.add(this);
     }
@@ -228,6 +224,11 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                                 snapshotIndexMetaData = metaDataIndexUpgradeService.upgradeIndexMetaData(snapshotIndexMetaData);
                             } catch (Exception ex) {
                                 throw new SnapshotRestoreException(snapshotId, "cannot restore index [" + index + "] because it cannot be upgraded", ex);
+                            }
+                            try {
+                                snapshotIndexMetaData = customUpgradeService.upgradeIndexMetaData(snapshotIndexMetaData);
+                            } catch (Exception ex) {
+                                throw new SnapshotRestoreException(snapshotId, "cannot restore index [" + index + "] because it cannot be upgraded by custom upgrade service", ex);
                             }
                             // Check that the index is closed or doesn't exist
                             IndexMetaData currentIndexMetaData = currentState.metaData().index(renamedIndex);
@@ -416,7 +417,15 @@ public class RestoreService extends AbstractComponent implements ClusterStateLis
                             for (String index : filteredIndices) {
                                 if (currentState.metaData().templates().get(cursor.value.name()) == null
                                         && Regex.simpleMatch(cursor.value.template(), index)) {
-                                    mdBuilder.put(cursor.value);
+                                    IndexTemplateMetaData indexTemplateMetaData = cursor.value;
+                                    try {
+                                        indexTemplateMetaData = customUpgradeService.upgradeIndexTemplateMetaData(indexTemplateMetaData);
+                                    } catch (Exception ex) {
+                                        throw new SnapshotRestoreException(snapshotId,
+                                            "cannot restore template [" + indexTemplateMetaData.getName() + "] because it cannot be upgraded by custom upgrade service",
+                                            ex);
+                                    }
+                                    mdBuilder.put(indexTemplateMetaData);
                                     break;
                                 }
                             }
