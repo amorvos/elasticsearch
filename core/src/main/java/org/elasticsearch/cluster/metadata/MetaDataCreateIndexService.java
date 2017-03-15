@@ -597,9 +597,6 @@ public class MetaDataCreateIndexService extends AbstractComponent {
             .put(sourceMetaData.getSettings().filter(analysisSimilarityPredicate))
             .put(IndexMetaData.INDEX_SHRINK_SOURCE_NAME.getKey(), shrinkFromIndex.getName())
             .put(IndexMetaData.INDEX_SHRINK_SOURCE_UUID.getKey(), shrinkFromIndex.getUUID());
-        if (sourceMetaData.getMinimumCompatibleVersion() != null) {
-            indexSettingsBuilder.put(IndexMetaData.SETTING_VERSION_MINIMUM_COMPATIBLE, sourceMetaData.getMinimumCompatibleVersion());
-        }
     }
 
 }
