@@ -221,7 +221,6 @@ public class IndexMetaData implements Diffable<IndexMetaData>, FromXContentBuild
     public static final String SETTING_VERSION_CREATED_STRING = "index.version.created_string";
     public static final String SETTING_VERSION_UPGRADED = "index.version.upgraded";
     public static final String SETTING_VERSION_UPGRADED_STRING = "index.version.upgraded_string";
-    public static final String SETTING_VERSION_MINIMUM_COMPATIBLE = "index.version.minimum_compatible";
     public static final String SETTING_CREATION_DATE = "index.creation_date";
     /**
      * The user provided name for an index. This is the plain string provided by the user when the index was created.
@@ -305,7 +304,6 @@ public class IndexMetaData implements Diffable<IndexMetaData>, FromXContentBuild
 
     private final Version indexCreatedVersion;
     private final Version indexUpgradedVersion;
-    private final org.apache.lucene.util.Version minimumCompatibleLuceneVersion;
 
     private final ActiveShardCount waitForActiveShards;
     private final HashFunction routingHashFunction;
@@ -314,7 +312,7 @@ public class IndexMetaData implements Diffable<IndexMetaData>, FromXContentBuild
                           ImmutableOpenMap<String, MappingMetaData> mappings, ImmutableOpenMap<String, AliasMetaData> aliases,
                           ImmutableOpenMap<String, Custom> customs, ImmutableOpenIntMap<Set<String>> inSyncAllocationIds,
                           DiscoveryNodeFilters requireFilters, DiscoveryNodeFilters initialRecoveryFilters, DiscoveryNodeFilters includeFilters, DiscoveryNodeFilters excludeFilters,
-                          Version indexCreatedVersion, Version indexUpgradedVersion, org.apache.lucene.util.Version minimumCompatibleLuceneVersion,
+                          Version indexCreatedVersion, Version indexUpgradedVersion,
                           int routingNumShards, ActiveShardCount waitForActiveShards) {
 
         this.index = index;
@@ -336,7 +334,6 @@ public class IndexMetaData implements Diffable<IndexMetaData>, FromXContentBuild
         this.initialRecoveryFilters = initialRecoveryFilters;
         this.indexCreatedVersion = indexCreatedVersion;
         this.indexUpgradedVersion = indexUpgradedVersion;
-        this.minimumCompatibleLuceneVersion = minimumCompatibleLuceneVersion;
         this.routingNumShards = routingNumShards;
         this.routingFactor = routingNumShards / numberOfShards;
         this.waitForActiveShards = waitForActiveShards;
@@ -394,13 +391,6 @@ public class IndexMetaData implements Diffable<IndexMetaData>, FromXContentBuild
      */
     public Version getUpgradedVersion() {
         return indexUpgradedVersion;
-    }
-
-    /**
-     * Return the {@link org.apache.lucene.util.Version} of the oldest lucene segment in the index
-     */
-    public org.apache.lucene.util.Version getMinimumCompatibleVersion() {
-        return minimumCompatibleLuceneVersion;
     }
 
     public long getCreationDate() {
@@ -1011,17 +1001,6 @@ public class IndexMetaData implements Diffable<IndexMetaData>, FromXContentBuild
             }
             Version indexCreatedVersion = Version.indexCreated(settings);
             Version indexUpgradedVersion = settings.getAsVersion(IndexMetaData.SETTING_VERSION_UPGRADED, indexCreatedVersion);
-            String stringLuceneVersion = settings.get(SETTING_VERSION_MINIMUM_COMPATIBLE);
-            final org.apache.lucene.util.Version minimumCompatibleLuceneVersion;
-            if (stringLuceneVersion != null) {
-                try {
-                    minimumCompatibleLuceneVersion = org.apache.lucene.util.Version.parse(stringLuceneVersion);
-                } catch (ParseException ex) {
-                    throw new IllegalStateException("Cannot parse lucene version [" + stringLuceneVersion + "] in the [" + SETTING_VERSION_MINIMUM_COMPATIBLE + "] setting", ex);
-                }
-            } else {
-                minimumCompatibleLuceneVersion = null;
-            }
 
             if (primaryTerms == null) {
                 initializePrimaryTerms();
@@ -1040,7 +1019,7 @@ public class IndexMetaData implements Diffable<IndexMetaData>, FromXContentBuild
             final String uuid = settings.get(SETTING_INDEX_UUID, INDEX_UUID_NA_VALUE);
             return new IndexMetaData(new Index(index, uuid), version, primaryTerms, state, numberOfShards, numberOfReplicas, tmpSettings, mappings.build(),
                 tmpAliases.build(), customs.build(), filledInSyncAllocationIds.build(), requireFilters, initialRecoveryFilters, includeFilters, excludeFilters,
-                indexCreatedVersion, indexUpgradedVersion, minimumCompatibleLuceneVersion, getRoutingNumShards(), waitForActiveShards);
+                indexCreatedVersion, indexUpgradedVersion, getRoutingNumShards(), waitForActiveShards);
         }
 
         public static void toXContent(IndexMetaData indexMetaData, XContentBuilder builder, ToXContent.Params params) throws IOException {
