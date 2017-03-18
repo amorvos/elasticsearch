@@ -19,6 +19,7 @@
 
 package org.elasticsearch.cluster.routing;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
@@ -219,14 +220,20 @@ public class OperationRouting extends AbstractComponent {
     }
 
     static int generateShardId(IndexMetaData indexMetaData, String id, @Nullable String routing) {
+        final HashFunction hashFunction = indexMetaData.routingHashFunction();
         final int hash;
         if (routing == null) {
-            hash = Murmur3HashFunction.hash(id);
+            hash = hashFunction.hashRouting(id);
         } else {
-            hash = Murmur3HashFunction.hash(routing);
+            hash = hashFunction.hashRouting(routing);
         }
+
         // we don't use IMD#getNumberOfShards since the index might have been shrunk such that we need to use the size
         // of original index to hash documents
-        return Math.floorMod(hash, indexMetaData.getRoutingNumShards()) / indexMetaData.getRoutingFactor();
+        if (indexMetaData.getCreationVersion().onOrAfter(Version.V_2_0_0_beta1)) {
+            return Math.floorMod(hash, indexMetaData.getRoutingNumShards()) / indexMetaData.getRoutingFactor();
+        } else {
+            return Math.abs(hash % indexMetaData.getRoutingNumShards()) / indexMetaData.getRoutingFactor();
+        }
     }
 }
