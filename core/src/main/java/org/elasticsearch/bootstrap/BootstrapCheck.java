@@ -258,7 +258,7 @@ final class BootstrapCheck {
         public final String errorMessage() {
             return String.format(
                 Locale.ROOT,
-                "max file descriptors [%d] for elasticsearch process is too low, increase to at least [%d]",
+                "max file descriptors [%d] for crate process is too low, increase to at least [%d]",
                 getMaxFileDescriptorCount(),
                 limit
             );
@@ -286,7 +286,7 @@ final class BootstrapCheck {
 
         @Override
         public String errorMessage() {
-            return "memory locking requested for elasticsearch process but memory is not locked";
+            return "memory locking requested for crate process but memory is not locked";
         }
 
         // visible for testing
