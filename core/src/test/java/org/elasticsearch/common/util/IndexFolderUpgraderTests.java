@@ -261,6 +261,79 @@ public class IndexFolderUpgraderTests extends ESTestCase {
         }
     }
 
+    /**
+     * CRATE PATCH: tests custom BLOB paths defined per index are upgraded
+     */
+    public void testUpgradeCustomIndexBlobPath() throws IOException {
+        Path customPath = createTempDir();
+        try (NodeEnvironment nodeEnv = newNodeEnvironment(Settings.EMPTY)) {
+            final Index index = new Index(randomAsciiOfLength(10), UUIDs.randomBase64UUID());
+            IndexMetaData indexState = IndexMetaData.builder(index.getName())
+                .settings(Settings.builder()
+                    .put(IndexMetaData.SETTING_VERSION_CREATED, Version.CURRENT)
+                    .put("index.blobs.path", customPath.toAbsolutePath().toString()))
+                .numberOfShards(1)
+                .numberOfReplicas(0)
+                .build();
+            IndexSettings indexSettings = new IndexSettings(indexState, Settings.EMPTY);
+            IndexFolderUpgrader helper = new IndexFolderUpgrader(Settings.EMPTY, nodeEnv);
+
+            NodeEnvironment.NodePath[] nodePaths = nodeEnv.nodePaths();
+            for (NodeEnvironment.NodePath nodePath : nodePaths) {
+                Path customBlobPathIndicesLocation = IndexFolderUpgrader.resolveBaseIndicesLocationOfCustomPath(
+                    nodePath, customPath.toAbsolutePath().toString());
+                Path oldIndexPath = customBlobPathIndicesLocation.resolve(index.getName());
+                Path newPath = customBlobPathIndicesLocation.resolve(index.getUUID());
+                Files.createDirectories(oldIndexPath);
+
+                helper.upgradeCustomBlobPathIfNeeded(indexSettings, nodePath, index);
+                assertFalse(Files.isDirectory(oldIndexPath));
+                assertTrue(Files.isDirectory(newPath));
+
+                // its safe to run it again, its already migrated, nothing should happen
+                helper.upgradeCustomBlobPathIfNeeded(indexSettings, nodePath, index);
+            }
+        }
+    }
+
+    /**
+     * CRATE PATCH: tests custom BLOB paths defined globally are upgraded
+     */
+    public void testUpgradeCustomGlobalBlobPath() throws IOException {
+        Path customPath = createTempDir();
+        Settings nodeSettings = Settings.builder()
+            .put("blobs.path", customPath.toAbsolutePath().toString())
+            .build();
+        try (NodeEnvironment nodeEnv = newNodeEnvironment(nodeSettings)) {
+            final Index index = new Index(randomAsciiOfLength(10), UUIDs.randomBase64UUID());
+
+            IndexMetaData indexState = IndexMetaData.builder(index.getName())
+                .settings(Settings.builder()
+                    .put(IndexMetaData.SETTING_VERSION_CREATED, Version.CURRENT))
+                .numberOfShards(1)
+                .numberOfReplicas(0)
+                .build();
+            IndexSettings indexSettings = new IndexSettings(indexState, nodeSettings);
+            IndexFolderUpgrader helper = new IndexFolderUpgrader(nodeSettings, nodeEnv);
+
+            NodeEnvironment.NodePath[] nodePaths = nodeEnv.nodePaths();
+            for (NodeEnvironment.NodePath nodePath : nodePaths) {
+                Path customBlobPathIndicesLocation = IndexFolderUpgrader.resolveBaseIndicesLocationOfCustomPath(
+                    nodePath, customPath.toAbsolutePath().toString());
+                Path oldIndexPath = customBlobPathIndicesLocation.resolve(index.getName());
+                Path newPath = customBlobPathIndicesLocation.resolve(index.getUUID());
+                Files.createDirectories(oldIndexPath);
+
+                helper.upgradeCustomBlobPathIfNeeded(indexSettings, nodePath, index);
+                assertFalse(Files.isDirectory(oldIndexPath));
+                assertTrue(Files.isDirectory(newPath));
+
+                // its safe to run it again, its already migrated, nothing should happen
+                helper.upgradeCustomBlobPathIfNeeded(indexSettings, nodePath, index);
+            }
+        }
+    }
+
     private void checkIndex(NodeEnvironment nodeEnv, IndexSettings indexSettings,
                             int numIdxFiles, int numTranslogFiles) throws IOException {
         final Index index = indexSettings.getIndex();
