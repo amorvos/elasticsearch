@@ -24,6 +24,7 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.logging.log4j.util.Supplier;
 import org.apache.lucene.util.IOUtils;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
+import org.elasticsearch.common.SuppressForbidden;
 import org.elasticsearch.common.io.PathUtils;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
@@ -143,6 +144,7 @@ public class IndexFolderUpgrader {
     /**
      * CRATE PATCH: resolve base indices directory inside a given custom path
      */
+    @SuppressForbidden(reason = "configures paths for custom blob locations")
     static Path resolveBaseIndicesLocationOfCustomPath(NodeEnvironment.NodePath nodePath, String customPath) {
         Path indicesRootPath = nodePath.indicesPath;
         Path clusterDataDir = indicesRootPath.getParent().getParent().getParent();
