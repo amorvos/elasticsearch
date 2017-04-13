@@ -33,7 +33,10 @@ import org.elasticsearch.index.IndexSettings;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 /**
  * Renames index folders from {index.name} to {index.uuid}
