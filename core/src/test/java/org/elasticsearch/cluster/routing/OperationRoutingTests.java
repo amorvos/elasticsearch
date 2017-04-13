@@ -36,7 +36,14 @@ import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.LinkedHashMap;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -191,14 +198,16 @@ public class OperationRoutingTests extends ESTestCase{
         XContentBuilder builder = XContentFactory.jsonBuilder()
                                                  .startObject()
                                                  .startObject("_meta")
-                                                 .field(IndexMetaData.SETTING_ROUTING_HASH_FUNCTION, Murmur3HashFunction.class.getCanonicalName())
+                                                 .field(IndexMetaData.SETTING_ROUTING_HASH_FUNCTION,
+                                                     Murmur3HashFunction.class.getCanonicalName())
                                                  .endObject()
                                                  .endObject();
         Map<String, Object> mappingSource = XContentHelper.convertToMap(builder.bytes(), true).v2();
         IndexMetaData.Builder metaBuilder = IndexMetaData.builder("test")
                                                          .settings(settings(Version.CURRENT)).numberOfShards(8)
                                                          .numberOfReplicas(1)
-                                                         .putMapping(new MappingMetaData(IndexMetaData.DEFAULT_MAPPING_TYPE, mappingSource));
+                                                         .putMapping(new MappingMetaData(IndexMetaData.DEFAULT_MAPPING_TYPE,
+                                                             mappingSource));
         IndexMetaData metaData = metaBuilder.build();
 
         Map<String, Integer> termToShard = new LinkedHashMap<>();
