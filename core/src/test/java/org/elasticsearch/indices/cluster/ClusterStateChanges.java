@@ -158,7 +158,8 @@ public class ClusterStateChanges extends AbstractComponent {
                 return indexMetaData;
             }
         };
-        NodeServicesProvider nodeServicesProvider = new NodeServicesProvider(threadPool, null, null, null, null, null, clusterService, null);
+        NodeServicesProvider nodeServicesProvider = new NodeServicesProvider(threadPool, null, null, null, null, null,
+            clusterService, null);
         MetaDataIndexStateService indexStateService = new MetaDataIndexStateService(settings, clusterService, allocationService,
             metaDataIndexUpgradeService, nodeServicesProvider, indicesService);
         MetaDataDeleteIndexService deleteIndexService = new MetaDataDeleteIndexService(settings, clusterService, allocationService);

@@ -35,7 +35,12 @@ import org.elasticsearch.index.mapper.TextFieldMapper.TextFieldType;
 import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 
 /** A parser for documents, given mappings from a DocumentMapper */
 final class DocumentParser {
