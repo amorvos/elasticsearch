@@ -1075,7 +1075,8 @@ public abstract class AbstractQueryTestCase<QB extends AbstractQueryBuilder<QB>>
             scriptService = scriptModule.getScriptService();
             similarityService = new SimilarityService(idxSettings, Collections.emptyMap());
             MapperRegistry mapperRegistry = indicesModule.getMapperRegistry();
-            mapperService = new MapperService(idxSettings, analysisService, similarityService, mapperRegistry, this::createShardContext, new DynamicArrayFieldMapperBuilderFactoryProvider());
+            mapperService = new MapperService(idxSettings, analysisService, similarityService, mapperRegistry, this::createShardContext,
+                new DynamicArrayFieldMapperBuilderFactoryProvider());
             IndicesFieldDataCache indicesFieldDataCache = new IndicesFieldDataCache(nodeSettings, new IndexFieldDataCache.Listener() {
             });
             indexFieldDataService = new IndexFieldDataService(idxSettings, indicesFieldDataCache,
