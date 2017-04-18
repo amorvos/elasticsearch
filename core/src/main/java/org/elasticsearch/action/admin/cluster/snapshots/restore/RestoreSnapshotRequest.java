@@ -53,6 +53,7 @@ public class RestoreSnapshotRequest extends MasterNodeRequest<RestoreSnapshotReq
     private String snapshot;
     private String repository;
     private String[] indices = Strings.EMPTY_ARRAY;
+    private String[] templates = Strings.EMPTY_ARRAY;
     private IndicesOptions indicesOptions = IndicesOptions.strictExpandOpen();
     private String renamePattern;
     private String renameReplacement;
@@ -180,6 +181,18 @@ public class RestoreSnapshotRequest extends MasterNodeRequest<RestoreSnapshotReq
      */
     public String[] indices() {
         return indices;
+    }
+
+    public RestoreSnapshotRequest templates(String... templates) {
+        this.templates = templates;
+        return this;
+    }
+
+    /**
+     * Returns list of templates that should be restored from snapshot
+     */
+    public String[] templates() {
+        return templates;
     }
 
     /**
@@ -627,6 +640,7 @@ public class RestoreSnapshotRequest extends MasterNodeRequest<RestoreSnapshotReq
         settings = readSettingsFromStream(in);
         indexSettings = readSettingsFromStream(in);
         ignoreIndexSettings = in.readStringArray();
+        templates = in.readStringArray();
     }
 
     @Override
@@ -645,5 +659,6 @@ public class RestoreSnapshotRequest extends MasterNodeRequest<RestoreSnapshotReq
         writeSettingsToStream(settings, out);
         writeSettingsToStream(indexSettings, out);
         out.writeStringArray(ignoreIndexSettings);
+        out.writeStringArray(templates);
     }
 }
