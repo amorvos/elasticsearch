@@ -44,6 +44,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Collections;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -118,7 +119,7 @@ public class Setting<T> extends ToXContentToBytes {
 
     private Setting(Key key, @Nullable Setting<T> fallbackSetting, Function<Settings, String> defaultValue, Function<String, T> parser,
             Property... properties) {
-        assert parser.apply(defaultValue.apply(Settings.EMPTY)) != null || this.isGroupSetting(): "parser returned null";
+        assert parser.apply(defaultValue.apply(Settings.EMPTY)) != null || this.hasComplexMatcher(): "parser returned null";
         this.key = key;
         this.fallbackSetting = fallbackSetting;
         this.defaultValue = defaultValue;
@@ -265,7 +266,7 @@ public class Setting<T> extends ToXContentToBytes {
         return false;
     }
 
-    boolean hasComplexMatcher() {
+    public boolean hasComplexMatcher() {
         return isGroupSetting();
     }
 
@@ -661,7 +662,7 @@ public class Setting<T> extends ToXContentToBytes {
             }
 
             @Override
-            boolean hasComplexMatcher() {
+            public boolean hasComplexMatcher() {
                 return true;
             }
 
@@ -698,7 +699,9 @@ public class Setting<T> extends ToXContentToBytes {
             XContentBuilder builder = XContentBuilder.builder(XContentType.JSON.xContent());
             builder.startArray();
             for (String element : array) {
-                builder.value(element);
+                if(!element.isEmpty()){
+                    builder.value(element);
+                }
             }
             builder.endArray();
             return builder.string();
@@ -787,6 +790,42 @@ public class Setting<T> extends ToXContentToBytes {
                         return "Updater for: " + setting.toString();
                     }
                 };
+            }
+        };
+    }
+
+    public static <T> Setting<List<Map<String, Object>>> mapListSetting(String key, Property... properties) {
+
+     Function<String, Map<String, Object>> MAP_PARSER =
+        (String t) -> {
+            try {
+                if(t.equals("[]")){
+                    return Collections.emptyMap();
+                }
+                return XContentType.YAML.xContent().createParser(t).map();
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Could not parse HBA entry.", e);
+            }
+        };
+
+        Function<String, List<Map<String, Object>>> parser = (s) ->
+            parseableStringToList(s).stream().map(MAP_PARSER).collect(Collectors.toList());
+
+        return new Setting<List<Map<String, Object>>>(new ListKey(key),s -> "[]", parser, properties) {
+            public String getRaw(Settings settings) {
+                String[] array = settings.getAsArray(getKey(), null);
+                return array == null ? defaultValue.apply(settings) : arrayToParsableString(array);
+            }
+
+            @Override
+            public boolean hasComplexMatcher() {
+                return true;
+            }
+
+            @Override
+            public boolean exists(Settings settings) {
+                boolean exists = super.exists(settings);
+                return exists || settings.get(getKey() + ".0") != null;
             }
         };
     }
