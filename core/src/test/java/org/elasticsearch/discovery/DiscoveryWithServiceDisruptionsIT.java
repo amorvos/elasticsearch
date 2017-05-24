@@ -27,6 +27,7 @@ import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateUpdateTask;
@@ -331,8 +332,9 @@ public class DiscoveryWithServiceDisruptionsIT extends ESIntegTestCase {
 
         // Makes sure that the get request can be executed on each node locally:
         assertAcked(prepareCreate("test").setSettings(Settings.builder()
-            .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
-            .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 2)
+                .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
+                .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 2)
+                .put(IndexMetaData.SETTING_AUTO_EXPAND_REPLICAS, false)
         ));
 
         // Everything is stable now, it is now time to simulate evil...
@@ -413,10 +415,11 @@ public class DiscoveryWithServiceDisruptionsIT extends ESIntegTestCase {
         final List<String> nodes = startCluster(3);
 
         assertAcked(prepareCreate("test")
-            .setSettings(Settings.builder()
-                .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1 + randomInt(2))
-                .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, randomInt(2))
-            ));
+                .setSettings(Settings.builder()
+                        .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1 + randomInt(2))
+                        .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, randomInt(2))
+                        .put(IndexMetaData.SETTING_AUTO_EXPAND_REPLICAS, false)
+                ));
 
         ensureGreen();
         String isolatedNode = internalCluster().getMasterName();
@@ -488,10 +491,11 @@ public class DiscoveryWithServiceDisruptionsIT extends ESIntegTestCase {
         final List<String> nodes = startCluster(rarely() ? 5 : 3);
 
         assertAcked(prepareCreate("test")
-            .setSettings(Settings.builder()
-                .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1 + randomInt(2))
-                .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, randomInt(2))
-            ));
+                .setSettings(Settings.builder()
+                        .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1 + randomInt(2))
+                        .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, randomInt(2))
+                        .put(IndexMetaData.SETTING_AUTO_EXPAND_REPLICAS, false)
+                ));
         ensureGreen();
 
         ServiceDisruptionScheme disruptionScheme = addRandomDisruptionScheme();
@@ -790,11 +794,13 @@ public class DiscoveryWithServiceDisruptionsIT extends ESIntegTestCase {
         List<String> nodes = startCluster(3);
 
         assertAcked(prepareCreate("test")
-            .setSettings(Settings.builder()
-                .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 2)
-            )
-            .get());
+                .setSettings(Settings.builder()
+                        .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
+                        .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 2)
+                        .put(IndexMetaData.SETTING_AUTO_EXPAND_REPLICAS, false)
+                        .put(IndexMetaData.SETTING_WAIT_FOR_ACTIVE_SHARDS.getKey(), ActiveShardCount.ONE)
+                )
+                .get());
         ensureGreen("test");
 
         nodes = new ArrayList<>(nodes);
@@ -992,6 +998,7 @@ public class DiscoveryWithServiceDisruptionsIT extends ESIntegTestCase {
             .setSettings(Settings.builder()
                 .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 3)
                 .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 2)
+                .put(IndexMetaData.SETTING_AUTO_EXPAND_REPLICAS, "false")
             ));
         ensureGreen();
         String nonMasterNodeId = internalCluster().clusterService(nonMasterNode).localNode().getId();
@@ -1118,9 +1125,10 @@ public class DiscoveryWithServiceDisruptionsIT extends ESIntegTestCase {
 
         logger.info("--> creating index [test] with one shard and on replica");
         assertAcked(prepareCreate("test").setSettings(
-            Settings.builder().put(indexSettings())
-                .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 0))
+                Settings.builder().put(indexSettings())
+                        .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
+                        .put(IndexMetaData.SETTING_AUTO_EXPAND_REPLICAS, false)
+                        .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 0))
         );
         ensureGreen("test");
 
@@ -1241,7 +1249,8 @@ public class DiscoveryWithServiceDisruptionsIT extends ESIntegTestCase {
 
         assertAcked(client(randomFrom(nonPreferredNodes)).admin().indices().prepareCreate("test").setSettings(
             INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1,
-            INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 0
+            INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 0,
+            IndexMetaData.SETTING_AUTO_EXPAND_REPLICAS, false
         ));
 
         internalCluster().clearDisruptionScheme(false);

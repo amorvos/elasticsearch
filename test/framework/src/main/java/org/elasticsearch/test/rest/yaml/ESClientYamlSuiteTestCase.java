@@ -20,8 +20,9 @@
 package org.elasticsearch.test.rest.yaml;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
-
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
+import org.apache.http.entity.StringEntity;
 import org.apache.lucene.util.IOUtils;
 import org.elasticsearch.Version;
 import org.elasticsearch.client.Response;
@@ -175,7 +176,23 @@ public abstract class ESClientYamlSuiteTestCase extends ESRestTestCase {
         //skip test if test section is disabled
         assumeFalse(testCandidate.getTestSection().getSkipSection().getSkipMessage(testCandidate.getTestPath()),
                 testCandidate.getTestSection().getSkipSection().skip(restTestExecutionContext.esVersion()));
+
+        setupDefaultsTemplate();
     }
+
+    private void setupDefaultsTemplate() throws IOException {
+        HttpEntity body = new StringEntity("{\n" +
+                                           "          \"template\": \"*\",\n" +
+                                           "          \"settings\": {\n" +
+                                           "            \"auto_expand_replicas\": \"false\",\n" +
+                                           "            \"write\": {\n" +
+                                           "              \"wait_for_active_shards\": 1\n" +
+                                           "            }\n" +
+                                           "          }\n" +
+                                           "        }");
+        adminClient().performRequest("PUT", "_template/defaults_template", Collections.emptyMap(), body);
+    }
+
 
     @Override
     protected void afterIfFailed(List<Throwable> errors) {
