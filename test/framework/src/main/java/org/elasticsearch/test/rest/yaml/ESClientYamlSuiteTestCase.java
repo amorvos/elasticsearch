@@ -20,7 +20,8 @@
 package org.elasticsearch.test.rest.yaml;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
-
+import org.apache.http.HttpEntity;
+import org.apache.http.entity.StringEntity;
 import org.apache.lucene.util.IOUtils;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.SuppressForbidden;
@@ -30,11 +31,10 @@ import org.elasticsearch.test.rest.yaml.parser.ClientYamlTestParseException;
 import org.elasticsearch.test.rest.yaml.parser.ClientYamlTestSuiteParser;
 import org.elasticsearch.test.rest.yaml.restspec.ClientYamlSuiteRestApi;
 import org.elasticsearch.test.rest.yaml.restspec.ClientYamlSuiteRestSpec;
+import org.elasticsearch.test.rest.yaml.section.ClientYamlTestSection;
 import org.elasticsearch.test.rest.yaml.section.ClientYamlTestSuite;
 import org.elasticsearch.test.rest.yaml.section.DoSection;
 import org.elasticsearch.test.rest.yaml.section.ExecutableSection;
-import org.elasticsearch.test.rest.yaml.section.SkipSection;
-import org.elasticsearch.test.rest.yaml.section.ClientYamlTestSection;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -275,6 +275,21 @@ public abstract class ESClientYamlSuiteTestCase extends ESRestTestCase {
         //skip test if test section is disabled
         assumeFalse(testCandidate.getTestSection().getSkipSection().getSkipMessage(testCandidate.getTestPath()),
                 testCandidate.getTestSection().getSkipSection().skip(restTestExecutionContext.esVersion()));
+
+        setupDefaultsTemplate();
+    }
+
+    private void setupDefaultsTemplate() throws IOException {
+        HttpEntity body = new StringEntity("{\n" +
+            "          \"template\": \"*\",\n" +
+            "          \"settings\": {\n" +
+            "            \"auto_expand_replicas\": \"false\",\n" +
+            "            \"write\": {\n" +
+            "              \"wait_for_active_shards\": 1\n" +
+            "            }\n" +
+            "          }\n" +
+            "        }");
+        adminClient().performRequest("PUT", "_template/defaults_template", Collections.emptyMap(), body);
     }
 
     public void test() throws IOException {

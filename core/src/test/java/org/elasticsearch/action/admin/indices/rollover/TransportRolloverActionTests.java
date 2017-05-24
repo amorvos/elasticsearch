@@ -59,6 +59,7 @@ public class TransportRolloverActionTests extends ESTestCase {
             .put(IndexMetaData.SETTING_INDEX_UUID, UUIDs.randomBase64UUID())
             .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
             .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 0)
+            .put(IndexMetaData.SETTING_AUTO_EXPAND_REPLICAS, false)
             .build();
         final IndexMetaData metaData = IndexMetaData.builder(randomAsciiOfLength(10))
             .creationDate(System.currentTimeMillis() - TimeValue.timeValueHours(3).getMillis())
@@ -131,6 +132,7 @@ public class TransportRolloverActionTests extends ESTestCase {
             .put(IndexMetaData.SETTING_INDEX_UUID, UUIDs.randomBase64UUID())
             .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
             .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 0)
+            .put(IndexMetaData.SETTING_AUTO_EXPAND_REPLICAS, false)
             .build();
         final MetaData metaData = MetaData.builder()
             .put(IndexMetaData.builder(index1)

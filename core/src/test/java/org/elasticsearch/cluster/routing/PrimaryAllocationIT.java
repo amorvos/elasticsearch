@@ -27,7 +27,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.routing.allocation.command.AllocateEmptyPrimaryAllocationCommand;
 import org.elasticsearch.cluster.routing.allocation.command.AllocateStalePrimaryAllocationCommand;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.ImmutableOpenIntMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
@@ -38,7 +37,6 @@ import org.elasticsearch.test.InternalTestCluster;
 import org.elasticsearch.test.disruption.NetworkDisruption;
 import org.elasticsearch.test.disruption.NetworkDisruption.NetworkDisconnect;
 import org.elasticsearch.test.disruption.NetworkDisruption.TwoPartitions;
-import org.elasticsearch.test.junit.annotations.TestLogging;
 import org.elasticsearch.test.transport.MockTransportService;
 
 import java.util.Arrays;
@@ -70,7 +68,9 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
         internalCluster().startDataOnlyNodesAsync(2).get();
 
         assertAcked(client().admin().indices().prepareCreate("test").setSettings(Settings.builder()
-            .put("index.number_of_shards", 1).put("index.number_of_replicas", 1)).get());
+            .put("index.number_of_shards", 1).put("index.number_of_replicas", 1)
+            .put(IndexMetaData.SETTING_AUTO_EXPAND_REPLICAS, "false")
+            .put(IndexMetaData.SETTING_WAIT_FOR_ACTIVE_SHARDS.getKey(), ActiveShardCount.ONE)).get());
         ensureGreen();
         logger.info("--> indexing...");
         client().prepareIndex("test", "type1").setSource(jsonBuilder().startObject().field("field", "value1").endObject()).get();
@@ -215,7 +215,10 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
         internalCluster().startMasterOnlyNode(Settings.EMPTY);
         internalCluster().startDataOnlyNode(Settings.EMPTY);
         assertAcked(client().admin().indices().prepareCreate("test").setSettings(Settings.builder()
-            .put("index.number_of_shards", 1).put("index.number_of_replicas", 1).put("index.unassigned.node_left.delayed_timeout", "0ms")).get());
+            .put("index.number_of_shards", 1).put("index.number_of_replicas", 1)
+            .put(IndexMetaData.SETTING_AUTO_EXPAND_REPLICAS, "false")
+            .put(IndexMetaData.SETTING_WAIT_FOR_ACTIVE_SHARDS.getKey(), ActiveShardCount.ONE)
+            .put("index.unassigned.node_left.delayed_timeout", "0ms")).get());
         String replicaNode = internalCluster().startDataOnlyNode(Settings.EMPTY);
         ensureGreen("test");
         internalCluster().stopRandomNode(InternalTestCluster.nameFilter(replicaNode));
@@ -269,7 +272,8 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
         internalCluster().startNodesAsync(3).get();
         logger.info("--> creating index with 1 primary and 2 replicas");
         assertAcked(client().admin().indices().prepareCreate("test").setSettings(Settings.builder()
-            .put("index.number_of_shards", randomIntBetween(1, 3)).put("index.number_of_replicas", 2)).get());
+            .put("index.number_of_shards", randomIntBetween(1, 3)).put("index.number_of_replicas", 2)
+            .put(IndexMetaData.SETTING_AUTO_EXPAND_REPLICAS, "false")).get());
         ensureGreen("test");
         client().prepareIndex("test", "type1").setSource(jsonBuilder().startObject().field("field", "value1").endObject()).get();
         logger.info("--> removing 2 nodes from cluster");
