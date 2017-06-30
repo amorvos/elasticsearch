@@ -76,7 +76,7 @@ public class UidFieldMapper extends MetadataFieldMapper {
         }
     }
 
-    static final class UidFieldType extends TermBasedFieldType {
+    static final class UidFieldType extends StringFieldType {
 
         public UidFieldType() {
         }

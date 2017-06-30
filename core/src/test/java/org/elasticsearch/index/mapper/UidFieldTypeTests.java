@@ -18,20 +18,9 @@
  */
 package org.elasticsearch.index.mapper;
 
-import org.elasticsearch.index.mapper.MappedFieldType;
-import org.elasticsearch.index.mapper.UidFieldMapper;
-
 public class UidFieldTypeTests extends FieldTypeTestCase {
     @Override
     protected MappedFieldType createDefaultFieldType() {
         return new UidFieldMapper.UidFieldType();
-    }
-
-    public void testRangeQuery() {
-        MappedFieldType ft = createDefaultFieldType();
-        ft.setName("_uid");
-        IllegalArgumentException e = expectThrows(IllegalArgumentException.class,
-                () -> ft.rangeQuery(null, null, randomBoolean(), randomBoolean()));
-        assertEquals("Field [_uid] of type [_uid] does not support range queries", e.getMessage());
     }
 }
