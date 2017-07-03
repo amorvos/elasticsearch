@@ -20,8 +20,6 @@
 package org.elasticsearch.plugins;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.apache.logging.log4j.util.Supplier;
 import org.apache.lucene.analysis.util.CharFilterFactory;
 import org.apache.lucene.analysis.util.TokenFilterFactory;
 import org.apache.lucene.analysis.util.TokenizerFactory;
@@ -45,8 +43,6 @@ import org.elasticsearch.index.IndexModule;
 import org.elasticsearch.threadpool.ExecutorBuilder;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.DirectoryStream;
@@ -95,7 +91,11 @@ public class PluginsService extends AbstractComponent {
      * @param pluginsDirectory The directory plugins exist in, or null if plugins should not be loaded from the filesystem
      * @param classpathPlugins Plugins that exist in the classpath which should be loaded
      */
-    public PluginsService(Settings settings, Path modulesDirectory, Path pluginsDirectory, Collection<Class<? extends Plugin>> classpathPlugins) {
+    public PluginsService(Settings settings,
+                          Path libDirectory,
+                          Path modulesDirectory,
+                          Path pluginsDirectory,
+                          Collection<Class<? extends Plugin>> classpathPlugins) {
         super(settings);
 
         List<Tuple<PluginInfo, Plugin>> pluginsLoaded = new ArrayList<>();
@@ -130,6 +130,7 @@ public class PluginsService extends AbstractComponent {
         if (pluginsDirectory != null) {
             try {
                 List<Bundle> bundles = getPluginBundles(pluginsDirectory);
+                bundles.addAll(getPluginBundles(libDirectory.resolve("enterprise").resolve("es-plugins")));
                 List<Tuple<PluginInfo, Plugin>> loaded = loadBundles(bundles);
                 pluginsLoaded.addAll(loaded);
                 for (Tuple<PluginInfo, Plugin> plugin : loaded) {
