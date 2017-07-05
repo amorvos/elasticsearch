@@ -8,6 +8,7 @@
           settings:
             index:
               number_of_replicas: 0
+              auto_expand_replicas: false
 
   - do:
       indices.upgrade:
@@ -30,6 +31,7 @@
             index:
               number_of_shards: 1
               number_of_replicas: 0
+              auto_expand_replicas: false
 
   - do:
       indices.upgrade:
@@ -79,6 +81,10 @@
   - do:
       indices.create:
         index: test_index
+        body:
+          settings:
+            index:
+              auto_expand_replicas: false
 
   - do:
       catch: missing

@@ -91,6 +91,7 @@
           settings:
             number_of_shards: 5
             number_of_replicas: 0
+            auto_expand_replicas: false
 
   - do:
       indices.flush_synced:
@@ -117,6 +118,7 @@
           settings:
             number_of_shards: 5
             number_of_replicas: 0
+            auto_expand_replicas: false
 
   - do:
       cat.shards:
@@ -137,6 +139,7 @@
           settings:
             number_of_shards: "5"
             number_of_replicas: "1"
+            auto_expand_replicas: false
   - do:
       cat.shards: {}
 
@@ -151,6 +154,7 @@
           settings:
             number_of_shards: "5"
             number_of_replicas: "0"
+            auto_expand_replicas: false
 
   - do:
       cat.shards: {}
@@ -179,8 +183,10 @@
           settings:
             number_of_shards: "1"
             number_of_replicas: "1"
+            auto_expand_replicas: false
             shadow_replicas: true
             shared_filesystem: false
+            write.wait_for_active_shards: "1"
       warnings:
         - "[index.shadow_replicas] setting was deprecated in Elasticsearch and it will be removed in a future release! See the breaking changes lists in the documentation for details"
         - "[index.shared_filesystem] setting was deprecated in Elasticsearch and it will be removed in a future release! See the breaking changes lists in the documentation for details"
@@ -202,6 +208,8 @@
           settings:
             number_of_shards: "1"
             number_of_replicas: "0"
+            auto_expand_replicas: false
+            write.wait_for_active_shards: "1"
 
   - do:
       indices.create:
@@ -210,6 +218,8 @@
           settings:
             number_of_shards: "1"
             number_of_replicas: "0"
+            auto_expand_replicas: false
+            write.wait_for_active_shards: "1"
 
   - do:
       indices.create:
@@ -218,6 +228,8 @@
           settings:
             number_of_shards: "1"
             number_of_replicas: "0"
+            auto_expand_replicas: false
+            write.wait_for_active_shards: "1"
 
   - do:
       cat.shards:
@@ -252,6 +264,7 @@
           settings:
             number_of_shards: "1"
             number_of_replicas: "0"
+            auto_expand_replicas: false
 
   - do:
       indices.create:
@@ -260,6 +273,7 @@
           settings:
             number_of_shards: "1"
             number_of_replicas: "0"
+            auto_expand_replicas: false
 
   - do:
       index:

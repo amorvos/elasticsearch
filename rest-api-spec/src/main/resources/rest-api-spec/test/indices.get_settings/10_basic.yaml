@@ -7,6 +7,7 @@ setup:
             settings:
               number_of_shards: 5
               number_of_replicas: 1
+              auto_expand_replicas: false
   - do:
         indices.create:
           index: test_2
@@ -14,6 +15,7 @@ setup:
             settings:
               number_of_shards: 3
               number_of_replicas: 0
+              auto_expand_replicas: false
 
 ---
 "Get /_settings":

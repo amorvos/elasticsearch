@@ -8,6 +8,8 @@
           settings:
             number_of_shards: "1"
             number_of_replicas: "0"
+            auto_expand_replicas: false
+            write.wait_for_active_shards: "1"
 
  - do:
       cluster.health:

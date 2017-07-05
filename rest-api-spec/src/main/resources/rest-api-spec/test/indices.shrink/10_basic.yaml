@@ -21,6 +21,7 @@
             # ensure everything is allocated on a single node
             index.routing.allocation.include._id: $master
             number_of_replicas: 0
+            auto_expand_replicas: false
   - do:
       index:
         index: source

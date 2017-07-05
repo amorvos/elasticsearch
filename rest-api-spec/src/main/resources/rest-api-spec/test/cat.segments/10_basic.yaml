@@ -39,6 +39,7 @@
           settings:
             number_of_shards: "3"
             number_of_replicas: "0"
+            auto_expand_replicas: false
   - do:
       index:
         index: index1
@@ -59,6 +60,7 @@
           settings:
             number_of_shards: "3"
             number_of_replicas: "0"
+            auto_expand_replicas: false
   - do:
       index:
         index: index2
@@ -93,6 +95,7 @@
           settings:
             number_of_shards: "1"
             number_of_replicas: "0"
+            auto_expand_replicas: false
 
   - do:
       indices.close:
@@ -113,6 +116,7 @@
           settings:
             number_of_shards: "1"
             number_of_replicas: "0"
+            auto_expand_replicas: false
 
   - do:
       index:
@@ -128,6 +132,7 @@
           settings:
             number_of_shards: "1"
             number_of_replicas: "0"
+            auto_expand_replicas: false
 
   - do:
       index:
@@ -143,6 +148,7 @@
           settings:
             number_of_shards: "1"
             number_of_replicas: "0"
+            auto_expand_replicas: false
 
   - do:
       index:

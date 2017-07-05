@@ -6,6 +6,7 @@ setup:
           settings:
             index:
               number_of_replicas: 0
+              auto_expand_replicas: false
 
 ---
 "Test indices settings":

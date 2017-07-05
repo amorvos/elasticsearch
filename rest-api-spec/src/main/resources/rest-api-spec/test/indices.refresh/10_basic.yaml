@@ -8,6 +8,7 @@ setup:
             index:
               number_of_replicas: 0
               number_of_shards: 5
+              auto_expand_replicas: false
 
   - do:
       indices.create:
@@ -17,6 +18,7 @@ setup:
             index:
               number_of_replicas: 0
               number_of_shards: 5
+              auto_expand_replicas: false
 
   - do:
       cluster.health:

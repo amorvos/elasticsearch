@@ -12,6 +12,10 @@
   - do:
       indices.create:
         index: test
+        body:
+          settings:
+            index:
+              auto_expand_replicas: false
 
   - match: { acknowledged: true }
 
@@ -45,7 +49,7 @@
   - do:
       indices.create:
         index: test
-        body: { "index.number_of_shards": 1, "index.number_of_replicas": 9 }
+        body: { "index.number_of_shards": 1, "index.number_of_replicas": 9, "write.wait_for_active_shards": 1 }
 
   - do:
       cluster.state:
