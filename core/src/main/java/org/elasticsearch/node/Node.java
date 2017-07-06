@@ -55,6 +55,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.RoutingService;
 import org.elasticsearch.cluster.routing.allocation.DiskThresholdMonitor;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.component.LifecycleComponent;
@@ -153,8 +154,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -164,6 +167,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
+import static org.elasticsearch.cluster.node.DiscoveryNode.getRolesFromSettings;
 
 /**
  * A node represent a node within a cluster (<tt>cluster.name</tt>). The {@link #client()} can be used
@@ -600,6 +604,17 @@ public class Node implements Closeable {
         Discovery discovery = injector.getInstance(Discovery.class);
         clusterService.getMasterService().setClusterStatePublisher(discovery::publish);
 
+        // Start Http service before Transport service to ensure that
+        // the publish http address gets passed as a node attribute.
+        if (NetworkModule.HTTP_ENABLED.get(settings)) {
+            HttpServerTransport httpServerTransport = injector.getInstance(HttpServerTransport.class);
+            httpServerTransport.start();
+            // CRATE_PATCH: add http publish address to the discovery node
+            localNodeFactory.httpPublishAddress =
+                httpServerTransport.info().address().publishAddress().getAddress() + ":" +
+                httpServerTransport.info().address().publishAddress().getPort();
+        }
+
         // Start the transport service now so the publish address will be added to the local disco node in ClusterService
         TransportService transportService = injector.getInstance(TransportService.class);
         transportService.getTaskManager().setTaskResultsService(injector.getInstance(TaskResultsService.class));
@@ -666,11 +681,6 @@ public class Node implements Closeable {
                     throw new ElasticsearchTimeoutException("Interrupted while waiting for initial discovery state");
                 }
             }
-        }
-
-
-        if (NetworkModule.HTTP_ENABLED.get(settings)) {
-            injector.getInstance(HttpServerTransport.class).start();
         }
 
         if (WRITE_PORTS_FILE_SETTING.get(settings)) {
@@ -929,6 +939,9 @@ public class Node implements Closeable {
         private final String persistentNodeId;
         private final Settings settings;
 
+        @Nullable
+        String httpPublishAddress;
+
         private LocalNodeFactory(Settings settings, String persistentNodeId) {
             this.persistentNodeId = persistentNodeId;
             this.settings = settings;
@@ -936,7 +949,13 @@ public class Node implements Closeable {
 
         @Override
         public DiscoveryNode apply(BoundTransportAddress boundTransportAddress) {
-            localNode.set(DiscoveryNode.createLocal(settings, boundTransportAddress.publishAddress(), persistentNodeId));
+            // CRATE_PATCH: use existing node attributes to pass and stream http_address between the nodes
+            Map<String, String> attributes = new HashMap<>(Node.NODE_ATTRIBUTES.get(settings).getAsMap());
+            Set<DiscoveryNode.Role> roles = getRolesFromSettings(settings);
+            if (httpPublishAddress != null) {
+                attributes.put("http_address", httpPublishAddress);
+            }
+            localNode.set(new DiscoveryNode(Node.NODE_NAME_SETTING.get(settings), persistentNodeId, boundTransportAddress.publishAddress(), attributes, roles, Version.CURRENT));
             return localNode.get();
         }
 
