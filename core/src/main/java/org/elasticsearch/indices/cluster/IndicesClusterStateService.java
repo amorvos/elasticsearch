@@ -65,7 +65,6 @@ import org.elasticsearch.indices.recovery.PeerRecoveryTargetService;
 import org.elasticsearch.indices.recovery.RecoveryFailedException;
 import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.repositories.RepositoriesService;
-import org.elasticsearch.search.SearchService;
 import org.elasticsearch.snapshots.RestoreService;
 import org.elasticsearch.snapshots.SnapshotShardsService;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -117,11 +116,11 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent imple
                                       ShardStateAction shardStateAction,
                                       NodeMappingRefreshAction nodeMappingRefreshAction,
                                       RepositoriesService repositoriesService, RestoreService restoreService,
-                                      SearchService searchService, SyncedFlushService syncedFlushService,
+                                      SyncedFlushService syncedFlushService,
                                       PeerRecoverySourceService peerRecoverySourceService, SnapshotShardsService snapshotShardsService) {
         this(settings, (AllocatedIndices<? extends Shard, ? extends AllocatedIndex<? extends Shard>>) indicesService,
             clusterService, threadPool, recoveryTargetService, shardStateAction,
-            nodeMappingRefreshAction, repositoriesService, restoreService, searchService, syncedFlushService, peerRecoverySourceService,
+            nodeMappingRefreshAction, repositoriesService, restoreService, syncedFlushService, peerRecoverySourceService,
             snapshotShardsService);
     }
 
@@ -133,10 +132,10 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent imple
                                ShardStateAction shardStateAction,
                                NodeMappingRefreshAction nodeMappingRefreshAction,
                                RepositoriesService repositoriesService, RestoreService restoreService,
-                               SearchService searchService, SyncedFlushService syncedFlushService,
+                               SyncedFlushService syncedFlushService,
                                PeerRecoverySourceService peerRecoverySourceService, SnapshotShardsService snapshotShardsService) {
         super(settings);
-        this.buildInIndexListener = Arrays.asList(peerRecoverySourceService, recoveryTargetService, searchService, syncedFlushService,
+        this.buildInIndexListener = Arrays.asList(peerRecoverySourceService, recoveryTargetService, syncedFlushService,
                                                   snapshotShardsService);
         this.indicesService = indicesService;
         this.clusterService = clusterService;

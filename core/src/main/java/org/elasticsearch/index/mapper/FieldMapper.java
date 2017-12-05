@@ -33,8 +33,6 @@ import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
-import org.elasticsearch.index.similarity.SimilarityProvider;
-import org.elasticsearch.index.similarity.SimilarityService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -184,11 +182,6 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
 
         public T includeInAll(Boolean includeInAll) {
             this.includeInAll = includeInAll;
-            return builder;
-        }
-
-        public T similarity(SimilarityProvider similarity) {
-            this.fieldType.setSimilarity(similarity);
             return builder;
         }
 
@@ -412,12 +405,6 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         }
         if (includeDefaults || fieldType().eagerGlobalOrdinals() != defaultFieldType.eagerGlobalOrdinals()) {
             builder.field("eager_global_ordinals", fieldType().eagerGlobalOrdinals());
-        }
-
-        if (fieldType().similarity() != null) {
-            builder.field("similarity", fieldType().similarity().name());
-        } else if (includeDefaults) {
-            builder.field("similarity", SimilarityService.DEFAULT_SIMILARITY);
         }
 
         multiFields.toXContent(builder, params);

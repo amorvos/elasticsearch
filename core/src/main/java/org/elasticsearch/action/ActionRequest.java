@@ -39,12 +39,6 @@ public abstract class ActionRequest extends TransportRequest {
 
     public abstract ActionRequestValidationException validate();
 
-    /**
-     * Should this task store its result after it has finished?
-     */
-    public boolean getShouldStoreResult() {
-        return false;
-    }
 
     @Override
     public void readFrom(StreamInput in) throws IOException {

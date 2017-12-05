@@ -31,7 +31,6 @@ import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryRequ
 import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryRequest;
 import org.elasticsearch.action.admin.cluster.reroute.ClusterRerouteRequest;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
-import org.elasticsearch.action.admin.cluster.shards.ClusterSearchShardsRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.delete.DeleteSnapshotRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequest;
@@ -55,11 +54,7 @@ import org.elasticsearch.action.admin.indices.segments.IndicesSegmentsRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.shards.IndicesShardStoresRequest;
 import org.elasticsearch.action.admin.indices.upgrade.post.UpgradeRequest;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 
@@ -78,41 +73,6 @@ public class Requests {
      */
     public static XContentType INDEX_CONTENT_TYPE = XContentType.JSON;
 
-    public static IndexRequest indexRequest() {
-        return new IndexRequest();
-    }
-
-    /**
-     * Create an index request against a specific index. Note the {@link IndexRequest#type(String)} must be
-     * set as well and optionally the {@link IndexRequest#id(String)}.
-     *
-     * @param index The index name to index the request against
-     * @return The index request
-     * @see org.elasticsearch.client.Client#index(org.elasticsearch.action.index.IndexRequest)
-     */
-    public static IndexRequest indexRequest(String index) {
-        return new IndexRequest(index);
-    }
-
-    /**
-     * Creates a delete request against a specific index. Note the {@link DeleteRequest#type(String)} and
-     * {@link DeleteRequest#id(String)} must be set.
-     *
-     * @param index The index name to delete from
-     * @return The delete request
-     * @see org.elasticsearch.client.Client#delete(org.elasticsearch.action.delete.DeleteRequest)
-     */
-    public static DeleteRequest deleteRequest(String index) {
-        return new DeleteRequest(index);
-    }
-
-    /**
-     * Creates a new bulk request.
-     */
-    public static BulkRequest bulkRequest() {
-        return new BulkRequest();
-    }
-
     /**
      * Creates a get request to get the JSON source from an index based on a type and id. Note, the
      * {@link GetRequest#type(String)} and {@link GetRequest#id(String)} must be set.
@@ -126,23 +86,10 @@ public class Requests {
     }
 
     /**
-     * Creates a search request against one or more indices. Note, the search source must be set either using the
-     * actual JSON search source, or the {@link org.elasticsearch.search.builder.SearchSourceBuilder}.
-     *
-     * @param indices The indices to search against. Use <tt>null</tt> or <tt>_all</tt> to execute against all indices
-     * @return The search request
-     * @see org.elasticsearch.client.Client#search(org.elasticsearch.action.search.SearchRequest)
-     */
-    public static SearchRequest searchRequest(String... indices) {
-        return new SearchRequest(indices);
-    }
-
-    /**
      * Creates a search scroll request allowing to continue searching a previous search request.
      *
      * @param scrollId The scroll id representing the scrollable search
      * @return The search scroll request
-     * @see org.elasticsearch.client.Client#searchScroll(org.elasticsearch.action.search.SearchScrollRequest)
      */
     public static SearchScrollRequest searchScrollRequest(String scrollId) {
         return new SearchScrollRequest(scrollId);
@@ -339,20 +286,6 @@ public class Requests {
      */
     public static ClusterHealthRequest clusterHealthRequest(String... indices) {
         return new ClusterHealthRequest(indices);
-    }
-
-    /**
-     * List all shards for the give search
-     */
-    public static ClusterSearchShardsRequest clusterSearchShardsRequest() {
-        return new ClusterSearchShardsRequest();
-    }
-
-    /**
-     * List all shards for the give search
-     */
-    public static ClusterSearchShardsRequest clusterSearchShardsRequest(String... indices) {
-        return new ClusterSearchShardsRequest(indices);
     }
 
     /**

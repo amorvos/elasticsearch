@@ -34,12 +34,10 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.ConstructingObjectParser;
 import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.common.xcontent.ObjectParser.ValueType;
-import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.query.QueryBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -361,22 +359,6 @@ public class IndicesAliasesRequest extends AcknowledgedRequest<IndicesAliasesReq
                 return this;
             } catch (IOException e) {
                 throw new ElasticsearchGenerationException("Failed to generate [" + filter + "]", e);
-            }
-        }
-
-        public AliasActions filter(QueryBuilder filter) {
-            if (filter == null) {
-                this.filter = null;
-                return this;
-            }
-            try {
-                XContentBuilder builder = XContentFactory.jsonBuilder();
-                filter.toXContent(builder, ToXContent.EMPTY_PARAMS);
-                builder.close();
-                this.filter = builder.string();
-                return this;
-            } catch (IOException e) {
-                throw new ElasticsearchGenerationException("Failed to build json for alias request", e);
             }
         }
 

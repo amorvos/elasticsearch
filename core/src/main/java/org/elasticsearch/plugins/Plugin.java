@@ -41,12 +41,8 @@ import org.elasticsearch.discovery.DiscoveryModule;
 import org.elasticsearch.index.IndexModule;
 import org.elasticsearch.indices.analysis.AnalysisModule;
 import org.elasticsearch.repositories.RepositoriesModule;
-import org.elasticsearch.script.ScriptModule;
-import org.elasticsearch.script.ScriptService;
-import org.elasticsearch.search.SearchModule;
 import org.elasticsearch.threadpool.ExecutorBuilder;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.watcher.ResourceWatcherService;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -69,7 +65,6 @@ import java.util.function.UnaryOperator;
  * <li>{@link NetworkPlugin}
  * <li>{@link RepositoryPlugin}
  * <li>{@link ScriptPlugin}
- * <li>{@link SearchPlugin}
  * </ul>
  * <p>In addition to extension points this class also declares some {@code @Deprecated} {@code public final void onModule} methods. These
  * methods should cause any extensions of {@linkplain Plugin} that used the pre-5.x style extension syntax to fail to build and point the
@@ -102,11 +97,8 @@ public abstract class Plugin implements Closeable {
      * @param client A client to make requests to the system
      * @param clusterService A service to allow watching and updating cluster state
      * @param threadPool A service to allow retrieving an executor to run an async action
-     * @param resourceWatcherService A service to watch for changes to node local files
-     * @param scriptService A service to allow running scripts on the local node
      */
     public Collection<Object> createComponents(Client client, ClusterService clusterService, ThreadPool threadPool,
-                                               ResourceWatcherService resourceWatcherService, ScriptService scriptService,
                                                NamedXContentRegistry xContentRegistry) {
         return Collections.emptyList();
     }
@@ -247,15 +239,6 @@ public abstract class Plugin implements Closeable {
     public final void onModule(SettingsModule settingsModule) {}
 
     /**
-     * Old-style guice scripting extension point. {@code @Deprecated} and {@code final} to act as a signpost for plugin authors upgrading
-     * from 2.x.
-     *
-     * @deprecated implement {@link ScriptPlugin} instead
-     */
-    @Deprecated
-    public final void onModule(ScriptModule module) {}
-
-    /**
      * Old-style analysis extension point. {@code @Deprecated} and {@code final} to act as a signpost for plugin authors upgrading
      * from 2.x.
      *
@@ -272,15 +255,6 @@ public abstract class Plugin implements Closeable {
      */
     @Deprecated
     public final void onModule(ActionModule module) {}
-
-    /**
-     * Old-style search extension point. {@code @Deprecated} and {@code final} to act as a signpost for plugin authors upgrading
-     * from 2.x.
-     *
-     * @deprecated implement {@link SearchPlugin} instead
-     */
-    @Deprecated
-    public final void onModule(SearchModule module) {}
 
     /**
      * Old-style network extension point. {@code @Deprecated} and {@code final} to act as a signpost for plugin authors upgrading

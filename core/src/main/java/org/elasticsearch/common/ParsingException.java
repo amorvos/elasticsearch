@@ -24,13 +24,12 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentLocation;
-import org.elasticsearch.index.query.QueryParseContext;
 import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
 
 /**
- * Exception that can be used when parsing queries with a given {@link QueryParseContext}.
+ * Exception that can be used when parsing queries with a given QueryParseContext.
  * Can contain information about location of the error.
  */
 public class ParsingException extends ElasticsearchException {
@@ -57,7 +56,7 @@ public class ParsingException extends ElasticsearchException {
 
     /**
      * This constructor is provided for use in unit tests where a
-     * {@link QueryParseContext} may not be available
+     * QueryParseContext may not be available
      */
     public ParsingException(int line, int col, String msg, Throwable cause) {
         super(msg, cause);

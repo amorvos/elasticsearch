@@ -28,7 +28,6 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
-import org.elasticsearch.transport.RemoteClusterAware;
 
 import java.io.IOException;
 
@@ -141,7 +140,7 @@ public final class SearchShardTarget implements Writeable, Comparable<SearchShar
 
     @Override
     public String toString() {
-        String shardToString = "[" + RemoteClusterAware.buildRemoteIndexName(clusterAlias, shardId.getIndexName()) + "][" + shardId.getId()
+        String shardToString = "[" + shardId.getId()
             + "]";
         if (nodeId == null) {
             return "[_na_]" + shardToString;

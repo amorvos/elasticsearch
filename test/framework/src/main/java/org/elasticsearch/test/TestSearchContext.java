@@ -33,31 +33,13 @@ import org.elasticsearch.index.fielddata.IndexFieldDataService;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.ObjectMapper;
-import org.elasticsearch.index.query.ParsedQuery;
 import org.elasticsearch.index.query.QueryShardContext;
 import org.elasticsearch.index.shard.IndexShard;
-import org.elasticsearch.index.similarity.SimilarityService;
-import org.elasticsearch.search.SearchExtBuilder;
 import org.elasticsearch.search.SearchShardTarget;
-import org.elasticsearch.search.aggregations.SearchContextAggregations;
-import org.elasticsearch.search.collapse.CollapseContext;
 import org.elasticsearch.search.dfs.DfsSearchResult;
-import org.elasticsearch.search.fetch.FetchPhase;
-import org.elasticsearch.search.fetch.FetchSearchResult;
-import org.elasticsearch.search.fetch.StoredFieldsContext;
-import org.elasticsearch.search.fetch.subphase.DocValueFieldsContext;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
-import org.elasticsearch.search.fetch.subphase.ScriptFieldsContext;
-import org.elasticsearch.search.fetch.subphase.highlight.SearchContextHighlight;
 import org.elasticsearch.search.internal.ContextIndexSearcher;
-import org.elasticsearch.search.internal.ScrollContext;
 import org.elasticsearch.search.internal.SearchContext;
-import org.elasticsearch.search.internal.ShardSearchRequest;
-import org.elasticsearch.search.profile.Profilers;
-import org.elasticsearch.search.query.QuerySearchResult;
-import org.elasticsearch.search.rescore.RescoreSearchContext;
-import org.elasticsearch.search.sort.SortAndFormats;
-import org.elasticsearch.search.suggest.SuggestionSearchContext;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import java.util.HashMap;
@@ -74,10 +56,7 @@ public class TestSearchContext extends SearchContext {
     final Map<Class<?>, Collector> queryCollectors = new HashMap<>();
     final IndexShard indexShard;
     final Counter timeEstimateCounter = Counter.newCounter();
-    final QuerySearchResult queryResult = new QuerySearchResult();
     final QueryShardContext queryShardContext;
-    ParsedQuery originalQuery;
-    ParsedQuery postFilter;
     Query query;
     Float minScore;
     SearchTask task;
@@ -85,10 +64,8 @@ public class TestSearchContext extends SearchContext {
     ContextIndexSearcher searcher;
     int size;
     private int terminateAfter = DEFAULT_TERMINATE_AFTER;
-    private SearchContextAggregations aggregations;
 
     private final long originNanoTime = System.nanoTime();
-    private final Map<String, SearchExtBuilder> searchExtBuilders = new HashMap<>();
 
     public TestSearchContext(ThreadPool threadPool, BigArrays bigArrays, IndexService indexService) {
         this.bigArrays = bigArrays.withCircuitBreaking();
@@ -130,11 +107,6 @@ public class TestSearchContext extends SearchContext {
     }
 
     @Override
-    public ShardSearchRequest request() {
-        return null;
-    }
-
-    @Override
     public SearchType searchType() {
         return null;
     }
@@ -160,74 +132,6 @@ public class TestSearchContext extends SearchContext {
     }
 
     @Override
-    public ScrollContext scrollContext() {
-        return null;
-    }
-
-    @Override
-    public SearchContext scrollContext(ScrollContext scrollContext) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SearchContextAggregations aggregations() {
-        return aggregations;
-    }
-
-    @Override
-    public SearchContext aggregations(SearchContextAggregations aggregations) {
-        this.aggregations = aggregations;
-        return this;
-    }
-
-    @Override
-    public void addSearchExt(SearchExtBuilder searchExtBuilder) {
-        searchExtBuilders.put(searchExtBuilder.getWriteableName(), searchExtBuilder);
-    }
-
-    @Override
-    public SearchExtBuilder getSearchExt(String name) {
-        return searchExtBuilders.get(name);
-    }
-
-    @Override
-    public SearchContextHighlight highlight() {
-        return null;
-    }
-
-    @Override
-    public void highlight(SearchContextHighlight highlight) {
-    }
-
-    @Override
-    public SuggestionSearchContext suggest() {
-        return null;
-    }
-
-    @Override
-    public void suggest(SuggestionSearchContext suggest) {
-    }
-
-    @Override
-    public List<RescoreSearchContext> rescore() {
-        return null;
-    }
-
-    @Override
-    public void addRescore(RescoreSearchContext rescore) {
-    }
-
-    @Override
-    public boolean hasScriptFields() {
-        return false;
-    }
-
-    @Override
-    public ScriptFieldsContext scriptFields() {
-        return null;
-    }
-
-    @Override
     public boolean sourceRequested() {
         return false;
     }
@@ -244,16 +148,6 @@ public class TestSearchContext extends SearchContext {
 
     @Override
     public SearchContext fetchSourceContext(FetchSourceContext fetchSourceContext) {
-        return null;
-    }
-
-    @Override
-    public DocValueFieldsContext docValueFieldsContext() {
-        return null;
-    }
-
-    @Override
-    public SearchContext docValueFieldsContext(DocValueFieldsContext docValueFieldsContext) {
         return null;
     }
 
@@ -276,11 +170,6 @@ public class TestSearchContext extends SearchContext {
         if (indexService != null) {
             return indexService.mapperService();
         }
-        return null;
-    }
-
-    @Override
-    public SimilarityService similarityService() {
         return null;
     }
 
@@ -335,16 +224,6 @@ public class TestSearchContext extends SearchContext {
     }
 
     @Override
-    public SearchContext sort(SortAndFormats sort) {
-        return null;
-    }
-
-    @Override
-    public SortAndFormats sort() {
-        return null;
-    }
-
-    @Override
     public SearchContext trackScores(boolean trackScores) {
         return null;
     }
@@ -365,41 +244,8 @@ public class TestSearchContext extends SearchContext {
     }
 
     @Override
-    public SearchContext collapse(CollapseContext collapse) {
-        return null;
-    }
-
-    @Override
-    public CollapseContext collapse() {
-        return null;
-    }
-
-    @Override
-    public SearchContext parsedPostFilter(ParsedQuery postFilter) {
-        this.postFilter = postFilter;
-        return this;
-    }
-
-    @Override
-    public ParsedQuery parsedPostFilter() {
-        return postFilter;
-    }
-
-    @Override
     public Query aliasFilter() {
         return null;
-    }
-
-    @Override
-    public SearchContext parsedQuery(ParsedQuery query) {
-        this.originalQuery = query;
-        this.query = query.query();
-        return this;
-    }
-
-    @Override
-    public ParsedQuery parsedQuery() {
-        return originalQuery;
     }
 
     @Override
@@ -445,16 +291,6 @@ public class TestSearchContext extends SearchContext {
     @Override
     public boolean storedFieldsRequested() {
         return false;
-    }
-
-    @Override
-    public StoredFieldsContext storedFieldsContext() {
-        return null;
-    }
-
-    @Override
-    public SearchContext storedFieldsContext(StoredFieldsContext storedFieldsContext) {
-        return null;
     }
 
     @Override
@@ -528,21 +364,6 @@ public class TestSearchContext extends SearchContext {
     }
 
     @Override
-    public QuerySearchResult queryResult() {
-        return queryResult;
-    }
-
-    @Override
-    public FetchSearchResult fetchResult() {
-        return null;
-    }
-
-    @Override
-    public FetchPhase fetchPhase() {
-        return null;
-    }
-
-    @Override
     public MappedFieldType smartNameFieldType(String name) {
         if (mapperService() != null) {
             return mapperService().fullName(name);
@@ -565,11 +386,6 @@ public class TestSearchContext extends SearchContext {
     @Override
     public Counter timeEstimateCounter() {
         return timeEstimateCounter;
-    }
-
-    @Override
-    public Profilers getProfilers() {
-        return null; // no profiling
     }
 
     @Override

@@ -29,14 +29,9 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.BoundTransportAddress;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.MockBigArrays;
-import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.indices.recovery.RecoverySettings;
 import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.script.ScriptService;
-import org.elasticsearch.search.MockSearchService;
-import org.elasticsearch.search.SearchService;
-import org.elasticsearch.search.fetch.FetchPhase;
 import org.elasticsearch.test.transport.MockTransportService;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.Transport;
@@ -76,16 +71,6 @@ public class MockNode extends Node {
         return new MockBigArrays(settings, circuitBreakerService);
     }
 
-
-    @Override
-    protected SearchService newSearchService(ClusterService clusterService, IndicesService indicesService,
-                                             ThreadPool threadPool, ScriptService scriptService, BigArrays bigArrays,
-                                             FetchPhase fetchPhase) {
-        if (getPluginsService().filterPlugins(MockSearchService.TestPlugin.class).isEmpty()) {
-            return super.newSearchService(clusterService, indicesService, threadPool, scriptService, bigArrays, fetchPhase);
-        }
-        return new MockSearchService(clusterService, indicesService, threadPool, scriptService, bigArrays, fetchPhase);
-    }
 
     @Override
     protected TransportService newTransportService(Settings settings, Transport transport, ThreadPool threadPool,

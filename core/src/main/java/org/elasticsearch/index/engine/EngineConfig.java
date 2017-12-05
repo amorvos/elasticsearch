@@ -25,8 +25,6 @@ import org.apache.lucene.index.SnapshotDeletionPolicy;
 import org.apache.lucene.search.QueryCache;
 import org.apache.lucene.search.QueryCachingPolicy;
 import org.apache.lucene.search.ReferenceManager;
-import org.apache.lucene.search.similarities.Similarity;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.unit.ByteSizeUnit;
@@ -42,6 +40,8 @@ import org.elasticsearch.indices.IndexingMemoryController;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import java.util.List;
+
+import static org.elasticsearch.index.shard.IndexShard.UNSET_AUTO_GENERATED_TIMESTAMP;
 
 /*
  * Holds all the configuration that is used to create an {@link Engine}.
@@ -62,7 +62,6 @@ public final class EngineConfig {
     private final SnapshotDeletionPolicy deletionPolicy;
     private final MergePolicy mergePolicy;
     private final Analyzer analyzer;
-    private final Similarity similarity;
     private final CodecService codecService;
     private final Engine.EventListener eventListener;
     private final QueryCache queryCache;
@@ -110,7 +109,7 @@ public final class EngineConfig {
     public EngineConfig(OpenMode openMode, ShardId shardId, ThreadPool threadPool,
                         IndexSettings indexSettings, Engine.Warmer warmer, Store store, SnapshotDeletionPolicy deletionPolicy,
                         MergePolicy mergePolicy, Analyzer analyzer,
-                        Similarity similarity, CodecService codecService, Engine.EventListener eventListener,
+                        CodecService codecService, Engine.EventListener eventListener,
                         TranslogRecoveryPerformer translogRecoveryPerformer, QueryCache queryCache, QueryCachingPolicy queryCachingPolicy,
                         TranslogConfig translogConfig, TimeValue flushMergesAfter, List<ReferenceManager.RefreshListener> refreshListeners,
                         long maxUnsafeAutoIdTimestamp) {
@@ -125,7 +124,6 @@ public final class EngineConfig {
         this.deletionPolicy = deletionPolicy;
         this.mergePolicy = mergePolicy;
         this.analyzer = analyzer;
-        this.similarity = similarity;
         this.codecService = codecService;
         this.eventListener = eventListener;
         codecName = indexSettings.getValue(INDEX_CODEC_SETTING);
@@ -140,7 +138,7 @@ public final class EngineConfig {
         this.flushMergesAfter = flushMergesAfter;
         this.openMode = openMode;
         this.refreshListeners = refreshListeners;
-        assert maxUnsafeAutoIdTimestamp >= IndexRequest.UNSET_AUTO_GENERATED_TIMESTAMP :
+        assert maxUnsafeAutoIdTimestamp >= UNSET_AUTO_GENERATED_TIMESTAMP :
             "maxUnsafeAutoIdTimestamp must be >= -1 but was " + maxUnsafeAutoIdTimestamp;
         this.maxUnsafeAutoIdTimestamp = maxUnsafeAutoIdTimestamp;
     }
@@ -254,13 +252,6 @@ public final class EngineConfig {
      */
     public Analyzer getAnalyzer() {
         return analyzer;
-    }
-
-    /**
-     * Returns the {@link org.apache.lucene.search.similarities.Similarity} used for indexing and searching.
-     */
-    public Similarity getSimilarity() {
-        return similarity;
     }
 
     /**

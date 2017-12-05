@@ -59,7 +59,6 @@ import org.elasticsearch.index.shard.ShadowIndexShard;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.ShardNotFoundException;
 import org.elasticsearch.index.shard.ShardPath;
-import org.elasticsearch.index.similarity.SimilarityService;
 import org.elasticsearch.index.store.IndexStore;
 import org.elasticsearch.index.store.Store;
 import org.elasticsearch.index.translog.Translog;
@@ -67,7 +66,6 @@ import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.indices.cluster.IndicesClusterStateService;
 import org.elasticsearch.indices.fielddata.cache.IndicesFieldDataCache;
 import org.elasticsearch.indices.mapper.MapperRegistry;
-import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import java.io.Closeable;
@@ -101,7 +99,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     private final IndexCache indexCache;
     private final MapperService mapperService;
     private final NamedXContentRegistry xContentRegistry;
-    private final SimilarityService similarityService;
     private final EngineFactory engineFactory;
     private final IndexWarmer warmer;
     private volatile Map<Integer, IndexShard> shards = emptyMap();
@@ -114,20 +111,17 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     private volatile AsyncTranslogFSync fsyncTask;
     private final ThreadPool threadPool;
     private final BigArrays bigArrays;
-    private final ScriptService scriptService;
     private final ClusterService clusterService;
     private final Client client;
 
     public IndexService(IndexSettings indexSettings, NodeEnvironment nodeEnv,
                         NamedXContentRegistry xContentRegistry,
-                        SimilarityService similarityService,
                         ShardStoreDeleter shardStoreDeleter,
                         AnalysisRegistry registry,
                         @Nullable EngineFactory engineFactory,
                         CircuitBreakerService circuitBreakerService,
                         BigArrays bigArrays,
                         ThreadPool threadPool,
-                        ScriptService scriptService,
                         ClusterService clusterService,
                         Client client,
                         QueryCache queryCache,
@@ -141,8 +135,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         super(indexSettings);
         this.indexSettings = indexSettings;
         this.xContentRegistry = xContentRegistry;
-        this.similarityService = similarityService;
-        this.mapperService = new MapperService(indexSettings, registry.build(indexSettings), xContentRegistry, similarityService,
+        this.mapperService = new MapperService(indexSettings, registry.build(indexSettings), xContentRegistry,
             mapperRegistry,
             // we parse all percolator queries as they would be parsed on shard 0
             () -> newQueryShardContext(0, null, System::currentTimeMillis));
@@ -150,7 +143,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         this.shardStoreDeleter = shardStoreDeleter;
         this.bigArrays = bigArrays;
         this.threadPool = threadPool;
-        this.scriptService = scriptService;
         this.clusterService = clusterService;
         this.client = client;
         this.eventListener = eventListener;
@@ -230,10 +222,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
 
     public NamedXContentRegistry xContentRegistry() {
         return xContentRegistry;
-    }
-
-    public SimilarityService similarityService() {
-        return similarityService;
     }
 
     public synchronized void close(final String reason, boolean delete) throws IOException {
@@ -346,12 +334,12 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
             store = new Store(shardId, this.indexSettings, indexStore.newDirectoryService(path), lock,
                 new StoreCloseListener(shardId, canDeleteShardContent, () -> eventListener.onStoreClosed(shardId)));
             if (useShadowEngine(primary, this.indexSettings)) {
-                indexShard = new ShadowIndexShard(routing, this.indexSettings, path, store, indexCache, mapperService, similarityService,
+                indexShard = new ShadowIndexShard(routing, this.indexSettings, path, store, indexCache, mapperService,
                     indexFieldData, engineFactory, eventListener, searcherWrapper, threadPool, bigArrays, engineWarmer,
                     searchOperationListeners);
                 // no indexing listeners - shadow  engines don't index
             } else {
-                indexShard = new IndexShard(routing, this.indexSettings, path, store, indexCache, mapperService, similarityService,
+                indexShard = new IndexShard(routing, this.indexSettings, path, store, indexCache, mapperService,
                     indexFieldData, engineFactory, eventListener, searcherWrapper, threadPool, bigArrays, engineWarmer,
                     searchOperationListeners, indexingOperationListeners);
             }
@@ -464,7 +452,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     public QueryShardContext newQueryShardContext(int shardId, IndexReader indexReader, LongSupplier nowInMillis) {
         return new QueryShardContext(
             shardId, indexSettings, indexCache.bitsetFilterCache(), indexFieldData, mapperService(),
-                similarityService(), scriptService, xContentRegistry,
+                xContentRegistry,
                 client, indexReader,
             nowInMillis);
     }
@@ -481,13 +469,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
      */
     public BigArrays getBigArrays() {
         return bigArrays;
-    }
-
-    /**
-     * The {@link ScriptService} to use for this index.
-     */
-    public ScriptService getScriptService() {
-        return scriptService;
     }
 
     List<IndexingOperationListener> getIndexOperationListeners() { // pkg private for testing

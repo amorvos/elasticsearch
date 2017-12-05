@@ -20,8 +20,6 @@
 package org.elasticsearch.search;
 
 import org.elasticsearch.common.io.stream.Streamable;
-import org.elasticsearch.search.fetch.FetchSearchResult;
-import org.elasticsearch.search.query.QuerySearchResult;
 import org.elasticsearch.transport.TransportResponse;
 
 /**
@@ -67,16 +65,4 @@ public abstract class SearchPhaseResult extends TransportResponse implements Str
         assert shardIndex >= 0 : "shardIndex must be >= 0 but was: " + shardIndex;
         this.shardIndex = shardIndex;
     }
-
-    /**
-     * Returns the query result iff it's included in this response otherwise <code>null</code>
-     */
-    public QuerySearchResult queryResult() {
-        return null;
-    }
-
-    /**
-     * Returns the fetch result iff it's included in this response otherwise <code>null</code>
-     */
-    public FetchSearchResult fetchResult() { return null; }
 }

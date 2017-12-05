@@ -27,7 +27,6 @@ import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.IOUtils;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.RecoverySource;
@@ -56,7 +55,6 @@ import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.SourceToParse;
 import org.elasticsearch.index.mapper.Uid;
 import org.elasticsearch.index.mapper.UidFieldMapper;
-import org.elasticsearch.index.similarity.SimilarityService;
 import org.elasticsearch.index.store.DirectoryService;
 import org.elasticsearch.index.store.Store;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
@@ -80,6 +78,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
+import static org.elasticsearch.index.shard.IndexShard.UNSET_AUTO_GENERATED_TIMESTAMP;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 
@@ -250,7 +249,6 @@ public abstract class IndexShardTestCase extends ESTestCase {
             MapperService mapperService = MapperTestUtils.newMapperService(xContentRegistry(), createTempDir(),
                     indexSettings.getSettings());
             mapperService.merge(indexMetaData, MapperService.MergeReason.MAPPING_RECOVERY, true);
-            SimilarityService similarityService = new SimilarityService(indexSettings, Collections.emptyMap());
             final IndexEventListener indexEventListener = new IndexEventListener() {
             };
             final Engine.Warmer warmer = searcher -> {
@@ -259,7 +257,7 @@ public abstract class IndexShardTestCase extends ESTestCase {
             });
             IndexFieldDataService indexFieldDataService = new IndexFieldDataService(indexSettings, indicesFieldDataCache,
                 new NoneCircuitBreakerService(), mapperService);
-            indexShard = new IndexShard(routing, indexSettings, shardPath, store, indexCache, mapperService, similarityService,
+            indexShard = new IndexShard(routing, indexSettings, shardPath, store, indexCache, mapperService,
                 indexFieldDataService, null, indexEventListener, indexSearcherWrapper, threadPool, BigArrays.NON_RECYCLING_INSTANCE, warmer,
                 Collections.emptyList(), Arrays.asList(listeners));
             success = true;
@@ -451,13 +449,13 @@ public abstract class IndexShardTestCase extends ESTestCase {
                     xContentType),
                 Versions.MATCH_ANY,
                 VersionType.INTERNAL,
-                IndexRequest.UNSET_AUTO_GENERATED_TIMESTAMP,
+                UNSET_AUTO_GENERATED_TIMESTAMP,
                 false);
         } else {
             index = shard.prepareIndexOnReplica(
                 SourceToParse.source(SourceToParse.Origin.PRIMARY, shard.shardId().getIndexName(), type, id, new BytesArray(source),
                     xContentType),
-                1, VersionType.EXTERNAL, IndexRequest.UNSET_AUTO_GENERATED_TIMESTAMP, false);
+                1, VersionType.EXTERNAL, UNSET_AUTO_GENERATED_TIMESTAMP, false);
         }
         shard.index(index);
         return index;

@@ -81,10 +81,6 @@ import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsActi
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequestBuilder;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsResponse;
-import org.elasticsearch.action.admin.cluster.shards.ClusterSearchShardsAction;
-import org.elasticsearch.action.admin.cluster.shards.ClusterSearchShardsRequest;
-import org.elasticsearch.action.admin.cluster.shards.ClusterSearchShardsRequestBuilder;
-import org.elasticsearch.action.admin.cluster.shards.ClusterSearchShardsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotAction;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequestBuilder;
@@ -113,18 +109,6 @@ import org.elasticsearch.action.admin.cluster.stats.ClusterStatsAction;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequest;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequestBuilder;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsResponse;
-import org.elasticsearch.action.admin.cluster.storedscripts.DeleteStoredScriptAction;
-import org.elasticsearch.action.admin.cluster.storedscripts.DeleteStoredScriptRequest;
-import org.elasticsearch.action.admin.cluster.storedscripts.DeleteStoredScriptRequestBuilder;
-import org.elasticsearch.action.admin.cluster.storedscripts.DeleteStoredScriptResponse;
-import org.elasticsearch.action.admin.cluster.storedscripts.GetStoredScriptAction;
-import org.elasticsearch.action.admin.cluster.storedscripts.GetStoredScriptRequest;
-import org.elasticsearch.action.admin.cluster.storedscripts.GetStoredScriptRequestBuilder;
-import org.elasticsearch.action.admin.cluster.storedscripts.GetStoredScriptResponse;
-import org.elasticsearch.action.admin.cluster.storedscripts.PutStoredScriptAction;
-import org.elasticsearch.action.admin.cluster.storedscripts.PutStoredScriptRequest;
-import org.elasticsearch.action.admin.cluster.storedscripts.PutStoredScriptRequestBuilder;
-import org.elasticsearch.action.admin.cluster.storedscripts.PutStoredScriptResponse;
 import org.elasticsearch.action.admin.cluster.tasks.PendingClusterTasksAction;
 import org.elasticsearch.action.admin.cluster.tasks.PendingClusterTasksRequest;
 import org.elasticsearch.action.admin.cluster.tasks.PendingClusterTasksRequestBuilder;
@@ -256,26 +240,6 @@ import org.elasticsearch.action.admin.indices.upgrade.post.UpgradeAction;
 import org.elasticsearch.action.admin.indices.upgrade.post.UpgradeRequest;
 import org.elasticsearch.action.admin.indices.upgrade.post.UpgradeRequestBuilder;
 import org.elasticsearch.action.admin.indices.upgrade.post.UpgradeResponse;
-import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryAction;
-import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryRequest;
-import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryRequestBuilder;
-import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryResponse;
-import org.elasticsearch.action.bulk.BulkAction;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteAction;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteRequestBuilder;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.explain.ExplainAction;
-import org.elasticsearch.action.explain.ExplainRequest;
-import org.elasticsearch.action.explain.ExplainRequestBuilder;
-import org.elasticsearch.action.explain.ExplainResponse;
-import org.elasticsearch.action.fieldcaps.FieldCapabilitiesAction;
-import org.elasticsearch.action.fieldcaps.FieldCapabilitiesRequest;
-import org.elasticsearch.action.fieldcaps.FieldCapabilitiesRequestBuilder;
-import org.elasticsearch.action.fieldcaps.FieldCapabilitiesResponse;
 import org.elasticsearch.action.fieldstats.FieldStatsAction;
 import org.elasticsearch.action.fieldstats.FieldStatsRequest;
 import org.elasticsearch.action.fieldstats.FieldStatsRequestBuilder;
@@ -288,54 +252,8 @@ import org.elasticsearch.action.get.MultiGetAction;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
-import org.elasticsearch.action.index.IndexAction;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.ingest.DeletePipelineAction;
-import org.elasticsearch.action.ingest.DeletePipelineRequest;
-import org.elasticsearch.action.ingest.DeletePipelineRequestBuilder;
-import org.elasticsearch.action.ingest.GetPipelineAction;
-import org.elasticsearch.action.ingest.GetPipelineRequest;
-import org.elasticsearch.action.ingest.GetPipelineRequestBuilder;
-import org.elasticsearch.action.ingest.GetPipelineResponse;
-import org.elasticsearch.action.ingest.PutPipelineAction;
-import org.elasticsearch.action.ingest.PutPipelineRequest;
-import org.elasticsearch.action.ingest.PutPipelineRequestBuilder;
-import org.elasticsearch.action.ingest.SimulatePipelineAction;
-import org.elasticsearch.action.ingest.SimulatePipelineRequest;
-import org.elasticsearch.action.ingest.SimulatePipelineRequestBuilder;
-import org.elasticsearch.action.ingest.SimulatePipelineResponse;
-import org.elasticsearch.action.ingest.WritePipelineResponse;
-import org.elasticsearch.action.search.ClearScrollAction;
-import org.elasticsearch.action.search.ClearScrollRequest;
-import org.elasticsearch.action.search.ClearScrollRequestBuilder;
-import org.elasticsearch.action.search.ClearScrollResponse;
-import org.elasticsearch.action.search.MultiSearchAction;
-import org.elasticsearch.action.search.MultiSearchRequest;
-import org.elasticsearch.action.search.MultiSearchRequestBuilder;
-import org.elasticsearch.action.search.MultiSearchResponse;
-import org.elasticsearch.action.search.SearchAction;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchScrollAction;
-import org.elasticsearch.action.search.SearchScrollRequest;
-import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.ThreadedActionListener;
-import org.elasticsearch.action.termvectors.MultiTermVectorsAction;
-import org.elasticsearch.action.termvectors.MultiTermVectorsRequest;
-import org.elasticsearch.action.termvectors.MultiTermVectorsRequestBuilder;
-import org.elasticsearch.action.termvectors.MultiTermVectorsResponse;
-import org.elasticsearch.action.termvectors.TermVectorsAction;
-import org.elasticsearch.action.termvectors.TermVectorsRequest;
-import org.elasticsearch.action.termvectors.TermVectorsRequestBuilder;
-import org.elasticsearch.action.termvectors.TermVectorsResponse;
-import org.elasticsearch.action.update.UpdateAction;
-import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.action.update.UpdateRequestBuilder;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.ClusterAdminClient;
@@ -343,11 +261,9 @@ import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.client.FilterClient;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.threadpool.ThreadPool;
 
@@ -410,85 +326,6 @@ public abstract class AbstractClient extends AbstractComponent implements Client
 
     protected abstract <Request extends ActionRequest, Response extends ActionResponse, RequestBuilder extends ActionRequestBuilder<Request, Response, RequestBuilder>> void doExecute(Action<Request, Response, RequestBuilder> action, Request request, ActionListener<Response> listener);
 
-    @Override
-    public ActionFuture<IndexResponse> index(final IndexRequest request) {
-        return execute(IndexAction.INSTANCE, request);
-    }
-
-    @Override
-    public void index(final IndexRequest request, final ActionListener<IndexResponse> listener) {
-        execute(IndexAction.INSTANCE, request, listener);
-    }
-
-    @Override
-    public IndexRequestBuilder prepareIndex() {
-        return new IndexRequestBuilder(this, IndexAction.INSTANCE, null);
-    }
-
-    @Override
-    public IndexRequestBuilder prepareIndex(String index, String type) {
-        return prepareIndex(index, type, null);
-    }
-
-    @Override
-    public IndexRequestBuilder prepareIndex(String index, String type, @Nullable String id) {
-        return prepareIndex().setIndex(index).setType(type).setId(id);
-    }
-
-    @Override
-    public ActionFuture<UpdateResponse> update(final UpdateRequest request) {
-        return execute(UpdateAction.INSTANCE, request);
-    }
-
-    @Override
-    public void update(final UpdateRequest request, final ActionListener<UpdateResponse> listener) {
-        execute(UpdateAction.INSTANCE, request, listener);
-    }
-
-    @Override
-    public UpdateRequestBuilder prepareUpdate() {
-        return new UpdateRequestBuilder(this, UpdateAction.INSTANCE, null, null, null);
-    }
-
-    @Override
-    public UpdateRequestBuilder prepareUpdate(String index, String type, String id) {
-        return new UpdateRequestBuilder(this, UpdateAction.INSTANCE, index, type, id);
-    }
-
-    @Override
-    public ActionFuture<DeleteResponse> delete(final DeleteRequest request) {
-        return execute(DeleteAction.INSTANCE, request);
-    }
-
-    @Override
-    public void delete(final DeleteRequest request, final ActionListener<DeleteResponse> listener) {
-        execute(DeleteAction.INSTANCE, request, listener);
-    }
-
-    @Override
-    public DeleteRequestBuilder prepareDelete() {
-        return new DeleteRequestBuilder(this, DeleteAction.INSTANCE, null);
-    }
-
-    @Override
-    public DeleteRequestBuilder prepareDelete(String index, String type, String id) {
-        return prepareDelete().setIndex(index).setType(type).setId(id);
-    }
-
-    @Override
-    public ActionFuture<BulkResponse> bulk(final BulkRequest request) {
-        return execute(BulkAction.INSTANCE, request);
-    }
-
-    @Override
-    public void bulk(final BulkRequest request, final ActionListener<BulkResponse> listener) {
-        execute(BulkAction.INSTANCE, request, listener);
-    }
-
-    @Override
-    public BulkRequestBuilder prepareBulk() {
-        return new BulkRequestBuilder(this, BulkAction.INSTANCE);
-    }
 
     @Override
     public ActionFuture<GetResponse> get(final GetRequest request) {
@@ -526,140 +363,6 @@ public abstract class AbstractClient extends AbstractComponent implements Client
     }
 
     @Override
-    public ActionFuture<SearchResponse> search(final SearchRequest request) {
-        return execute(SearchAction.INSTANCE, request);
-    }
-
-    @Override
-    public void search(final SearchRequest request, final ActionListener<SearchResponse> listener) {
-        execute(SearchAction.INSTANCE, request, listener);
-    }
-
-    @Override
-    public SearchRequestBuilder prepareSearch(String... indices) {
-        return new SearchRequestBuilder(this, SearchAction.INSTANCE).setIndices(indices);
-    }
-
-    @Override
-    public ActionFuture<SearchResponse> searchScroll(final SearchScrollRequest request) {
-        return execute(SearchScrollAction.INSTANCE, request);
-    }
-
-    @Override
-    public void searchScroll(final SearchScrollRequest request, final ActionListener<SearchResponse> listener) {
-        execute(SearchScrollAction.INSTANCE, request, listener);
-    }
-
-    @Override
-    public SearchScrollRequestBuilder prepareSearchScroll(String scrollId) {
-        return new SearchScrollRequestBuilder(this, SearchScrollAction.INSTANCE, scrollId);
-    }
-
-    @Override
-    public ActionFuture<MultiSearchResponse> multiSearch(MultiSearchRequest request) {
-        return execute(MultiSearchAction.INSTANCE, request);
-    }
-
-    @Override
-    public void multiSearch(MultiSearchRequest request, ActionListener<MultiSearchResponse> listener) {
-        execute(MultiSearchAction.INSTANCE, request, listener);
-    }
-
-    @Override
-    public MultiSearchRequestBuilder prepareMultiSearch() {
-        return new MultiSearchRequestBuilder(this, MultiSearchAction.INSTANCE);
-    }
-
-    @Override
-    public ActionFuture<TermVectorsResponse> termVectors(final TermVectorsRequest request) {
-        return execute(TermVectorsAction.INSTANCE, request);
-    }
-
-    @Override
-    public void termVectors(final TermVectorsRequest request, final ActionListener<TermVectorsResponse> listener) {
-        execute(TermVectorsAction.INSTANCE, request, listener);
-    }
-
-    @Override
-    public TermVectorsRequestBuilder prepareTermVectors() {
-        return new TermVectorsRequestBuilder(this, TermVectorsAction.INSTANCE);
-    }
-
-    @Override
-    public TermVectorsRequestBuilder prepareTermVectors(String index, String type, String id) {
-        return new TermVectorsRequestBuilder(this, TermVectorsAction.INSTANCE, index, type, id);
-    }
-
-    @Deprecated
-    @Override
-    public ActionFuture<TermVectorsResponse> termVector(final TermVectorsRequest request) {
-        return termVectors(request);
-    }
-
-    @Deprecated
-    @Override
-    public void termVector(final TermVectorsRequest request, final ActionListener<TermVectorsResponse> listener) {
-        termVectors(request, listener);
-    }
-
-    @Deprecated
-    @Override
-    public TermVectorsRequestBuilder prepareTermVector() {
-        return prepareTermVectors();
-    }
-
-    @Deprecated
-    @Override
-    public TermVectorsRequestBuilder prepareTermVector(String index, String type, String id) {
-        return prepareTermVectors(index, type, id);
-    }
-
-    @Override
-    public ActionFuture<MultiTermVectorsResponse> multiTermVectors(final MultiTermVectorsRequest request) {
-        return execute(MultiTermVectorsAction.INSTANCE, request);
-    }
-
-    @Override
-    public void multiTermVectors(final MultiTermVectorsRequest request, final ActionListener<MultiTermVectorsResponse> listener) {
-        execute(MultiTermVectorsAction.INSTANCE, request, listener);
-    }
-
-    @Override
-    public MultiTermVectorsRequestBuilder prepareMultiTermVectors() {
-        return new MultiTermVectorsRequestBuilder(this, MultiTermVectorsAction.INSTANCE);
-    }
-
-    @Override
-    public ExplainRequestBuilder prepareExplain(String index, String type, String id) {
-        return new ExplainRequestBuilder(this, ExplainAction.INSTANCE, index, type, id);
-    }
-
-    @Override
-    public ActionFuture<ExplainResponse> explain(ExplainRequest request) {
-        return execute(ExplainAction.INSTANCE, request);
-    }
-
-    @Override
-    public void explain(ExplainRequest request, ActionListener<ExplainResponse> listener) {
-        execute(ExplainAction.INSTANCE, request, listener);
-    }
-
-    @Override
-    public void clearScroll(ClearScrollRequest request, ActionListener<ClearScrollResponse> listener) {
-        execute(ClearScrollAction.INSTANCE, request, listener);
-    }
-
-    @Override
-    public ActionFuture<ClearScrollResponse> clearScroll(ClearScrollRequest request) {
-        return execute(ClearScrollAction.INSTANCE, request);
-    }
-
-    @Override
-    public ClearScrollRequestBuilder prepareClearScroll() {
-        return new ClearScrollRequestBuilder(this, ClearScrollAction.INSTANCE);
-    }
-
-    @Override
     public void fieldStats(FieldStatsRequest request, ActionListener<FieldStatsResponse> listener) {
         execute(FieldStatsAction.INSTANCE, request, listener);
     }
@@ -672,21 +375,6 @@ public abstract class AbstractClient extends AbstractComponent implements Client
     @Override
     public FieldStatsRequestBuilder prepareFieldStats() {
         return new FieldStatsRequestBuilder(this, FieldStatsAction.INSTANCE);
-    }
-
-    @Override
-    public void fieldCaps(FieldCapabilitiesRequest request, ActionListener<FieldCapabilitiesResponse> listener) {
-        execute(FieldCapabilitiesAction.INSTANCE, request, listener);
-    }
-
-    @Override
-    public ActionFuture<FieldCapabilitiesResponse> fieldCaps(FieldCapabilitiesRequest request) {
-        return execute(FieldCapabilitiesAction.INSTANCE, request);
-    }
-
-    @Override
-    public FieldCapabilitiesRequestBuilder prepareFieldCaps() {
-        return new FieldCapabilitiesRequestBuilder(this, FieldCapabilitiesAction.INSTANCE);
     }
 
     static class Admin implements AdminClient {
@@ -912,26 +600,6 @@ public abstract class AbstractClient extends AbstractComponent implements Client
         }
 
         @Override
-        public ActionFuture<ClusterSearchShardsResponse> searchShards(final ClusterSearchShardsRequest request) {
-            return execute(ClusterSearchShardsAction.INSTANCE, request);
-        }
-
-        @Override
-        public void searchShards(final ClusterSearchShardsRequest request, final ActionListener<ClusterSearchShardsResponse> listener) {
-            execute(ClusterSearchShardsAction.INSTANCE, request, listener);
-        }
-
-        @Override
-        public ClusterSearchShardsRequestBuilder prepareSearchShards() {
-            return new ClusterSearchShardsRequestBuilder(this, ClusterSearchShardsAction.INSTANCE);
-        }
-
-        @Override
-        public ClusterSearchShardsRequestBuilder prepareSearchShards(String... indices) {
-            return new ClusterSearchShardsRequestBuilder(this, ClusterSearchShardsAction.INSTANCE).setIndices(indices);
-        }
-
-        @Override
         public PendingClusterTasksRequestBuilder preparePendingClusterTasks() {
             return new PendingClusterTasksRequestBuilder(this, PendingClusterTasksAction.INSTANCE);
         }
@@ -1089,80 +757,6 @@ public abstract class AbstractClient extends AbstractComponent implements Client
             return new SnapshotsStatusRequestBuilder(this, SnapshotsStatusAction.INSTANCE);
         }
 
-        @Override
-        public void putPipeline(PutPipelineRequest request, ActionListener<WritePipelineResponse> listener) {
-            execute(PutPipelineAction.INSTANCE, request, listener);
-        }
-
-        @Override
-        public ActionFuture<WritePipelineResponse> putPipeline(PutPipelineRequest request) {
-            return execute(PutPipelineAction.INSTANCE, request);
-        }
-
-        @Override
-        public PutPipelineRequestBuilder preparePutPipeline(String id, BytesReference source) {
-            return new PutPipelineRequestBuilder(this, PutPipelineAction.INSTANCE, id, source);
-        }
-
-        @Override
-        public PutPipelineRequestBuilder preparePutPipeline(String id, BytesReference source, XContentType xContentType) {
-            return new PutPipelineRequestBuilder(this, PutPipelineAction.INSTANCE, id, source, xContentType);
-        }
-
-        @Override
-        public void deletePipeline(DeletePipelineRequest request, ActionListener<WritePipelineResponse> listener) {
-            execute(DeletePipelineAction.INSTANCE, request, listener);
-        }
-
-        @Override
-        public ActionFuture<WritePipelineResponse> deletePipeline(DeletePipelineRequest request) {
-            return execute(DeletePipelineAction.INSTANCE, request);
-        }
-
-        @Override
-        public DeletePipelineRequestBuilder prepareDeletePipeline() {
-            return new DeletePipelineRequestBuilder(this, DeletePipelineAction.INSTANCE);
-        }
-
-        @Override
-        public DeletePipelineRequestBuilder prepareDeletePipeline(String id) {
-            return new DeletePipelineRequestBuilder(this, DeletePipelineAction.INSTANCE, id);
-        }
-
-        @Override
-        public void getPipeline(GetPipelineRequest request, ActionListener<GetPipelineResponse> listener) {
-            execute(GetPipelineAction.INSTANCE, request, listener);
-        }
-
-        @Override
-        public ActionFuture<GetPipelineResponse> getPipeline(GetPipelineRequest request) {
-            return execute(GetPipelineAction.INSTANCE, request);
-        }
-
-        @Override
-        public GetPipelineRequestBuilder prepareGetPipeline(String... ids) {
-            return new GetPipelineRequestBuilder(this, GetPipelineAction.INSTANCE, ids);
-        }
-
-        @Override
-        public void simulatePipeline(SimulatePipelineRequest request, ActionListener<SimulatePipelineResponse> listener) {
-            execute(SimulatePipelineAction.INSTANCE, request, listener);
-        }
-
-        @Override
-        public ActionFuture<SimulatePipelineResponse> simulatePipeline(SimulatePipelineRequest request) {
-            return execute(SimulatePipelineAction.INSTANCE, request);
-        }
-
-        @Override
-        public SimulatePipelineRequestBuilder prepareSimulatePipeline(BytesReference source) {
-            return new SimulatePipelineRequestBuilder(this, SimulatePipelineAction.INSTANCE, source);
-        }
-
-        @Override
-        public SimulatePipelineRequestBuilder prepareSimulatePipeline(BytesReference source, XContentType xContentType) {
-            return new SimulatePipelineRequestBuilder(this, SimulatePipelineAction.INSTANCE, source, xContentType);
-        }
 
         @Override
         public void allocationExplain(ClusterAllocationExplainRequest request, ActionListener<ClusterAllocationExplainResponse> listener) {
@@ -1177,62 +771,6 @@ public abstract class AbstractClient extends AbstractComponent implements Client
         @Override
         public ClusterAllocationExplainRequestBuilder prepareAllocationExplain() {
             return new ClusterAllocationExplainRequestBuilder(this, ClusterAllocationExplainAction.INSTANCE);
-        }
-
-        @Override
-        public ActionFuture<GetStoredScriptResponse> getStoredScript(final GetStoredScriptRequest request) {
-            return execute(GetStoredScriptAction.INSTANCE, request);
-        }
-
-        @Override
-        public void getStoredScript(final GetStoredScriptRequest request, final ActionListener<GetStoredScriptResponse> listener) {
-            execute(GetStoredScriptAction.INSTANCE, request, listener);
-        }
-
-        @Override
-        public GetStoredScriptRequestBuilder prepareGetStoredScript() {
-            return new GetStoredScriptRequestBuilder(this, GetStoredScriptAction.INSTANCE);
-        }
-
-        @Override
-        public GetStoredScriptRequestBuilder prepareGetStoredScript(String scriptLang, String id) {
-            return prepareGetStoredScript().setLang(scriptLang).setId(id);
-        }
-
-        @Override
-        public PutStoredScriptRequestBuilder preparePutStoredScript() {
-            return new PutStoredScriptRequestBuilder(this, PutStoredScriptAction.INSTANCE);
-        }
-
-        @Override
-        public void putStoredScript(final PutStoredScriptRequest request, ActionListener<PutStoredScriptResponse> listener){
-            execute(PutStoredScriptAction.INSTANCE, request, listener);
-
-        }
-
-        @Override
-        public ActionFuture<PutStoredScriptResponse> putStoredScript(final PutStoredScriptRequest request){
-            return execute(PutStoredScriptAction.INSTANCE, request);
-        }
-
-        @Override
-        public void deleteStoredScript(DeleteStoredScriptRequest request, ActionListener<DeleteStoredScriptResponse> listener){
-            execute(DeleteStoredScriptAction.INSTANCE, request, listener);
-        }
-
-        @Override
-        public ActionFuture<DeleteStoredScriptResponse> deleteStoredScript(DeleteStoredScriptRequest request){
-            return execute(DeleteStoredScriptAction.INSTANCE, request);
-        }
-
-        @Override
-        public DeleteStoredScriptRequestBuilder prepareDeleteStoredScript(){
-            return DeleteStoredScriptAction.INSTANCE.newRequestBuilder(this);
-        }
-
-        @Override
-        public DeleteStoredScriptRequestBuilder prepareDeleteStoredScript(@Nullable String scriptLang, String id){
-            return prepareDeleteStoredScript().setLang(scriptLang).setId(id);
         }
     }
 
@@ -1710,21 +1248,6 @@ public abstract class AbstractClient extends AbstractComponent implements Client
         @Override
         public DeleteIndexTemplateRequestBuilder prepareDeleteTemplate(String name) {
             return new DeleteIndexTemplateRequestBuilder(this, DeleteIndexTemplateAction.INSTANCE, name);
-        }
-
-        @Override
-        public ActionFuture<ValidateQueryResponse> validateQuery(final ValidateQueryRequest request) {
-            return execute(ValidateQueryAction.INSTANCE, request);
-        }
-
-        @Override
-        public void validateQuery(final ValidateQueryRequest request, final ActionListener<ValidateQueryResponse> listener) {
-            execute(ValidateQueryAction.INSTANCE, request, listener);
-        }
-
-        @Override
-        public ValidateQueryRequestBuilder prepareValidateQuery(String... indices) {
-            return new ValidateQueryRequestBuilder(this, ValidateQueryAction.INSTANCE).setIndices(indices);
         }
 
         @Override

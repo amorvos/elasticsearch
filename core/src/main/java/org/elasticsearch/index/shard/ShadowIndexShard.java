@@ -29,7 +29,6 @@ import org.elasticsearch.index.engine.EngineFactory;
 import org.elasticsearch.index.fielddata.IndexFieldDataService;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.merge.MergeStats;
-import org.elasticsearch.index.similarity.SimilarityService;
 import org.elasticsearch.index.store.Store;
 import org.elasticsearch.index.translog.Translog;
 import org.elasticsearch.index.translog.TranslogStats;
@@ -49,11 +48,11 @@ import java.util.function.Consumer;
 public final class ShadowIndexShard extends IndexShard {
 
     public ShadowIndexShard(ShardRouting shardRouting, IndexSettings indexSettings, ShardPath path, Store store, IndexCache indexCache,
-                            MapperService mapperService, SimilarityService similarityService, IndexFieldDataService indexFieldDataService,
+                            MapperService mapperService, IndexFieldDataService indexFieldDataService,
                             @Nullable EngineFactory engineFactory, IndexEventListener indexEventListener, IndexSearcherWrapper wrapper,
                             ThreadPool threadPool, BigArrays bigArrays, Engine.Warmer engineWarmer,
                             List<SearchOperationListener> searchOperationListeners) throws IOException {
-        super(shardRouting, indexSettings, path, store, indexCache, mapperService, similarityService, indexFieldDataService, engineFactory,
+        super(shardRouting, indexSettings, path, store, indexCache, mapperService, indexFieldDataService, engineFactory,
             indexEventListener, wrapper, threadPool, bigArrays, engineWarmer, searchOperationListeners, Collections.emptyList());
     }
 

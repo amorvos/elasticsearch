@@ -22,7 +22,6 @@ package org.elasticsearch.action.admin.indices.alias;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
 import org.elasticsearch.action.support.master.AcknowledgedRequestBuilder;
 import org.elasticsearch.client.ElasticsearchClient;
-import org.elasticsearch.index.query.QueryBuilder;
 
 import java.util.Map;
 
@@ -103,30 +102,6 @@ public class IndicesAliasesRequestBuilder
      */
     public IndicesAliasesRequestBuilder addAlias(String index, String alias, Map<String, Object> filter) {
         request.addAliasAction(AliasActions.add().index(index).alias(alias).filter(filter));
-        return this;
-    }
-
-    /**
-     * Adds an alias to the index.
-     *
-     * @param indices       The indices
-     * @param alias         The alias
-     * @param filterBuilder The filter
-     */
-    public IndicesAliasesRequestBuilder addAlias(String indices[], String alias, QueryBuilder filterBuilder) {
-        request.addAliasAction(AliasActions.add().indices(indices).alias(alias).filter(filterBuilder));
-        return this;
-    }
-
-    /**
-     * Adds an alias to the index.
-     *
-     * @param index         The index
-     * @param alias         The alias
-     * @param filterBuilder The filter
-     */
-    public IndicesAliasesRequestBuilder addAlias(String index, String alias, QueryBuilder filterBuilder) {
-        request.addAliasAction(AliasActions.add().index(index).alias(alias).filter(filterBuilder));
         return this;
     }
 

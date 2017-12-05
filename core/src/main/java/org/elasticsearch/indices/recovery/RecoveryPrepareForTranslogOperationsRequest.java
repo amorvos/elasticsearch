@@ -19,7 +19,6 @@
 
 package org.elasticsearch.indices.recovery;
 
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.index.shard.ShardId;
@@ -27,12 +26,14 @@ import org.elasticsearch.transport.TransportRequest;
 
 import java.io.IOException;
 
+import static org.elasticsearch.index.shard.IndexShard.UNSET_AUTO_GENERATED_TIMESTAMP;
+
 /**
  *
  */
 public class RecoveryPrepareForTranslogOperationsRequest extends TransportRequest {
 
-    private long maxUnsafeAutoIdTimestamp = IndexRequest.UNSET_AUTO_GENERATED_TIMESTAMP;
+    private long maxUnsafeAutoIdTimestamp = UNSET_AUTO_GENERATED_TIMESTAMP;
     private long recoveryId;
     private ShardId shardId;
     private int totalTranslogOps = RecoveryState.Translog.UNKNOWN;

@@ -46,7 +46,6 @@ import org.elasticsearch.node.MockNode;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeValidationException;
 import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.internal.SearchContext;
 import org.elasticsearch.test.discovery.TestZenDiscovery;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -170,7 +169,6 @@ public abstract class ESSingleNodeTestCase extends ESTestCase {
             // This needs to tie into the ESIntegTestCase#indexSettings() method
             .put(Environment.PATH_SHARED_DATA_SETTING.getKey(), createTempDir().getParent())
             .put("node.name", "node_s_0")
-            .put(ScriptService.SCRIPT_MAX_COMPILATIONS_PER_MINUTE.getKey(), 1000)
             .put(EsExecutors.PROCESSORS_SETTING.getKey(), 1) // limit the number of threads created
             .put(NetworkModule.HTTP_ENABLED.getKey(), false)
             .put("transport.type", "local")

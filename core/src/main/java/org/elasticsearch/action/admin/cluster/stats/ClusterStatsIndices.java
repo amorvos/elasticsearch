@@ -29,7 +29,6 @@ import org.elasticsearch.index.engine.SegmentsStats;
 import org.elasticsearch.index.fielddata.FieldDataStats;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.index.store.StoreStats;
-import org.elasticsearch.search.suggest.completion.CompletionStats;
 
 import java.io.IOException;
 import java.util.List;
@@ -42,7 +41,6 @@ public class ClusterStatsIndices implements ToXContent {
     private StoreStats store;
     private FieldDataStats fieldData;
     private QueryCacheStats queryCache;
-    private CompletionStats completion;
     private SegmentsStats segments;
 
     public ClusterStatsIndices(List<ClusterStatsNodeResponse> nodeResponses) {
@@ -52,7 +50,6 @@ public class ClusterStatsIndices implements ToXContent {
         this.store = new StoreStats();
         this.fieldData = new FieldDataStats();
         this.queryCache = new QueryCacheStats();
-        this.completion = new CompletionStats();
         this.segments = new SegmentsStats();
 
         for (ClusterStatsNodeResponse r : nodeResponses) {
@@ -74,7 +71,6 @@ public class ClusterStatsIndices implements ToXContent {
                 store.add(shardCommonStats.store);
                 fieldData.add(shardCommonStats.fieldData);
                 queryCache.add(shardCommonStats.queryCache);
-                completion.add(shardCommonStats.completion);
                 segments.add(shardCommonStats.segments);
             }
         }
@@ -110,10 +106,6 @@ public class ClusterStatsIndices implements ToXContent {
         return queryCache;
     }
 
-    public CompletionStats getCompletion() {
-        return completion;
-    }
-
     public SegmentsStats getSegments() {
         return segments;
     }
@@ -130,7 +122,6 @@ public class ClusterStatsIndices implements ToXContent {
         store.toXContent(builder, params);
         fieldData.toXContent(builder, params);
         queryCache.toXContent(builder, params);
-        completion.toXContent(builder, params);
         segments.toXContent(builder, params);
         return builder;
     }

@@ -32,7 +32,6 @@ import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.index.mapper.MapperService;
-import org.elasticsearch.index.similarity.SimilarityService;
 import org.elasticsearch.indices.mapper.MapperRegistry;
 
 import java.util.AbstractMap;
@@ -137,7 +136,6 @@ public class MetaDataIndexUpgradeService extends AbstractComponent {
             // We cannot instantiate real analysis server at this point because the node might not have
             // been started yet. However, we don't really need real analyzers at this stage - so we can fake it
             IndexSettings indexSettings = new IndexSettings(indexMetaData, this.settings);
-            SimilarityService similarityService = new SimilarityService(indexSettings, Collections.emptyMap());
             final NamedAnalyzer fakeDefault = new NamedAnalyzer("fake_default", AnalyzerScope.INDEX, new Analyzer() {
                 @Override
                 protected TokenStreamComponents createComponents(String fieldName) {
@@ -160,7 +158,7 @@ public class MetaDataIndexUpgradeService extends AbstractComponent {
                 }
             };
             try (IndexAnalyzers fakeIndexAnalzyers = new IndexAnalyzers(indexSettings, fakeDefault, fakeDefault, fakeDefault, analyzerMap, analyzerMap)) {
-                MapperService mapperService = new MapperService(indexSettings, fakeIndexAnalzyers, xContentRegistry, similarityService,
+                MapperService mapperService = new MapperService(indexSettings, fakeIndexAnalzyers, xContentRegistry,
                         mapperRegistry, () -> null);
                 mapperService.merge(indexMetaData, MapperService.MergeReason.MAPPING_RECOVERY, false);
             }

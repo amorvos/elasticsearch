@@ -59,7 +59,6 @@ import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.store.IndexStoreConfig;
 import org.elasticsearch.indices.recovery.RecoverySettings;
-import org.elasticsearch.indices.ttl.IndicesTTLService;
 import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
@@ -735,7 +734,6 @@ public class MetaData implements Iterable<IndexMetaData>, Diffable<MetaData>, To
 
     /** All known time cluster settings. */
     public static final Set<String> CLUSTER_TIME_SETTINGS = unmodifiableSet(newHashSet(
-                                    IndicesTTLService.INDICES_TTL_INTERVAL_SETTING.getKey(),
                                     RecoverySettings.INDICES_RECOVERY_RETRY_DELAY_STATE_SYNC_SETTING.getKey(),
                                     RecoverySettings.INDICES_RECOVERY_RETRY_DELAY_NETWORK_SETTING.getKey(),
                                     RecoverySettings.INDICES_RECOVERY_ACTIVITY_TIMEOUT_SETTING.getKey(),

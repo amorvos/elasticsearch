@@ -58,9 +58,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.io.stream.NamedWriteable;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry.Entry;
-import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.io.stream.Writeable.Reader;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
@@ -68,10 +66,7 @@ import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.gateway.GatewayAllocator;
-import org.elasticsearch.ingest.IngestMetadata;
 import org.elasticsearch.plugins.ClusterPlugin;
-import org.elasticsearch.script.ScriptMetaData;
-import org.elasticsearch.tasks.TaskResultsService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -117,8 +112,6 @@ public class ClusterModule extends AbstractModule {
             SnapshotDeletionsInProgress::readDiffFrom);
         // Metadata
         registerMetaDataCustom(entries, RepositoriesMetaData.TYPE, RepositoriesMetaData::new, RepositoriesMetaData::readDiffFrom);
-        registerMetaDataCustom(entries, IngestMetadata.TYPE, IngestMetadata::new, IngestMetadata::readDiffFrom);
-        registerMetaDataCustom(entries, ScriptMetaData.TYPE, ScriptMetaData::new, ScriptMetaData::readDiffFrom);
         registerMetaDataCustom(entries, IndexGraveyard.TYPE, IndexGraveyard::new, IndexGraveyard::readDiffFrom);
         return entries;
     }
@@ -128,10 +121,6 @@ public class ClusterModule extends AbstractModule {
         // Metadata
         entries.add(new NamedXContentRegistry.Entry(MetaData.Custom.class, new ParseField(RepositoriesMetaData.TYPE),
             RepositoriesMetaData::fromXContent));
-        entries.add(new NamedXContentRegistry.Entry(MetaData.Custom.class, new ParseField(IngestMetadata.TYPE),
-            IngestMetadata::fromXContent));
-        entries.add(new NamedXContentRegistry.Entry(MetaData.Custom.class, new ParseField(ScriptMetaData.TYPE),
-            ScriptMetaData::fromXContent));
         entries.add(new NamedXContentRegistry.Entry(MetaData.Custom.class, new ParseField(IndexGraveyard.TYPE),
             IndexGraveyard::fromXContent));
         return entries;
@@ -232,7 +221,6 @@ public class ClusterModule extends AbstractModule {
         bind(ShardStateAction.class).asEagerSingleton();
         bind(NodeMappingRefreshAction.class).asEagerSingleton();
         bind(MappingUpdatedAction.class).asEagerSingleton();
-        bind(TaskResultsService.class).asEagerSingleton();
         bind(AllocationDeciders.class).toInstance(new AllocationDeciders(settings, allocationDeciders));
         bind(ShardsAllocator.class).toInstance(shardsAllocator);
     }

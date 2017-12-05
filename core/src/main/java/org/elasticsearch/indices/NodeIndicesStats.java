@@ -42,7 +42,6 @@ import org.elasticsearch.index.search.stats.SearchStats;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.index.shard.IndexingStats;
 import org.elasticsearch.index.store.StoreStats;
-import org.elasticsearch.search.suggest.completion.CompletionStats;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -129,11 +128,6 @@ public class NodeIndicesStats implements Streamable, ToXContent {
     @Nullable
     public RequestCacheStats getRequestCache() {
         return stats.getRequestCache();
-    }
-
-    @Nullable
-    public CompletionStats getCompletion() {
-        return stats.getCompletion();
     }
 
     @Nullable

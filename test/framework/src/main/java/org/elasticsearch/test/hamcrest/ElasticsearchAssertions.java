@@ -34,12 +34,7 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesResponse;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.action.support.broadcast.BroadcastResponse;
 import org.elasticsearch.action.support.master.AcknowledgedRequestBuilder;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -54,20 +49,15 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Streamable;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchModule;
-import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.VersionUtils;
 import org.hamcrest.CoreMatchers;
-import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 
 import java.io.IOException;
@@ -77,12 +67,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import static java.util.Collections.emptyList;
 import static org.apache.lucene.util.LuceneTestCase.random;
@@ -91,12 +79,9 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -204,134 +189,12 @@ public class ElasticsearchAssertions {
         return msg;
     }
 
-    public static String formatShardStatus(SearchResponse response) {
-        String msg = " Total shards: " + response.getTotalShards() + " Successful shards: " + response.getSuccessfulShards() + " & "
-                + response.getFailedShards() + " shard failures:";
-        for (ShardSearchFailure failure : response.getShardFailures()) {
-            msg += "\n " + failure.toString();
-        }
-        return msg;
-    }
-
-    public static void assertNoSearchHits(SearchResponse searchResponse) {
-        assertEquals(0, searchResponse.getHits().getHits().length);
-    }
-
-    public static void assertSearchHits(SearchResponse searchResponse, String... ids) {
-        String shardStatus = formatShardStatus(searchResponse);
-
-        Set<String> idsSet = new HashSet<>(Arrays.asList(ids));
-        for (SearchHit hit : searchResponse.getHits()) {
-            assertThat("id [" + hit.getId() + "] was found in search results but wasn't expected (type [" + hit.getType() + "], index [" + hit.index() + "])"
-                            + shardStatus, idsSet.remove(hit.getId()),
-                    equalTo(true));
-        }
-        assertThat("Some expected ids were not found in search results: " + Arrays.toString(idsSet.toArray(new String[idsSet.size()])) + "."
-                + shardStatus, idsSet.size(), equalTo(0));
-        assertVersionSerializable(searchResponse);
-    }
-
-    public static void assertSortValues(SearchResponse searchResponse, Object[]... sortValues) {
-        assertSearchResponse(searchResponse);
-        SearchHit[] hits = searchResponse.getHits().getHits();
-        assertEquals(sortValues.length, hits.length);
-        for (int i = 0; i < sortValues.length; ++i) {
-            final Object[] hitsSortValues = hits[i].getSortValues();
-            assertArrayEquals("Offset " + Integer.toString(i) + ", id " + hits[i].getId(), sortValues[i], hitsSortValues);
-        }
-        assertVersionSerializable(searchResponse);
-    }
-
-    public static void assertOrderedSearchHits(SearchResponse searchResponse, String... ids) {
-        String shardStatus = formatShardStatus(searchResponse);
-        assertThat("Expected different hit count. " + shardStatus, searchResponse.getHits().hits().length, equalTo(ids.length));
-        for (int i = 0; i < ids.length; i++) {
-            SearchHit hit = searchResponse.getHits().hits()[i];
-            assertThat("Expected id: " + ids[i] + " at position " + i + " but wasn't." + shardStatus, hit.getId(), equalTo(ids[i]));
-        }
-        assertVersionSerializable(searchResponse);
-    }
-
-    public static void assertHitCount(SearchResponse countResponse, long expectedHitCount) {
-        if (countResponse.getHits().totalHits() != expectedHitCount) {
-            fail("Count is " + countResponse.getHits().totalHits() + " but " + expectedHitCount + " was expected. " + formatShardStatus(countResponse));
-        }
-        assertVersionSerializable(countResponse);
-    }
 
     public static void assertExists(GetResponse response) {
         String message = String.format(Locale.ROOT, "Expected %s/%s/%s to exist, but does not", response.getIndex(), response.getType(), response.getId());
         assertThat(message, response.isExists(), is(true));
     }
 
-    public static void assertFirstHit(SearchResponse searchResponse, Matcher<SearchHit> matcher) {
-        assertSearchHit(searchResponse, 1, matcher);
-    }
-
-    public static void assertSecondHit(SearchResponse searchResponse, Matcher<SearchHit> matcher) {
-        assertSearchHit(searchResponse, 2, matcher);
-    }
-
-    public static void assertThirdHit(SearchResponse searchResponse, Matcher<SearchHit> matcher) {
-        assertSearchHit(searchResponse, 3, matcher);
-    }
-
-    public static void assertFourthHit(SearchResponse searchResponse, Matcher<SearchHit> matcher) {
-        assertSearchHit(searchResponse, 4, matcher);
-    }
-
-    public static void assertFifthHit(SearchResponse searchResponse, Matcher<SearchHit> matcher) {
-        assertSearchHit(searchResponse, 5, matcher);
-    }
-
-    public static void assertSearchHit(SearchResponse searchResponse, int number, Matcher<SearchHit> matcher) {
-        assertThat(number, greaterThan(0));
-        assertThat("SearchHit number must be greater than 0", number, greaterThan(0));
-        assertThat(searchResponse.getHits().totalHits(), greaterThanOrEqualTo((long) number));
-        assertSearchHit(searchResponse.getHits().getAt(number - 1), matcher);
-        assertVersionSerializable(searchResponse);
-    }
-
-    public static void assertNoFailures(SearchResponse searchResponse) {
-        assertThat("Unexpected ShardFailures: " + Arrays.toString(searchResponse.getShardFailures()),
-                searchResponse.getShardFailures().length, equalTo(0));
-        assertVersionSerializable(searchResponse);
-    }
-
-    public static void assertFailures(SearchResponse searchResponse) {
-        assertThat("Expected at least one shard failure, got none",
-                searchResponse.getShardFailures().length, greaterThan(0));
-        assertVersionSerializable(searchResponse);
-    }
-
-    public static void assertNoFailures(BulkResponse response) {
-        assertThat("Unexpected ShardFailures: " + response.buildFailureMessage(),
-                response.hasFailures(), is(false));
-        assertVersionSerializable(response);
-    }
-
-    public static void assertFailures(SearchRequestBuilder searchRequestBuilder, RestStatus restStatus, Matcher<String> reasonMatcher) {
-        //when the number for shards is randomized and we expect failures
-        //we can either run into partial or total failures depending on the current number of shards
-        try {
-            SearchResponse searchResponse = searchRequestBuilder.get();
-            assertThat("Expected shard failures, got none", searchResponse.getShardFailures().length, greaterThan(0));
-            for (ShardSearchFailure shardSearchFailure : searchResponse.getShardFailures()) {
-                assertThat(shardSearchFailure.status(), equalTo(restStatus));
-                assertThat(shardSearchFailure.reason(), reasonMatcher);
-            }
-            assertVersionSerializable(searchResponse);
-        } catch (SearchPhaseExecutionException e) {
-            assertThat(e.status(), equalTo(restStatus));
-            assertThat(e.toString(), reasonMatcher);
-            for (ShardSearchFailure shardSearchFailure : e.shardFailures()) {
-                assertThat(shardSearchFailure.status(), equalTo(restStatus));
-                assertThat(shardSearchFailure.reason(), reasonMatcher);
-            }
-        } catch (Exception e) {
-            fail("SearchPhaseExecutionException expected but got " + e.getClass());
-        }
-    }
 
     public static void assertNoFailures(BroadcastResponse response) {
         assertThat("Unexpected ShardFailures: " + Arrays.toString(response.getShardFailures()), response.getFailedShards(), equalTo(0));
@@ -343,108 +206,6 @@ public class ElasticsearchAssertions {
         assertThat("Expected all shards successful but got successful [" + response.getSuccessfulShards() + "] total [" + response.getTotalShards() + "]",
                 response.getTotalShards(), equalTo(response.getSuccessfulShards()));
         assertVersionSerializable(response);
-    }
-
-    public static void assertAllSuccessful(SearchResponse response) {
-        assertNoFailures(response);
-        assertThat("Expected all shards successful but got successful [" + response.getSuccessfulShards() + "] total [" + response.getTotalShards() + "]",
-                response.getTotalShards(), equalTo(response.getSuccessfulShards()));
-        assertVersionSerializable(response);
-    }
-
-    public static void assertSearchHit(SearchHit searchHit, Matcher<SearchHit> matcher) {
-        assertThat(searchHit, matcher);
-        assertVersionSerializable(searchHit);
-    }
-
-    public static void assertHighlight(SearchResponse resp, int hit, String field, int fragment, Matcher<String> matcher) {
-        assertHighlight(resp, hit, field, fragment, greaterThan(fragment), matcher);
-    }
-
-    public static void assertHighlight(SearchResponse resp, int hit, String field, int fragment, int totalFragments, Matcher<String> matcher) {
-        assertHighlight(resp, hit, field, fragment, equalTo(totalFragments), matcher);
-    }
-
-    public static void assertHighlight(SearchHit hit, String field, int fragment, Matcher<String> matcher) {
-        assertHighlight(hit, field, fragment, greaterThan(fragment), matcher);
-    }
-
-    public static void assertHighlight(SearchHit hit, String field, int fragment, int totalFragments, Matcher<String> matcher) {
-        assertHighlight(hit, field, fragment, equalTo(totalFragments), matcher);
-    }
-
-    private static void assertHighlight(SearchResponse resp, int hit, String field, int fragment, Matcher<Integer> fragmentsMatcher, Matcher<String> matcher) {
-        assertNoFailures(resp);
-        assertThat("not enough hits", resp.getHits().hits().length, greaterThan(hit));
-        assertHighlight(resp.getHits().hits()[hit], field, fragment, fragmentsMatcher, matcher);
-        assertVersionSerializable(resp);
-    }
-
-    private static void assertHighlight(SearchHit hit, String field, int fragment, Matcher<Integer> fragmentsMatcher, Matcher<String> matcher) {
-        assertThat(hit.getHighlightFields(), hasKey(field));
-        assertThat(hit.getHighlightFields().get(field).fragments().length, fragmentsMatcher);
-        assertThat(hit.highlightFields().get(field).fragments()[fragment].string(), matcher);
-    }
-
-    public static void assertNotHighlighted(SearchResponse resp, int hit, String field) {
-        assertNoFailures(resp);
-        assertThat("not enough hits", resp.getHits().hits().length, greaterThan(hit));
-        assertThat(resp.getHits().hits()[hit].getHighlightFields(), not(hasKey(field)));
-    }
-
-    public static void assertSuggestionSize(Suggest searchSuggest, int entry, int size, String key) {
-        assertThat(searchSuggest, notNullValue());
-        String msg = "Suggest result: " + searchSuggest.toString();
-        assertThat(msg, searchSuggest.size(), greaterThanOrEqualTo(1));
-        assertThat(msg, searchSuggest.getSuggestion(key).getName(), equalTo(key));
-        assertThat(msg, searchSuggest.getSuggestion(key).getEntries().size(), greaterThanOrEqualTo(entry));
-        assertThat(msg, searchSuggest.getSuggestion(key).getEntries().get(entry).getOptions().size(), equalTo(size));
-        assertVersionSerializable(searchSuggest);
-    }
-
-    public static void assertSuggestionPhraseCollateMatchExists(Suggest searchSuggest, String key, int numberOfPhraseExists) {
-        int counter = 0;
-        assertThat(searchSuggest, notNullValue());
-        String msg = "Suggest result: " + searchSuggest.toString();
-        assertThat(msg, searchSuggest.size(), greaterThanOrEqualTo(1));
-        assertThat(msg, searchSuggest.getSuggestion(key).getName(), equalTo(key));
-
-        for (Suggest.Suggestion.Entry.Option option : searchSuggest.getSuggestion(key).getEntries().get(0).getOptions()) {
-            if (option.collateMatch()) {
-                counter++;
-            }
-        }
-
-        assertThat(counter, equalTo(numberOfPhraseExists));
-    }
-
-    public static void assertSuggestion(Suggest searchSuggest, int entry, int ord, String key, String text) {
-        assertThat(searchSuggest, notNullValue());
-        String msg = "Suggest result: " + searchSuggest.toString();
-        assertThat(msg, searchSuggest.size(), greaterThanOrEqualTo(1));
-        assertThat(msg, searchSuggest.getSuggestion(key).getName(), equalTo(key));
-        assertThat(msg, searchSuggest.getSuggestion(key).getEntries().size(), greaterThanOrEqualTo(entry));
-        assertThat(msg, searchSuggest.getSuggestion(key).getEntries().get(entry).getOptions().size(), greaterThan(ord));
-        assertThat(msg, searchSuggest.getSuggestion(key).getEntries().get(entry).getOptions().get(ord).getText().string(), equalTo(text));
-        assertVersionSerializable(searchSuggest);
-    }
-
-    /**
-     * Assert suggestion returns exactly the provided text.
-     */
-    public static void assertSuggestion(Suggest searchSuggest, int entry, String key, String... text) {
-        assertSuggestion(searchSuggest, entry, key, text.length, text);
-    }
-
-    /**
-     * Assert suggestion returns size suggestions and the first are the provided
-     * text.
-     */
-    public static void assertSuggestion(Suggest searchSuggest, int entry, String key, int size, String... text) {
-        assertSuggestionSize(searchSuggest, entry, size, key);
-        for (int i = 0; i < text.length; i++) {
-            assertSuggestion(searchSuggest, entry, i, key, text[i]);
-        }
     }
 
     /**
@@ -483,24 +244,6 @@ public class ElasticsearchAssertions {
         assertTrue("Aliases should exist", aliasesExistResponse.exists());
     }
 
-    /*
-     * matchers
-     */
-    public static Matcher<SearchHit> hasId(final String id) {
-        return new ElasticsearchMatchers.SearchHitHasIdMatcher(id);
-    }
-
-    public static Matcher<SearchHit> hasType(final String type) {
-        return new ElasticsearchMatchers.SearchHitHasTypeMatcher(type);
-    }
-
-    public static Matcher<SearchHit> hasIndex(final String index) {
-        return new ElasticsearchMatchers.SearchHitHasIndexMatcher(index);
-    }
-
-    public static Matcher<SearchHit> hasScore(final float score) {
-        return new ElasticsearchMatchers.SearchHitHasScoreMatcher(score);
-    }
 
     public static <T extends Query> T assertBooleanSubQuery(Query query, Class<T> subqueryType, int i) {
         assertThat(query, instanceOf(BooleanQuery.class));
@@ -646,8 +389,7 @@ public class ElasticsearchAssertions {
         if (ESIntegTestCase.isInternalCluster() && ESIntegTestCase.internalCluster().size() > 0) {
             registry = ESIntegTestCase.internalCluster().getInstance(NamedWriteableRegistry.class);
         } else {
-            SearchModule searchModule = new SearchModule(Settings.EMPTY, false, emptyList());
-            registry = new NamedWriteableRegistry(searchModule.getNamedWriteables());
+            registry = new NamedWriteableRegistry(emptyList());
         }
         assertVersionSerializable(version, streamable, registry);
     }
@@ -733,23 +475,6 @@ public class ElasticsearchAssertions {
         } catch (Exception e) {
             return null;
         }
-    }
-
-    /**
-     * Applies basic assertions on the SearchResponse. This method checks if all shards were successful, if
-     * any of the shards threw an exception and if the response is serializable.
-     */
-    public static SearchResponse assertSearchResponse(SearchRequestBuilder request) {
-        return assertSearchResponse(request.get());
-    }
-
-    /**
-     * Applies basic assertions on the SearchResponse. This method checks if all shards were successful, if
-     * any of the shards threw an exception and if the response is serializable.
-     */
-    public static SearchResponse assertSearchResponse(SearchResponse response) {
-        assertNoFailures(response);
-        return response;
     }
 
     /**

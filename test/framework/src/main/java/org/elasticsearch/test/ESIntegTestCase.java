@@ -27,9 +27,7 @@ import org.apache.lucene.util.IOUtils;
 import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.TestUtil;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.ShardOperationFailedException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -46,13 +44,7 @@ import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.admin.indices.segments.IndicesSegmentResponse;
 import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateRequestBuilder;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.ClearScrollResponse;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.AdminClient;
@@ -90,13 +82,11 @@ import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.discovery.Discovery;
@@ -121,10 +111,6 @@ import org.elasticsearch.indices.store.IndicesStore;
 import org.elasticsearch.node.NodeMocksPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.script.ScriptService;
-import org.elasticsearch.search.MockSearchService;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchService;
 import org.elasticsearch.test.client.RandomizingClient;
 import org.elasticsearch.test.discovery.TestZenDiscovery;
 import org.elasticsearch.test.disruption.NetworkDisruption;
@@ -168,11 +154,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -182,8 +165,6 @@ import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_AUTO_EXPA
 import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_REPLICAS;
 import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_SHARDS;
 import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_WAIT_FOR_ACTIVE_SHARDS;
-import static org.elasticsearch.common.util.CollectionUtils.eagerPartition;
-import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.elasticsearch.test.XContentTestUtils.convertToMap;
 import static org.elasticsearch.test.XContentTestUtils.differenceBetweenMapsIgnoringArrayOrder;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
@@ -858,21 +839,6 @@ public abstract class ESIntegTestCase extends ESTestCase {
         }
     }
 
-    /** Ensures the result counts are as expected, and logs the results if different */
-    public void assertResultsAndLogOnFailure(long expectedResults, SearchResponse searchResponse) {
-        if (searchResponse.getHits().getTotalHits() != expectedResults) {
-            StringBuilder sb = new StringBuilder("search result contains [");
-            sb.append(searchResponse.getHits().getTotalHits()).append("] results. expected [").append(expectedResults).append("]");
-            String failMsg = sb.toString();
-            for (SearchHit hit : searchResponse.getHits().getHits()) {
-                sb.append("\n-> _index: [").append(hit.getIndex()).append("] type [").append(hit.getType())
-                    .append("] id [").append(hit.id()).append("]");
-            }
-            logger.warn("{}", sb);
-            fail(failMsg);
-        }
-    }
-
     /**
      * Restricts the given index to be allocated on <code>n</code> nodes using the allocation deciders.
      * Yet if the shards can't be allocated on any other node shards for this index will remain allocated on
@@ -978,76 +944,6 @@ public abstract class ESIntegTestCase extends ESTestCase {
             assertThat(actionGet.getStatus(), equalTo(status));
         }
         return actionGet.getStatus();
-    }
-
-    /**
-     * Waits until at least a give number of document is visible for searchers
-     *
-     * @param numDocs number of documents to wait for.
-     * @return the actual number of docs seen.
-     */
-    public long waitForDocs(final long numDocs) throws InterruptedException {
-        return waitForDocs(numDocs, null);
-    }
-
-    /**
-     * Waits until at least a give number of document is visible for searchers
-     *
-     * @param numDocs number of documents to wait for
-     * @param indexer a {@link org.elasticsearch.test.BackgroundIndexer}. If supplied it will be first checked for documents indexed.
-     *                This saves on unneeded searches.
-     * @return the actual number of docs seen.
-     */
-    public long waitForDocs(final long numDocs, @Nullable final BackgroundIndexer indexer) throws InterruptedException {
-        // indexing threads can wait for up to ~1m before retrying when they first try to index into a shard which is not STARTED.
-        return waitForDocs(numDocs, 90, TimeUnit.SECONDS, indexer);
-    }
-
-    /**
-     * Waits until at least a give number of document is visible for searchers
-     *
-     * @param numDocs         number of documents to wait for
-     * @param maxWaitTime     if not progress have been made during this time, fail the test
-     * @param maxWaitTimeUnit the unit in which maxWaitTime is specified
-     * @param indexer         a {@link org.elasticsearch.test.BackgroundIndexer}. If supplied it will be first checked for documents indexed.
-     *                        This saves on unneeded searches.
-     * @return the actual number of docs seen.
-     */
-    public long waitForDocs(final long numDocs, int maxWaitTime, TimeUnit maxWaitTimeUnit, @Nullable final BackgroundIndexer indexer)
-        throws InterruptedException {
-        final AtomicLong lastKnownCount = new AtomicLong(-1);
-        long lastStartCount = -1;
-        BooleanSupplier testDocs = () -> {
-            if (indexer != null) {
-                lastKnownCount.set(indexer.totalIndexedDocs());
-            }
-            if (lastKnownCount.get() >= numDocs) {
-                try {
-                    long count = client().prepareSearch().setSize(0).setQuery(matchAllQuery()).execute().actionGet().getHits().totalHits();
-                    if (count == lastKnownCount.get()) {
-                        // no progress - try to refresh for the next time
-                        client().admin().indices().prepareRefresh().get();
-                    }
-                    lastKnownCount.set(count);
-                } catch (Exception e) { // count now acts like search and barfs if all shards failed...
-                    logger.debug("failed to executed count", e);
-                    return false;
-                }
-                logger.debug("[{}] docs visible for search. waiting for [{}]", lastKnownCount.get(), numDocs);
-            } else {
-                logger.debug("[{}] docs indexed. waiting for [{}]", lastKnownCount.get(), numDocs);
-            }
-            return lastKnownCount.get() >= numDocs;
-        };
-
-        while (!awaitBusy(testDocs, maxWaitTime, maxWaitTimeUnit)) {
-            if (lastStartCount == lastKnownCount.get()) {
-                // we didn't make any progress
-                fail("failed to reach " + numDocs + "docs");
-            }
-            lastStartCount = lastKnownCount.get();
-        }
-        return lastKnownCount.get();
     }
 
 
@@ -1192,25 +1088,6 @@ public abstract class ESIntegTestCase extends ESTestCase {
         NetworkDisruption.ensureFullyConnectedCluster(internalCluster());
     }
 
-    /**
-     * Syntactic sugar for:
-     * <pre>
-     *   client().prepareIndex(index, type).setSource(source).execute().actionGet();
-     * </pre>
-     */
-    protected final IndexResponse index(String index, String type, XContentBuilder source) {
-        return client().prepareIndex(index, type).setSource(source).execute().actionGet();
-    }
-
-    /**
-     * Syntactic sugar for:
-     * <pre>
-     *   client().prepareIndex(index, type).setSource(source).execute().actionGet();
-     * </pre>
-     */
-    protected final IndexResponse index(String index, String type, String id, Map<String, Object> source) {
-        return client().prepareIndex(index, type, id).setWaitForActiveShards(1).setSource(source).execute().actionGet();
-    }
 
     /**
      * Syntactic sugar for:
@@ -1220,38 +1097,6 @@ public abstract class ESIntegTestCase extends ESTestCase {
      */
     protected final GetResponse get(String index, String type, String id) {
         return client().prepareGet(index, type, id).execute().actionGet();
-    }
-
-    /**
-     * Syntactic sugar for:
-     * <pre>
-     *   return client().prepareIndex(index, type, id).setSource(source).execute().actionGet();
-     * </pre>
-     */
-    protected final IndexResponse index(String index, String type, String id, XContentBuilder source) {
-        return client().prepareIndex(index, type, id).setSource(source).execute().actionGet();
-    }
-
-    /**
-     * Syntactic sugar for:
-     * <pre>
-     *   return client().prepareIndex(index, type, id).setSource(source).execute().actionGet();
-     * </pre>
-     */
-    protected final IndexResponse index(String index, String type, String id, Object... source) {
-        return client().prepareIndex(index, type, id).setSource(source).execute().actionGet();
-    }
-
-    /**
-     * Syntactic sugar for:
-     * <pre>
-     *   return client().prepareIndex(index, type, id).setSource(source).execute().actionGet();
-     * </pre>
-     * <p>
-     * where source is a JSON String.
-     */
-    protected final IndexResponse index(String index, String type, String id, String source) {
-        return client().prepareIndex(index, type, id).setSource(source, XContentType.JSON).execute().actionGet();
     }
 
     /**
@@ -1329,143 +1174,6 @@ public abstract class ESIntegTestCase extends ESTestCase {
      */
     protected AdminClient admin() {
         return client().admin();
-    }
-
-    /**
-     * Convenience method that forwards to {@link #indexRandom(boolean, List)}.
-     */
-    public void indexRandom(boolean forceRefresh, IndexRequestBuilder... builders) throws InterruptedException, ExecutionException {
-        indexRandom(forceRefresh, Arrays.asList(builders));
-    }
-
-    public void indexRandom(boolean forceRefresh, boolean dummyDocuments, IndexRequestBuilder... builders) throws InterruptedException, ExecutionException {
-        indexRandom(forceRefresh, dummyDocuments, Arrays.asList(builders));
-    }
-
-    /**
-     * Indexes the given {@link IndexRequestBuilder} instances randomly. It shuffles the given builders and either
-     * indexes them in a blocking or async fashion. This is very useful to catch problems that relate to internal document
-     * ids or index segment creations. Some features might have bug when a given document is the first or the last in a
-     * segment or if only one document is in a segment etc. This method prevents issues like this by randomizing the index
-     * layout.
-     *
-     * @param forceRefresh if <tt>true</tt> all involved indices are refreshed once the documents are indexed. Additionally if <tt>true</tt>
-     *                     some empty dummy documents are may be randomly inserted into the document list and deleted once all documents are indexed.
-     *                     This is useful to produce deleted documents on the server side.
-     * @param builders     the documents to index.
-     * @see #indexRandom(boolean, boolean, java.util.List)
-     */
-    public void indexRandom(boolean forceRefresh, List<IndexRequestBuilder> builders) throws InterruptedException, ExecutionException {
-        indexRandom(forceRefresh, forceRefresh, builders);
-    }
-
-    /**
-     * Indexes the given {@link IndexRequestBuilder} instances randomly. It shuffles the given builders and either
-     * indexes they in a blocking or async fashion. This is very useful to catch problems that relate to internal document
-     * ids or index segment creations. Some features might have bug when a given document is the first or the last in a
-     * segment or if only one document is in a segment etc. This method prevents issues like this by randomizing the index
-     * layout.
-     *
-     * @param forceRefresh   if <tt>true</tt> all involved indices are refreshed once the documents are indexed.
-     * @param dummyDocuments if <tt>true</tt> some empty dummy documents may be randomly inserted into the document list and deleted once
-     *                       all documents are indexed. This is useful to produce deleted documents on the server side.
-     * @param builders       the documents to index.
-     */
-    public void indexRandom(boolean forceRefresh, boolean dummyDocuments, List<IndexRequestBuilder> builders) throws InterruptedException, ExecutionException {
-        indexRandom(forceRefresh, dummyDocuments, true, builders);
-    }
-
-    /**
-     * Indexes the given {@link IndexRequestBuilder} instances randomly. It shuffles the given builders and either
-     * indexes they in a blocking or async fashion. This is very useful to catch problems that relate to internal document
-     * ids or index segment creations. Some features might have bug when a given document is the first or the last in a
-     * segment or if only one document is in a segment etc. This method prevents issues like this by randomizing the index
-     * layout.
-     *
-     * @param forceRefresh   if <tt>true</tt> all involved indices are refreshed once the documents are indexed.
-     * @param dummyDocuments if <tt>true</tt> some empty dummy documents may be randomly inserted into the document list and deleted once
-     *                       all documents are indexed. This is useful to produce deleted documents on the server side.
-     * @param maybeFlush     if <tt>true</tt> this method may randomly execute full flushes after index operations.
-     * @param builders       the documents to index.
-     */
-    public void indexRandom(boolean forceRefresh, boolean dummyDocuments, boolean maybeFlush, List<IndexRequestBuilder> builders) throws InterruptedException, ExecutionException {
-        Random random = random();
-        Map<String, Set<String>> indicesAndTypes = new HashMap<>();
-        for (IndexRequestBuilder builder : builders) {
-            final Set<String> types = indicesAndTypes.computeIfAbsent(builder.request().index(), index -> new HashSet<>());
-            types.add(builder.request().type());
-        }
-        Set<List<String>> bogusIds = new HashSet<>(); // (index, type, id)
-        if (random.nextBoolean() && !builders.isEmpty() && dummyDocuments) {
-            builders = new ArrayList<>(builders);
-            // inject some bogus docs
-            final int numBogusDocs = scaledRandomIntBetween(1, builders.size() * 2);
-            final int unicodeLen = between(1, 10);
-            for (int i = 0; i < numBogusDocs; i++) {
-                String id = "bogus_doc_" + randomRealisticUnicodeOfLength(unicodeLen) + Integer.toString(dummmyDocIdGenerator.incrementAndGet());
-                Map.Entry<String, Set<String>> indexAndTypes = RandomPicks.randomFrom(random, indicesAndTypes.entrySet());
-                String index = indexAndTypes.getKey();
-                String type = RandomPicks.randomFrom(random, indexAndTypes.getValue());
-                bogusIds.add(Arrays.asList(index, type, id));
-                // We configure a routing key in case the mapping requires it
-                builders.add(client().prepareIndex(index, type, id).setSource("{}", XContentType.JSON).setRouting(id));
-            }
-        }
-        Collections.shuffle(builders, random());
-        final CopyOnWriteArrayList<Tuple<IndexRequestBuilder, Exception>> errors = new CopyOnWriteArrayList<>();
-        List<CountDownLatch> inFlightAsyncOperations = new ArrayList<>();
-        // If you are indexing just a few documents then frequently do it one at a time.  If many then frequently in bulk.
-        final String[] indices = indicesAndTypes.keySet().toArray(new String[0]);
-        if (builders.size() < FREQUENT_BULK_THRESHOLD ? frequently() : builders.size() < ALWAYS_BULK_THRESHOLD ? rarely() : false) {
-            if (frequently()) {
-                logger.info("Index [{}] docs async: [{}] bulk: [{}]", builders.size(), true, false);
-                for (IndexRequestBuilder indexRequestBuilder : builders) {
-                    indexRequestBuilder.execute(new PayloadLatchedActionListener<IndexResponse, IndexRequestBuilder>(indexRequestBuilder, newLatch(inFlightAsyncOperations), errors));
-                    postIndexAsyncActions(indices, inFlightAsyncOperations, maybeFlush);
-                }
-            } else {
-                logger.info("Index [{}] docs async: [{}] bulk: [{}]", builders.size(), false, false);
-                for (IndexRequestBuilder indexRequestBuilder : builders) {
-                    indexRequestBuilder.execute().actionGet();
-                    postIndexAsyncActions(indices, inFlightAsyncOperations, maybeFlush);
-                }
-            }
-        } else {
-            List<List<IndexRequestBuilder>> partition = eagerPartition(builders, Math.min(MAX_BULK_INDEX_REQUEST_SIZE,
-                Math.max(1, (int) (builders.size() * randomDouble()))));
-            logger.info("Index [{}] docs async: [{}] bulk: [{}] partitions [{}]", builders.size(), false, true, partition.size());
-            for (List<IndexRequestBuilder> segmented : partition) {
-                BulkRequestBuilder bulkBuilder = client().prepareBulk();
-                for (IndexRequestBuilder indexRequestBuilder : segmented) {
-                    bulkBuilder.add(indexRequestBuilder);
-                }
-                BulkResponse actionGet = bulkBuilder.execute().actionGet();
-                assertThat(actionGet.hasFailures() ? actionGet.buildFailureMessage() : "", actionGet.hasFailures(), equalTo(false));
-            }
-        }
-        for (CountDownLatch operation : inFlightAsyncOperations) {
-            operation.await();
-        }
-        final List<Exception> actualErrors = new ArrayList<>();
-        for (Tuple<IndexRequestBuilder, Exception> tuple : errors) {
-            if (ExceptionsHelper.unwrapCause(tuple.v2()) instanceof EsRejectedExecutionException) {
-                tuple.v1().execute().actionGet(); // re-index if rejected
-            } else {
-                actualErrors.add(tuple.v2());
-            }
-        }
-        assertThat(actualErrors, emptyIterable());
-        if (!bogusIds.isEmpty()) {
-            // delete the bogus types again - it might trigger merges or at least holes in the segments and enforces deleted docs!
-            for (List<String> doc : bogusIds) {
-                assertEquals("failed to delete a dummy doc [" + doc.get(0) + "][" + doc.get(2) + "]",
-                    DocWriteResponse.Result.DELETED,
-                    client().prepareDelete(doc.get(0), doc.get(1), doc.get(2)).setRouting(doc.get(2)).get().getResult());
-            }
-        }
-        if (forceRefresh) {
-            assertNoFailures(client().admin().indices().prepareRefresh(indices).setIndicesOptions(IndicesOptions.lenientExpandOpen()).execute().get());
-        }
     }
 
     private AtomicInteger dummmyDocIdGenerator = new AtomicInteger();
@@ -1644,15 +1352,6 @@ public abstract class ESIntegTestCase extends ESTestCase {
 
     }
 
-    /**
-     * Clears the given scroll Ids
-     */
-    public void clearScroll(String... scrollIds) {
-        ClearScrollResponse clearResponse = client().prepareClearScroll()
-            .setScrollIds(Arrays.asList(scrollIds)).get();
-        assertThat(clearResponse.isSucceeded(), equalTo(true));
-    }
-
     private static <A extends Annotation> A getAnnotation(Class<?> clazz, Class<A> annotationClass) {
         if (clazz == Object.class || clazz == ESIntegTestCase.class) {
             return null;
@@ -1723,7 +1422,6 @@ public abstract class ESIntegTestCase extends ESTestCase {
             // from failing on nodes without enough disk space
             .put(DiskThresholdSettings.CLUSTER_ROUTING_ALLOCATION_LOW_DISK_WATERMARK_SETTING.getKey(), "1b")
             .put(DiskThresholdSettings.CLUSTER_ROUTING_ALLOCATION_HIGH_DISK_WATERMARK_SETTING.getKey(), "1b")
-            .put(ScriptService.SCRIPT_MAX_COMPILATIONS_PER_MINUTE.getKey(), 2048)
             .put("script.stored", "true")
             .put("script.inline", "true")
             // by default we never cache below 10k docs in a segment,
@@ -1731,8 +1429,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
             // integration tests that usually create few documents
             .put(IndicesQueryCache.INDICES_QUERIES_CACHE_ALL_SEGMENTS_SETTING.getKey(), nodeOrdinal % 2 == 0)
             // wait short time for other active shards before actually deleting, default 30s not needed in tests
-            .put(IndicesStore.INDICES_STORE_DELETE_SHARD_TIMEOUT.getKey(), new TimeValue(1, TimeUnit.SECONDS))
-            .put(SearchService.LOW_LEVEL_CANCELLATION_SETTING.getKey(), randomBoolean());
+            .put(IndicesStore.INDICES_STORE_DELETE_SHARD_TIMEOUT.getKey(), new TimeValue(1, TimeUnit.SECONDS));
         return builder.build();
     }
 
@@ -1922,9 +1619,6 @@ public abstract class ESIntegTestCase extends ESTestCase {
             if (randomBoolean()) {
                 mocks.add(MockEngineFactoryPlugin.class);
             }
-            if (randomBoolean()) {
-                mocks.add(MockSearchService.TestPlugin.class);
-            }
         }
 
         if (addMockTransportService()) {
@@ -2061,7 +1755,6 @@ public abstract class ESIntegTestCase extends ESTestCase {
         // Deleting indices is going to clear search contexts implicitly so we
         // need to check that there are no more in-flight search contexts before
         // we remove indices
-        super.ensureAllSearchContextsReleased();
         if (runTestScopeLifecycle()) {
             printTestMessage("cleaning up after");
             afterInternal(false);

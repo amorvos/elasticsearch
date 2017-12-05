@@ -38,29 +38,12 @@ import org.elasticsearch.index.fielddata.IndexFieldDataService;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.ObjectMapper;
-import org.elasticsearch.search.collapse.CollapseContext;
-import org.elasticsearch.index.query.ParsedQuery;
 import org.elasticsearch.index.query.QueryShardContext;
 import org.elasticsearch.index.shard.IndexShard;
-import org.elasticsearch.index.similarity.SimilarityService;
-import org.elasticsearch.search.SearchExtBuilder;
 import org.elasticsearch.search.SearchShardTarget;
-import org.elasticsearch.search.aggregations.SearchContextAggregations;
 import org.elasticsearch.search.dfs.DfsSearchResult;
-import org.elasticsearch.search.fetch.FetchPhase;
-import org.elasticsearch.search.fetch.FetchSearchResult;
-import org.elasticsearch.search.fetch.StoredFieldsContext;
-import org.elasticsearch.search.fetch.subphase.DocValueFieldsContext;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
-import org.elasticsearch.search.fetch.subphase.InnerHitsContext;
-import org.elasticsearch.search.fetch.subphase.ScriptFieldsContext;
-import org.elasticsearch.search.fetch.subphase.highlight.SearchContextHighlight;
 import org.elasticsearch.search.lookup.SearchLookup;
-import org.elasticsearch.search.profile.Profilers;
-import org.elasticsearch.search.query.QuerySearchResult;
-import org.elasticsearch.search.rescore.RescoreSearchContext;
-import org.elasticsearch.search.sort.SortAndFormats;
-import org.elasticsearch.search.suggest.SuggestionSearchContext;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -73,7 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * shards point in time snapshot (IndexReader / ContextIndexSearcher) and allows passing on
  * state from one query / fetch phase to another.
  *
- * This class also implements {@link RefCounted} since in some situations like in {@link org.elasticsearch.search.SearchService}
+ * This class also implements {@link RefCounted} since in some situations like in org.elasticsearch.search.SearchService
  * a SearchContext can be closed concurrently due to independent events ie. when an index gets removed. To prevent accessing closed
  * IndexReader / IndexSearcher instances the SearchContext can be guarded by a reference count and fail if it's been closed by
  * an external event.
@@ -84,7 +67,6 @@ public abstract class SearchContext extends AbstractRefCounted implements Releas
     public static final int DEFAULT_TERMINATE_AFTER = 0;
     private Map<Lifetime, List<Releasable>> clearables = null;
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    private InnerHitsContext innerHitsContext;
 
     protected SearchContext() {
         super("search_context");
@@ -133,8 +115,6 @@ public abstract class SearchContext extends AbstractRefCounted implements Releas
 
     public abstract String source();
 
-    public abstract ShardSearchRequest request();
-
     public abstract SearchType searchType();
 
     public abstract SearchShardTarget shardTarget();
@@ -145,43 +125,6 @@ public abstract class SearchContext extends AbstractRefCounted implements Releas
 
     public abstract long getOriginNanoTime();
 
-    public abstract ScrollContext scrollContext();
-
-    public abstract SearchContext scrollContext(ScrollContext scroll);
-
-    public abstract SearchContextAggregations aggregations();
-
-    public abstract SearchContext aggregations(SearchContextAggregations aggregations);
-
-    public abstract void addSearchExt(SearchExtBuilder searchExtBuilder);
-
-    public abstract SearchExtBuilder getSearchExt(String name);
-
-    public abstract SearchContextHighlight highlight();
-
-    public abstract void highlight(SearchContextHighlight highlight);
-
-    public InnerHitsContext innerHits() {
-        if (innerHitsContext == null) {
-            innerHitsContext = new InnerHitsContext();
-        }
-        return innerHitsContext;
-    }
-
-    public abstract SuggestionSearchContext suggest();
-
-    public abstract void suggest(SuggestionSearchContext suggest);
-
-    /**
-     * @return list of all rescore contexts.  empty if there aren't any.
-     */
-    public abstract List<RescoreSearchContext> rescore();
-
-    public abstract void addRescore(RescoreSearchContext rescore);
-
-    public abstract boolean hasScriptFields();
-
-    public abstract ScriptFieldsContext scriptFields();
 
     /**
      * A shortcut function to see whether there is a fetchSourceContext and it says the source is requested.
@@ -194,17 +137,11 @@ public abstract class SearchContext extends AbstractRefCounted implements Releas
 
     public abstract SearchContext fetchSourceContext(FetchSourceContext fetchSourceContext);
 
-    public abstract DocValueFieldsContext docValueFieldsContext();
-
-    public abstract SearchContext docValueFieldsContext(DocValueFieldsContext docValueFieldsContext);
-
     public abstract ContextIndexSearcher searcher();
 
     public abstract IndexShard indexShard();
 
     public abstract MapperService mapperService();
-
-    public abstract SimilarityService similarityService();
 
     public abstract BigArrays bigArrays();
 
@@ -232,10 +169,6 @@ public abstract class SearchContext extends AbstractRefCounted implements Releas
 
     public abstract Float minimumScore();
 
-    public abstract SearchContext sort(SortAndFormats sort);
-
-    public abstract SortAndFormats sort();
-
     public abstract SearchContext trackScores(boolean trackScores);
 
     public abstract boolean trackScores();
@@ -244,19 +177,8 @@ public abstract class SearchContext extends AbstractRefCounted implements Releas
 
     public abstract FieldDoc searchAfter();
 
-    public abstract SearchContext collapse(CollapseContext collapse);
-
-    public abstract CollapseContext collapse();
-
-    public abstract SearchContext parsedPostFilter(ParsedQuery postFilter);
-
-    public abstract ParsedQuery parsedPostFilter();
 
     public abstract Query aliasFilter();
-
-    public abstract SearchContext parsedQuery(ParsedQuery query);
-
-    public abstract ParsedQuery parsedQuery();
 
     /**
      * The query to execute, might be rewritten.
@@ -279,10 +201,6 @@ public abstract class SearchContext extends AbstractRefCounted implements Releas
      * A shortcut function to see whether there is a storedFieldsContext and it says the fields are requested.
      */
     public abstract boolean storedFieldsRequested();
-
-    public abstract StoredFieldsContext storedFieldsContext();
-
-    public abstract SearchContext storedFieldsContext(StoredFieldsContext storedFieldsContext);
 
     public abstract boolean explain();
 
@@ -318,17 +236,6 @@ public abstract class SearchContext extends AbstractRefCounted implements Releas
     }
 
     public abstract DfsSearchResult dfsResult();
-
-    public abstract QuerySearchResult queryResult();
-
-    public abstract FetchPhase fetchPhase();
-
-    public abstract FetchSearchResult fetchResult();
-
-    /**
-     * Return a handle over the profilers for the current search request, or {@code null} if profiling is not enabled.
-     */
-    public abstract Profilers getProfilers();
 
     /**
      * Schedule the release of a resource. The time when {@link Releasable#close()} will be called on this object
@@ -366,8 +273,7 @@ public abstract class SearchContext extends AbstractRefCounted implements Releas
      * @return true if the request contains only suggest
      */
     public final boolean hasOnlySuggest() {
-        return request().source() != null
-            && request().source().isSuggestOnly();
+        return false;
     }
 
     /**
@@ -407,13 +313,6 @@ public abstract class SearchContext extends AbstractRefCounted implements Releas
         StringBuilder result = new StringBuilder().append(shardTarget());
         if (searchType() != SearchType.DEFAULT) {
             result.append("searchType=[").append(searchType()).append("]");
-        }
-        if (scrollContext() != null) {
-            if (scrollContext().scroll != null) {
-                result.append("scroll=[").append(scrollContext().scroll.keepAlive()).append("]");
-            } else {
-                result.append("scroll=[null]");
-            }
         }
         result.append(" query=[").append(query()).append("]");
         return result.toString();

@@ -43,7 +43,6 @@ import org.elasticsearch.index.store.StoreStats;
 import org.elasticsearch.index.translog.TranslogStats;
 import org.elasticsearch.index.warmer.WarmerStats;
 import org.elasticsearch.indices.IndicesQueryCache;
-import org.elasticsearch.search.suggest.completion.CompletionStats;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -84,9 +83,6 @@ public class CommonStats implements Writeable, ToXContent {
 
     @Nullable
     public FieldDataStats fieldData;
-
-    @Nullable
-    public CompletionStats completion;
 
     @Nullable
     public SegmentsStats segments;
@@ -141,9 +137,6 @@ public class CommonStats implements Writeable, ToXContent {
                     break;
                 case FieldData:
                     fieldData = new FieldDataStats();
-                    break;
-                case Completion:
-                    completion = new CompletionStats();
                     break;
                 case Segments:
                     segments = new SegmentsStats();
@@ -203,9 +196,6 @@ public class CommonStats implements Writeable, ToXContent {
                 case FieldData:
                     fieldData = indexShard.fieldDataStats(flags.fieldDataFields());
                     break;
-                case Completion:
-                    completion = indexShard.completionStats(flags.completionDataFields());
-                    break;
                 case Segments:
                     segments = indexShard.segmentStats(flags.includeSegmentFileSizes());
                     break;
@@ -239,7 +229,6 @@ public class CommonStats implements Writeable, ToXContent {
         warmer =  in.readOptionalStreamable(WarmerStats::new);
         queryCache = in.readOptionalStreamable(QueryCacheStats::new);
         fieldData =  in.readOptionalStreamable(FieldDataStats::new);
-        completion =  in.readOptionalStreamable(CompletionStats::new);
         segments =  in.readOptionalStreamable(SegmentsStats::new);
         translog = in.readOptionalStreamable(TranslogStats::new);
         requestCache = in.readOptionalStreamable(RequestCacheStats::new);
@@ -259,7 +248,6 @@ public class CommonStats implements Writeable, ToXContent {
         out.writeOptionalStreamable(warmer);
         out.writeOptionalStreamable(queryCache);
         out.writeOptionalStreamable(fieldData);
-        out.writeOptionalStreamable(completion);
         out.writeOptionalStreamable(segments);
         out.writeOptionalStreamable(translog);
         out.writeOptionalStreamable(requestCache);
@@ -356,14 +344,6 @@ public class CommonStats implements Writeable, ToXContent {
         } else {
             fieldData.add(stats.getFieldData());
         }
-        if (completion == null) {
-            if (stats.getCompletion() != null) {
-                completion = new CompletionStats();
-                completion.add(stats.getCompletion());
-            }
-        } else {
-            completion.add(stats.getCompletion());
-        }
         if (segments == null) {
             if (stats.getSegments() != null) {
                 segments = new SegmentsStats();
@@ -454,11 +434,6 @@ public class CommonStats implements Writeable, ToXContent {
     }
 
     @Nullable
-    public CompletionStats getCompletion() {
-        return completion;
-    }
-
-    @Nullable
     public SegmentsStats getSegments() {
         return segments;
     }
@@ -504,7 +479,7 @@ public class CommonStats implements Writeable, ToXContent {
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         final Stream<ToXContent> stream = Arrays.stream(new ToXContent[] {
             docs, store, indexing, get, search, merge, refresh, flush, warmer, queryCache,
-            fieldData, completion, segments, translog, requestCache, recoveryStats})
+            fieldData, segments, translog, requestCache, recoveryStats})
             .filter(Objects::nonNull);
         for (ToXContent toXContent : ((Iterable<ToXContent>)stream::iterator)) {
             toXContent.toXContent(builder, params);

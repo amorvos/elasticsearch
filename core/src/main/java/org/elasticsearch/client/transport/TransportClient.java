@@ -45,14 +45,12 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
-import org.elasticsearch.node.Node;
 import org.elasticsearch.node.InternalSettingsPreparer;
+import org.elasticsearch.node.Node;
 import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.NetworkPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.PluginsService;
-import org.elasticsearch.plugins.SearchPlugin;
-import org.elasticsearch.search.SearchModule;
 import org.elasticsearch.threadpool.ExecutorBuilder;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TcpTransport;
@@ -137,17 +135,14 @@ public abstract class TransportClient extends AbstractClient {
             }
             SettingsModule settingsModule = new SettingsModule(settings, additionalSettings, additionalSettingsFilter);
 
-            SearchModule searchModule = new SearchModule(settings, true, pluginsService.filterPlugins(SearchPlugin.class));
             List<NamedWriteableRegistry.Entry> entries = new ArrayList<>();
             entries.addAll(NetworkModule.getNamedWriteables());
-            entries.addAll(searchModule.getNamedWriteables());
             entries.addAll(ClusterModule.getNamedWriteables());
             entries.addAll(pluginsService.filterPlugins(Plugin.class).stream()
                                          .flatMap(p -> p.getNamedWriteables().stream())
                                          .collect(Collectors.toList()));
             NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(entries);
             NamedXContentRegistry xContentRegistry = new NamedXContentRegistry(Stream.of(
-                    searchModule.getNamedXContents().stream(),
                     pluginsService.filterPlugins(Plugin.class).stream()
                             .flatMap(p -> p.getNamedXContent().stream())
                     ).flatMap(Function.identity()).collect(toList()));

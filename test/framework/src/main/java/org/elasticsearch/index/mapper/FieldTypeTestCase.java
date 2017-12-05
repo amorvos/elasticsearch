@@ -19,10 +19,8 @@
 package org.elasticsearch.index.mapper;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
-import org.elasticsearch.index.similarity.BM25SimilarityProvider;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.ArrayList;
@@ -114,22 +112,6 @@ public abstract class FieldTypeTestCase extends ESTestCase {
                 other.setSearchQuoteAnalyzer(new NamedAnalyzer("foo", AnalyzerScope.INDEX, new StandardAnalyzer()));
             }
         },
-        new Modifier("similarity", false) {
-            @Override
-            public void modify(MappedFieldType ft) {
-                ft.setSimilarity(new BM25SimilarityProvider("foo", Settings.EMPTY));
-            }
-        },
-        new Modifier("similarity", false) {
-            @Override
-            public void modify(MappedFieldType ft) {
-                ft.setSimilarity(new BM25SimilarityProvider("foo", Settings.EMPTY));
-            }
-            @Override
-            public void normalizeOther(MappedFieldType other) {
-                other.setSimilarity(new BM25SimilarityProvider("bar", Settings.EMPTY));
-            }
-        },
         new Modifier("eager_global_ordinals", true) {
             @Override
             public void modify(MappedFieldType ft) {
@@ -212,7 +194,6 @@ public abstract class FieldTypeTestCase extends ESTestCase {
             ", indexAnalyzer=" + ft.indexAnalyzer() +
             ", searchAnalyzer=" + ft.searchAnalyzer() +
             ", searchQuoteAnalyzer=" + ft.searchQuoteAnalyzer() +
-            ", similarity=" + ft.similarity() +
             ", eagerGlobalOrdinals=" + ft.eagerGlobalOrdinals() +
             ", nullValue=" + ft.nullValue() +
             ", nullValueAsString='" + ft.nullValueAsString() + "'" +

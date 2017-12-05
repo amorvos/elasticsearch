@@ -28,7 +28,6 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry.Entry;
 import org.elasticsearch.index.mapper.AllFieldMapper;
 import org.elasticsearch.index.mapper.BinaryFieldMapper;
 import org.elasticsearch.index.mapper.BooleanFieldMapper;
-import org.elasticsearch.index.mapper.CompletionFieldMapper;
 import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.index.mapper.FieldNamesFieldMapper;
 import org.elasticsearch.index.mapper.GeoPointFieldMapper;
@@ -43,7 +42,6 @@ import org.elasticsearch.index.mapper.MetadataFieldMapper;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.index.mapper.ObjectMapper;
 import org.elasticsearch.index.mapper.ParentFieldMapper;
-import org.elasticsearch.index.mapper.RangeFieldMapper;
 import org.elasticsearch.index.mapper.RoutingFieldMapper;
 import org.elasticsearch.index.mapper.ScaledFloatFieldMapper;
 import org.elasticsearch.index.mapper.SourceFieldMapper;
@@ -60,7 +58,6 @@ import org.elasticsearch.indices.flush.SyncedFlushService;
 import org.elasticsearch.indices.mapper.MapperRegistry;
 import org.elasticsearch.indices.store.IndicesStore;
 import org.elasticsearch.indices.store.TransportNodesListShardStoreMetaData;
-import org.elasticsearch.indices.ttl.IndicesTTLService;
 import org.elasticsearch.plugins.MapperPlugin;
 
 import java.util.ArrayList;
@@ -97,9 +94,6 @@ public class IndicesModule extends AbstractModule {
         for (NumberFieldMapper.NumberType type : NumberFieldMapper.NumberType.values()) {
             mappers.put(type.typeName(), new NumberFieldMapper.TypeParser(type));
         }
-        for (RangeFieldMapper.RangeType type : RangeFieldMapper.RangeType.values()) {
-            mappers.put(type.typeName(), new RangeFieldMapper.TypeParser(type));
-        }
         mappers.put(BooleanFieldMapper.CONTENT_TYPE, new BooleanFieldMapper.TypeParser());
         mappers.put(BinaryFieldMapper.CONTENT_TYPE, new BinaryFieldMapper.TypeParser());
         mappers.put(DateFieldMapper.CONTENT_TYPE, new DateFieldMapper.TypeParser());
@@ -111,7 +105,6 @@ public class IndicesModule extends AbstractModule {
         mappers.put(TokenCountFieldMapper.CONTENT_TYPE, new TokenCountFieldMapper.TypeParser());
         mappers.put(ObjectMapper.CONTENT_TYPE, new ObjectMapper.TypeParser());
         mappers.put(ObjectMapper.NESTED_CONTENT_TYPE, new ObjectMapper.TypeParser());
-        mappers.put(CompletionFieldMapper.CONTENT_TYPE, new CompletionFieldMapper.TypeParser());
         mappers.put(GeoPointFieldMapper.CONTENT_TYPE, new GeoPointFieldMapper.TypeParser());
         mappers.put(LatLonPointFieldMapper.CONTENT_TYPE, new LatLonPointFieldMapper.TypeParser());
         if (ShapesAvailability.JTS_AVAILABLE && ShapesAvailability.SPATIAL4J_AVAILABLE) {
@@ -169,7 +162,6 @@ public class IndicesModule extends AbstractModule {
         bind(IndicesClusterStateService.class).asEagerSingleton();
         bind(SyncedFlushService.class).asEagerSingleton();
         bind(TransportNodesListShardStoreMetaData.class).asEagerSingleton();
-        bind(IndicesTTLService.class).asEagerSingleton();
     }
 
     /**

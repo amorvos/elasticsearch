@@ -20,38 +20,28 @@ package org.elasticsearch.index.query;
 
 import org.apache.lucene.index.IndexReader;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.MapperService;
-import org.elasticsearch.script.CompiledScript;
-import org.elasticsearch.script.ExecutableScript;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptContext;
-import org.elasticsearch.script.ScriptService;
-import org.elasticsearch.script.ScriptSettings;
-import org.elasticsearch.template.CompiledTemplate;
 
 import java.util.function.LongSupplier;
 
 /**
- * Context object used to rewrite {@link QueryBuilder} instances into simplified version.
+ * Context object used to rewrite QueryBuilder instances into simplified version.
  */
 public class QueryRewriteContext {
     protected final MapperService mapperService;
-    protected final ScriptService scriptService;
     protected final IndexSettings indexSettings;
     private final NamedXContentRegistry xContentRegistry;
     protected final Client client;
     protected final IndexReader reader;
     protected final LongSupplier nowInMillis;
 
-    public QueryRewriteContext(IndexSettings indexSettings, MapperService mapperService, ScriptService scriptService,
+    public QueryRewriteContext(IndexSettings indexSettings, MapperService mapperService,
             NamedXContentRegistry xContentRegistry, Client client, IndexReader reader,
             LongSupplier nowInMillis) {
         this.mapperService = mapperService;
-        this.scriptService = scriptService;
         this.indexSettings = indexSettings;
         this.xContentRegistry = xContentRegistry;
         this.client = client;
@@ -95,28 +85,8 @@ public class QueryRewriteContext {
         return xContentRegistry;
     }
 
-    /**
-     * Returns a new {@link QueryParseContext} that wraps the provided parser.
-     */
-    public QueryParseContext newParseContext(XContentParser parser) {
-        return new QueryParseContext(parser);
-    }
-
-    /**
-     * Returns a new {@link QueryParseContext} like {@link #newParseContext(XContentParser)} with the only diffence, that
-     * the default script language will default to what has been set in the 'script.legacy.default_lang' setting.
-     */
-    public QueryParseContext newParseContextWithLegacyScriptLanguage(XContentParser parser) {
-        String defaultScriptLanguage = ScriptSettings.getLegacyDefaultLang(indexSettings.getNodeSettings());
-        return new QueryParseContext(defaultScriptLanguage, parser);
-    }
 
     public long nowInMillis() {
         return nowInMillis.getAsLong();
-    }
-
-    public BytesReference getTemplateBytes(Script template) {
-        CompiledTemplate compiledTemplate = scriptService.compileTemplate(template, ScriptContext.Standard.SEARCH);
-        return compiledTemplate.run(template.getParams());
     }
 }

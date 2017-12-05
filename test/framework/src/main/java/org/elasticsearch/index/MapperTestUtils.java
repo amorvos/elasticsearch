@@ -26,7 +26,6 @@ import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
 import org.elasticsearch.index.mapper.MapperService;
-import org.elasticsearch.index.similarity.SimilarityService;
 import org.elasticsearch.indices.IndicesModule;
 import org.elasticsearch.indices.mapper.MapperRegistry;
 import org.elasticsearch.test.IndexSettingsModule;
@@ -58,11 +57,9 @@ public class MapperTestUtils {
         MapperRegistry mapperRegistry = indicesModule.getMapperRegistry();
         IndexSettings indexSettings = IndexSettingsModule.newIndexSettings("test", finalSettings);
         IndexAnalyzers indexAnalyzers = createTestAnalysis(indexSettings, finalSettings).indexAnalyzers;
-        SimilarityService similarityService = new SimilarityService(indexSettings, Collections.emptyMap());
         return new MapperService(indexSettings,
             indexAnalyzers,
             xContentRegistry,
-            similarityService,
             mapperRegistry,
             () -> null);
     }

@@ -29,13 +29,9 @@ import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryParseContext;
 import org.elasticsearch.index.query.QueryShardContext;
 import org.elasticsearch.indices.InvalidAliasNameException;
 
-import java.io.IOException;
-import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -120,7 +116,6 @@ public class AliasValidator extends AbstractComponent {
             NamedXContentRegistry xContentRegistry) {
         assert queryShardContext != null;
         try (XContentParser parser = XContentFactory.xContent(filter).createParser(xContentRegistry, filter)) {
-            validateAliasFilter(parser, queryShardContext);
         } catch (Exception e) {
             throw new IllegalArgumentException("failed to parse filter for alias [" + alias + "]", e);
         }
@@ -135,18 +130,9 @@ public class AliasValidator extends AbstractComponent {
             NamedXContentRegistry xContentRegistry) {
         assert queryShardContext != null;
         try (XContentParser parser = XContentFactory.xContent(filter).createParser(xContentRegistry, filter)) {
-            validateAliasFilter(parser, queryShardContext);
+            //validateAliasFilter(parser, queryShardContext);
         } catch (Exception e) {
             throw new IllegalArgumentException("failed to parse filter for alias [" + alias + "]", e);
-        }
-    }
-
-    private static void validateAliasFilter(XContentParser parser, QueryShardContext queryShardContext) throws IOException {
-        QueryParseContext queryParseContext = queryShardContext.newParseContext(parser);
-        Optional<QueryBuilder> parseInnerQueryBuilder = queryParseContext.parseInnerQueryBuilder();
-        if (parseInnerQueryBuilder.isPresent()) {
-            QueryBuilder queryBuilder = QueryBuilder.rewriteQuery(parseInnerQueryBuilder.get(), queryShardContext);
-            queryBuilder.toFilter(queryShardContext);
         }
     }
 }

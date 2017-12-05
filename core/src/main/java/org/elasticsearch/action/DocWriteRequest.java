@@ -18,10 +18,8 @@
  */
 package org.elasticsearch.action;
 
-import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.IndicesOptions;
-import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.index.VersionType;
@@ -31,7 +29,7 @@ import java.util.Locale;
 
 /**
  * Generic interface to group ActionRequest, which perform writes to a single document
- * Action requests implementing this can be part of {@link org.elasticsearch.action.bulk.BulkRequest}
+ * Action requests implementing this can be part of org.elasticsearch.action.bulk.BulkRequest}
  */
 public interface DocWriteRequest<T> extends IndicesRequest {
 
@@ -171,14 +169,6 @@ public interface DocWriteRequest<T> extends IndicesRequest {
             IndexRequest indexRequest = new IndexRequest();
             indexRequest.readFrom(in);
             docWriteRequest = indexRequest;
-        } else if (type == 1) {
-            DeleteRequest deleteRequest = new DeleteRequest();
-            deleteRequest.readFrom(in);
-            docWriteRequest = deleteRequest;
-        } else if (type == 2) {
-            UpdateRequest updateRequest = new UpdateRequest();
-            updateRequest.readFrom(in);
-            docWriteRequest = updateRequest;
         } else {
             throw new IllegalStateException("invalid request type [" + type+ " ]");
         }
@@ -190,12 +180,6 @@ public interface DocWriteRequest<T> extends IndicesRequest {
         if (request instanceof IndexRequest) {
             out.writeByte((byte) 0);
             ((IndexRequest) request).writeTo(out);
-        } else if (request instanceof DeleteRequest) {
-            out.writeByte((byte) 1);
-            ((DeleteRequest) request).writeTo(out);
-        } else if (request instanceof UpdateRequest) {
-            out.writeByte((byte) 2);
-            ((UpdateRequest) request).writeTo(out);
         } else {
             throw new IllegalStateException("invalid request [" + request.getClass().getSimpleName() + " ]");
         }

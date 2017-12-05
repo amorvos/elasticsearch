@@ -31,7 +31,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.index.query.QueryShardContext;
-import org.elasticsearch.index.similarity.SimilarityService;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -279,12 +278,6 @@ public class AllFieldMapper extends MetadataFieldMapper {
         }
 
         doXContentAnalyzers(builder, includeDefaults);
-
-        if (fieldType().similarity() != null) {
-            builder.field("similarity", fieldType().similarity().name());
-        } else if (includeDefaults) {
-            builder.field("similarity", SimilarityService.DEFAULT_SIMILARITY);
-        }
     }
 
     @Override

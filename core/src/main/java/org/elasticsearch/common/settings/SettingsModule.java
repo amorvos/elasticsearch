@@ -26,7 +26,6 @@ import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.tribe.TribeService;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -36,7 +35,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -49,8 +47,6 @@ public class SettingsModule implements Module {
     private final Set<String> settingsFilterPattern = new HashSet<>();
     private final Map<String, Setting<?>> nodeSettings = new HashMap<>();
     private final Map<String, Setting<?>> indexSettings = new HashMap<>();
-    private static final Predicate<String> TRIBE_CLIENT_NODE_SETTINGS_PREDICATE =  (s) -> s.startsWith("tribe.")
-        && TribeService.TRIBE_SETTING_KEYS.contains(s) == false;
     private final Logger logger;
     private final IndexScopedSettings indexScopedSettings;
     private final ClusterSettings clusterSettings;
@@ -134,10 +130,7 @@ public class SettingsModule implements Module {
                 throw new RuntimeException(e);
             }
         }
-        // by now we are fully configured, lets check node level settings for unregistered index settings
-        final Predicate<String> acceptOnlyClusterSettings = TRIBE_CLIENT_NODE_SETTINGS_PREDICATE.negate();
-        clusterSettings.validate(settings.filter(acceptOnlyClusterSettings));
-        validateTribeSettings(settings, clusterSettings);
+        clusterSettings.validate(settings.filter(s -> false));
         this.settingsFilter = new SettingsFilter(settings, settingsFilterPattern);
      }
 
@@ -193,20 +186,6 @@ public class SettingsModule implements Module {
             throw new IllegalArgumentException("filter [" + filter + "] has already been registered");
         }
         settingsFilterPattern.add(filter);
-    }
-
-    private void validateTribeSettings(Settings settings, ClusterSettings clusterSettings) {
-        Map<String, Settings> groups = settings.filter(TRIBE_CLIENT_NODE_SETTINGS_PREDICATE).getGroups("tribe.", true);
-        for (Map.Entry<String, Settings>  tribeSettings : groups.entrySet()) {
-            Settings thisTribesSettings = tribeSettings.getValue();
-            for (Map.Entry<String, String> entry : thisTribesSettings.getAsMap().entrySet()) {
-                try {
-                    clusterSettings.validate(entry.getKey(), thisTribesSettings);
-                } catch (IllegalArgumentException ex) {
-                    throw new IllegalArgumentException("tribe." + tribeSettings.getKey() +" validation failed: "+ ex.getMessage(), ex);
-                }
-            }
-        }
     }
 
     public Settings getSettings() {

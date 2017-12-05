@@ -19,16 +19,10 @@
 
 package org.elasticsearch.tasks;
 
-import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.apache.logging.log4j.util.Supplier;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchTimeoutException;
-import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterStateApplier;
-import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.settings.Settings;
@@ -36,7 +30,6 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.ConcurrentMapLong;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -61,17 +54,10 @@ public class TaskManager extends AbstractComponent implements ClusterStateApplie
 
     private final Map<TaskId, String> banedParents = new ConcurrentHashMap<>();
 
-    private TaskResultsService taskResultsService;
-
     private DiscoveryNodes lastDiscoveryNodes = DiscoveryNodes.EMPTY_NODES;
 
     public TaskManager(Settings settings) {
         super(settings);
-    }
-
-    public void setTaskResultsService(TaskResultsService taskResultsService) {
-        assert this.taskResultsService == null;
-        this.taskResultsService = taskResultsService;
     }
 
     /**
@@ -151,74 +137,6 @@ public class TaskManager extends AbstractComponent implements ClusterStateApplie
         } else {
             return tasks.remove(task.getId());
         }
-    }
-
-    /**
-     * Stores the task failure
-     */
-    public <Response extends ActionResponse> void storeResult(Task task, Exception error, ActionListener<Response> listener) {
-        DiscoveryNode localNode = lastDiscoveryNodes.getLocalNode();
-        if (localNode == null) {
-            // too early to store anything, shouldn't really be here - just pass the error along
-            listener.onFailure(error);
-            return;
-        }
-        final TaskResult taskResult;
-        try {
-            taskResult = task.result(localNode, error);
-        } catch (IOException ex) {
-            logger.warn(
-                (Supplier<?>) () -> new ParameterizedMessage("couldn't store error {}", ExceptionsHelper.detailedMessage(error)), ex);
-            listener.onFailure(ex);
-            return;
-        }
-        taskResultsService.storeResult(taskResult, new ActionListener<Void>() {
-            @Override
-            public void onResponse(Void aVoid) {
-                listener.onFailure(error);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                logger.warn(
-                    (Supplier<?>) () -> new ParameterizedMessage("couldn't store error {}", ExceptionsHelper.detailedMessage(error)), e);
-                listener.onFailure(e);
-            }
-        });
-    }
-
-    /**
-     * Stores the task result
-     */
-    public <Response extends ActionResponse> void storeResult(Task task, Response response, ActionListener<Response> listener) {
-        DiscoveryNode localNode = lastDiscoveryNodes.getLocalNode();
-        if (localNode == null) {
-            // too early to store anything, shouldn't really be here - just pass the response along
-            logger.warn("couldn't store response {}, the node didn't join the cluster yet", response);
-            listener.onResponse(response);
-            return;
-        }
-        final TaskResult taskResult;
-        try {
-            taskResult = task.result(localNode, response);
-        } catch (IOException ex) {
-            logger.warn((Supplier<?>) () -> new ParameterizedMessage("couldn't store response {}", response), ex);
-            listener.onFailure(ex);
-            return;
-        }
-
-        taskResultsService.storeResult(taskResult, new ActionListener<Void>() {
-            @Override
-            public void onResponse(Void aVoid) {
-                listener.onResponse(response);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                logger.warn((Supplier<?>) () -> new ParameterizedMessage("couldn't store response {}", response), e);
-                listener.onFailure(e);
-            }
-        });
     }
 
     /**

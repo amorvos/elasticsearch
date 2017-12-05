@@ -91,11 +91,6 @@ import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.analysis.AnalysisModule;
 import org.elasticsearch.plugins.AnalysisPlugin;
 import org.elasticsearch.plugins.MapperPlugin;
-import org.elasticsearch.script.MockScriptEngine;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptModule;
-import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.MockSearchService;
 import org.elasticsearch.test.junit.listeners.LoggingListener;
 import org.elasticsearch.test.junit.listeners.ReproduceInfoPrinter;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -133,9 +128,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 import static org.elasticsearch.common.util.CollectionUtils.arrayAsArrayList;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -275,7 +267,6 @@ public abstract class ESTestCase extends LuceneTestCase {
             ensureNoWarnings();
             assert threadContext == null;
         }
-        ensureAllSearchContextsReleased();
         ensureCheckIndexPassed();
         logger.info("[{}]: after test", getTestName());
     }
@@ -392,11 +383,6 @@ public abstract class ESTestCase extends LuceneTestCase {
                 statusData.clear();
             }
         }
-    }
-
-    // this must be a separate method from other ensure checks above so suite scoped integ tests can call...TODO: fix that
-    public final void ensureAllSearchContextsReleased() throws Exception {
-        assertBusy(() -> MockSearchService.assertNoInFlightContext());
     }
 
     // mockdirectorywrappers currently set this boolean if checkindex fails
@@ -1042,13 +1028,6 @@ public abstract class ESTestCase extends LuceneTestCase {
         return new NamedXContentRegistry(ClusterModule.getNamedXWriteables());
     }
 
-    /**
-     * Create a "mock" script for use either with {@link MockScriptEngine} or anywhere where you need a script but don't really care about
-     * its contents.
-     */
-    public static final Script mockScript(String id) {
-        return new Script(ScriptType.INLINE, MockScriptEngine.NAME, id, emptyMap());
-    }
 
     /** Returns the suite failure marker: internal use only! */
     public static TestRuleMarkFailure getSuiteFailureMarker() {
@@ -1124,14 +1103,6 @@ public abstract class ESTestCase extends LuceneTestCase {
             analysisRegistry.buildCharFilterFactories(indexSettings));
     }
 
-    public static ScriptModule newTestScriptModule() {
-        Settings settings = Settings.builder()
-                .put(Environment.PATH_HOME_SETTING.getKey(), createTempDir())
-                .build();
-        Environment environment = new Environment(settings);
-        MockScriptEngine scriptEngine = new MockScriptEngine(MockScriptEngine.NAME, Collections.singletonMap("1", script -> "1"));
-        return new ScriptModule(settings, environment, null, singletonList(scriptEngine), emptyList());
-    }
 
     /** Creates an IndicesModule for testing with the given mappers and metadata mappers. */
     public static IndicesModule newTestIndicesModule(Map<String, Mapper.TypeParser> extraMappers,

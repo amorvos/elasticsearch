@@ -20,8 +20,8 @@
 package org.apache.lucene.queryparser.classic;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.miscellaneous.DisableGraphAttribute;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.miscellaneous.DisableGraphAttribute;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.index.Term;
@@ -44,6 +44,7 @@ import org.apache.lucene.util.IOUtils;
 import org.apache.lucene.util.automaton.RegExp;
 import org.elasticsearch.common.lucene.search.Queries;
 import org.elasticsearch.common.unit.Fuzziness;
+import org.elasticsearch.index.analysis.ShingleTokenFilterFactory;
 import org.elasticsearch.index.mapper.AllFieldMapper;
 import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.index.mapper.LegacyDateFieldMapper;
@@ -51,16 +52,15 @@ import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.StringFieldType;
 import org.elasticsearch.index.query.QueryShardContext;
-import org.elasticsearch.index.query.support.QueryParsers;
-import org.elasticsearch.index.analysis.ShingleTokenFilterFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Collections;
+
 import static java.util.Collections.unmodifiableMap;
 import static org.elasticsearch.common.lucene.search.Queries.fixNegativeQueryIfNeeded;
 
@@ -113,18 +113,6 @@ public class MapperQueryParser extends AnalyzingQueryParser {
         setDefaultOperator(settings.defaultOperator());
         setFuzzyPrefixLength(settings.fuzzyPrefixLength());
         setSplitOnWhitespace(settings.splitOnWhitespace());
-    }
-
-    /**
-     * We override this one so we can get the fuzzy part to be treated as string,
-     * so people can do: "age:10~5" or "timestamp:2012-10-10~5d"
-     */
-    @Override
-    Query handleBareFuzzy(String qfield, Token fuzzySlop, String termImage) throws ParseException {
-        if (fuzzySlop.image.length() == 1) {
-            return getFuzzyQuery(qfield, termImage, Float.toString(settings.fuzziness().asDistance(termImage)));
-        }
-        return getFuzzyQuery(qfield, termImage, fuzzySlop.image.substring(1));
     }
 
     @Override
@@ -427,7 +415,6 @@ public class MapperQueryParser extends AnalyzingQueryParser {
         int numEdits = FuzzyQuery.floatToEdits(minimumSimilarity, text.codePointCount(0, text.length()));
         FuzzyQuery query = new FuzzyQuery(term, numEdits, prefixLength,
             settings.fuzzyMaxExpansions(), FuzzyQuery.defaultTranspositions);
-        QueryParsers.setRewriteMethod(query, settings.fuzzyRewriteMethod());
         return query;
     }
 

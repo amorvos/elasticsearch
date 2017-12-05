@@ -21,17 +21,14 @@ package org.elasticsearch.test.client;
 
 import com.carrotsearch.randomizedtesting.generators.RandomPicks;
 import org.apache.lucene.util.TestUtil;
-import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.FilterClient;
 import org.elasticsearch.cluster.routing.Preference;
-import org.elasticsearch.common.unit.TimeValue;
 
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 /** A {@link Client} that randomizes request parameters. */
 public class RandomizingClient extends FilterClient {
@@ -71,22 +68,6 @@ public class RandomizingClient extends FilterClient {
             preFilterShardSize = -1;
         }
         doTimeout = random.nextBoolean();
-    }
-
-    @Override
-    public SearchRequestBuilder prepareSearch(String... indices) {
-        SearchRequestBuilder searchRequestBuilder = in.prepareSearch(indices).setSearchType(defaultSearchType)
-            .setPreference(defaultPreference).setBatchedReduceSize(batchedReduceSize);
-        if (maxConcurrentShardRequests != -1) {
-            searchRequestBuilder.setMaxConcurrentShardRequests(maxConcurrentShardRequests);
-        }
-        if (preFilterShardSize != -1) {
-            searchRequestBuilder.setPreFilterShardSize(preFilterShardSize);
-        }
-        if (doTimeout) {
-            searchRequestBuilder.setTimeout(new TimeValue(1, TimeUnit.DAYS));
-        }
-        return searchRequestBuilder;
     }
 
     @Override
