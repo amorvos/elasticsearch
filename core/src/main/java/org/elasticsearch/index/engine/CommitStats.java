@@ -60,15 +60,6 @@ public final class CommitStats implements Streamable, ToXContent {
         return userData;
     }
 
-    public long getGeneration() {
-        return generation;
-    }
-
-    /** base64 version of the commit id (see {@link SegmentInfos#getId()} */
-    public String getId() {
-        return id;
-    }
-
     /**
      * Returns the number of documents in the in this commit
      */

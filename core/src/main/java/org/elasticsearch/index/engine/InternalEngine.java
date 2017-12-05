@@ -27,7 +27,6 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LeafReader;
-import org.apache.lucene.index.LiveIndexWriterConfig;
 import org.apache.lucene.index.MergePolicy;
 import org.apache.lucene.index.SegmentCommitInfo;
 import org.apache.lucene.index.SegmentInfos;
@@ -1133,11 +1132,6 @@ public class InternalEngine extends Engine {
         lastDeleteVersionPruneTimeMSec = timeMSec;
     }
 
-    // testing
-    void clearDeletedTombstones() {
-        versionMap.clearTombstones();
-    }
-
     @Override
     public void forceMerge(final boolean flush, int maxNumSegments, boolean onlyExpungeDeletes,
                            final boolean upgrade, final boolean upgradeOnlyAncientSegments) throws EngineException, IOException {
@@ -1477,10 +1471,6 @@ public class InternalEngine extends Engine {
         return engineConfig.getIndexSettings().getGcDeletesInMillis();
     }
 
-    LiveIndexWriterConfig getCurrentIndexWriterConfig() {
-        return indexWriter.getConfig();
-    }
-
     private final class EngineMergeScheduler extends ElasticsearchConcurrentMergeScheduler {
         private final AtomicInteger numMergesInFlight = new AtomicInteger(0);
         private final AtomicBoolean isThrottling = new AtomicBoolean();
@@ -1624,22 +1614,6 @@ public class InternalEngine extends Engine {
         return mergeScheduler.stats();
     }
 
-    /**
-     * Returns the number of times a version was looked up either from the index.
-     * Note this is only available if assertions are enabled
-     */
-    long getNumIndexVersionsLookups() { // for testing
-        return numIndexVersionsLookups.count();
-    }
-
-    /**
-     * Returns the number of times a version was looked up either from memory or from the index.
-     * Note this is only available if assertions are enabled
-     */
-    long getNumVersionLookups() { // for testing
-        return numVersionLookups.count();
-    }
-
     private boolean incrementVersionLookup() { // only used by asserts
         numVersionLookups.inc();
         return true;
@@ -1648,14 +1622,6 @@ public class InternalEngine extends Engine {
     private boolean incrementIndexVersionLookup() {
         numIndexVersionsLookups.inc();
         return true;
-    }
-
-    /**
-     * Returns <code>true</code> iff the index writer has any deletions either buffered in memory or
-     * in the index.
-     */
-    boolean indexWriterHasDeletions() {
-        return indexWriter.hasDeletions();
     }
 
     @Override

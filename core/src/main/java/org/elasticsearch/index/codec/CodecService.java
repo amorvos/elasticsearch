@@ -69,11 +69,4 @@ public class CodecService {
         }
         return codec;
     }
-
-    /**
-     * Returns all registered available codec names
-     */
-    public String[] availableCodecs() {
-        return codecs.keySet().toArray(new String[0]);
-    }
 }

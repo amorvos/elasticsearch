@@ -19,12 +19,10 @@
 
 package org.elasticsearch.index.shard;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Streamable;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
@@ -79,59 +77,6 @@ public class IndexingStats implements Streamable, ToXContent {
             if (isThrottled != stats.isThrottled) {
                 isThrottled = true; //When combining if one is throttled set result to throttled.
             }
-        }
-
-        /**
-         * The total number of indexing operations
-         */
-        public long getIndexCount() { return indexCount; }
-
-        /**
-         * The number of failed indexing operations
-         */
-        public long getIndexFailedCount() { return indexFailedCount; }
-
-        /**
-         * The total amount of time spend on executing index operations.
-         */
-        public TimeValue getIndexTime() { return new TimeValue(indexTimeInMillis); }
-
-        /**
-         * Returns the currently in-flight indexing operations.
-         */
-        public long getIndexCurrent() { return indexCurrent;}
-
-        /**
-         * Returns the number of delete operation executed
-         */
-        public long getDeleteCount() {
-            return deleteCount;
-        }
-
-        /**
-         * Returns if the index is under merge throttling control
-         */
-        public boolean isThrottled() { return isThrottled; }
-
-        /**
-         * Gets the amount of time in a TimeValue that the index has been under merge throttling control
-         */
-        public TimeValue getThrottleTime() { return new TimeValue(throttleTimeInMillis); }
-
-        /**
-         * The total amount of time spend on executing delete operations.
-         */
-        public TimeValue getDeleteTime() { return new TimeValue(deleteTimeInMillis); }
-
-        /**
-         * Returns the currently in-flight delete operations
-         */
-        public long getDeleteCurrent() {
-            return deleteCurrent;
-        }
-
-        public long getNoopUpdateCount() {
-            return noopUpdateCount;
         }
 
         public static Stats readStats(StreamInput in) throws IOException {
@@ -231,15 +176,6 @@ public class IndexingStats implements Streamable, ToXContent {
             return;
         }
         totalStats.add(indexingStats.totalStats);
-    }
-
-    public Stats getTotal() {
-        return this.totalStats;
-    }
-
-    @Nullable
-    public Map<String, Stats> getTypeStats() {
-        return this.typeStats;
     }
 
     @Override

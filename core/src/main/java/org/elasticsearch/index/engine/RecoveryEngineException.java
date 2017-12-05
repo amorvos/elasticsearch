@@ -47,8 +47,4 @@ public class RecoveryEngineException extends EngineException {
         super.writeTo(out);
         out.writeInt(phase);
     }
-
-    public int phase() {
-        return phase;
-    }
 }

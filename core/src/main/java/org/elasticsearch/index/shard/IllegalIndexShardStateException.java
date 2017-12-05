@@ -43,10 +43,6 @@ public class IllegalIndexShardStateException extends ElasticsearchException {
         this.currentState = currentState;
     }
 
-    public IndexShardState currentState() {
-        return currentState;
-    }
-
     public IllegalIndexShardStateException(StreamInput in) throws IOException{
         super(in);
         currentState = IndexShardState.fromId(in.readByte());

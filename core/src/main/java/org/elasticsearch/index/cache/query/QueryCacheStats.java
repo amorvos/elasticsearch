@@ -23,7 +23,6 @@ import org.apache.lucene.search.DocIdSet;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Streamable;
-import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
@@ -60,10 +59,6 @@ public class QueryCacheStats implements Streamable, ToXContent {
 
     public long getMemorySizeInBytes() {
         return ramBytesUsed;
-    }
-
-    public ByteSizeValue getMemorySize() {
-        return new ByteSizeValue(ramBytesUsed);
     }
 
     /**

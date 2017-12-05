@@ -269,14 +269,6 @@ public class IpFieldMapper extends FieldMapper {
                 values.setDocument(docId);
             }
 
-            public String getValue() {
-                if (isEmpty()) {
-                    return null;
-                } else {
-                    return get(0);
-                }
-            }
-
             @Override
             public String get(int index) {
                 BytesRef encoded = values.lookupOrd(values.ordAt(0));

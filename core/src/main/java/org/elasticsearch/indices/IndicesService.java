@@ -430,7 +430,7 @@ public class IndicesService extends AbstractLifecycleComponent
             indexModule.addIndexEventListener(listener);
         }
         return indexModule.newIndexService(nodeEnv, xContentRegistry, this, circuitBreakerService, bigArrays, threadPool,
-                clusterService, client, indicesQueryCache, mapperRegistry, indicesFieldDataCache);
+                client, indicesQueryCache, mapperRegistry, indicesFieldDataCache);
     }
 
     /**

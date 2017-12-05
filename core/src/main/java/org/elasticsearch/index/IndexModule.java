@@ -21,7 +21,6 @@ package org.elasticsearch.index;
 
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
@@ -58,7 +57,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -68,7 +66,7 @@ import java.util.function.Function;
  *      <li>{@link IndexEventListener} - Custom {@link IndexEventListener} instances can be registered via
  *      {@link #addIndexEventListener(IndexEventListener)}</li>
  *      <li>Settings update listener - Custom settings update listener can be registered via
- *      {@link #addSettingsUpdateConsumer(Setting, Consumer)}</li>
+ *      #addSettingsUpdateConsumer(Setting, Consumer)}</li>
  * </ul>
  */
 public final class IndexModule {
@@ -82,8 +80,6 @@ public final class IndexModule {
     public static final Setting<List<String>> INDEX_STORE_PRE_LOAD_SETTING =
             Setting.listSetting("index.store.preload", Collections.emptyList(), Function.identity(),
                     Property.IndexScope, Property.NodeScope);
-
-    public static final String SIMILARITY_SETTINGS_PREFIX = "index.similarity";
 
     // whether to use the query cache
     public static final Setting<Boolean> INDEX_QUERY_CACHE_ENABLED_SETTING =
@@ -115,29 +111,6 @@ public final class IndexModule {
         this.indexStoreConfig = indexStoreConfig;
         this.indexSettings = indexSettings;
         this.analysisRegistry = analysisRegistry;
-        this.indexOperationListeners.add(new IndexingSlowLog(indexSettings));
-    }
-
-    /**
-     * Adds a Setting and it's consumer for this index.
-     */
-    public <T> void addSettingsUpdateConsumer(Setting<T> setting, Consumer<T> consumer) {
-        ensureNotFrozen();
-        if (setting == null) {
-            throw new IllegalArgumentException("setting must not be null");
-        }
-        indexSettings.getScopedSettings().addSettingsUpdateConsumer(setting, consumer);
-    }
-
-    /**
-     * Adds a Setting, it's consumer and validator for this index.
-     */
-    public <T> void addSettingsUpdateConsumer(Setting<T> setting, Consumer<T> consumer, Consumer<T> validator) {
-        ensureNotFrozen();
-        if (setting == null) {
-            throw new IllegalArgumentException("setting must not be null");
-        }
-        indexSettings.getScopedSettings().addSettingsUpdateConsumer(setting, consumer, validator);
     }
 
     /**
@@ -145,13 +118,6 @@ public final class IndexModule {
      */
     public Settings getSettings() {
         return indexSettings.getSettings();
-    }
-
-    /**
-     * Returns the index this module is associated with
-     */
-    public Index getIndex() {
-        return indexSettings.getIndex();
     }
 
     /**
@@ -175,29 +141,6 @@ public final class IndexModule {
         }
 
         this.indexEventListeners.add(listener);
-    }
-
-    /**
-     * Adds an {@link SearchOperationListener} for this index. All listeners added here
-     * are maintained for the entire index lifecycle on this node. Once an index is closed or deleted these
-     * listeners go out of scope.
-     * <p>
-     * Note: an index might be created on a node multiple times. For instance if the last shard from an index is
-     * relocated to another node the internal representation will be destroyed which includes the registered listeners.
-     * Once the node holds at least one shard of an index all modules are reloaded and listeners are registered again.
-     * Listeners can't be unregistered they will stay alive for the entire time the index is allocated on a node.
-     * </p>
-     */
-    public void addSearchOperationListener(SearchOperationListener listener) {
-        ensureNotFrozen();
-        if (listener == null) {
-            throw new IllegalArgumentException("listener must not be null");
-        }
-        if (searchOperationListeners.contains(listener)) {
-            throw new IllegalArgumentException("listener already added");
-        }
-
-        this.searchOperationListeners.add(listener);
     }
 
     /**
@@ -241,15 +184,6 @@ public final class IndexModule {
         storeTypes.put(type, provider);
     }
 
-    /**
-     * Sets a {@link org.elasticsearch.index.IndexModule.IndexSearcherWrapperFactory} that is called once the IndexService
-     * is fully constructed.
-     * Note: this method can only be called once per index. Multiple wrappers are not supported.
-     */
-    public void setSearcherWrapper(IndexSearcherWrapperFactory indexSearcherWrapperFactory) {
-        ensureNotFrozen();
-        this.indexSearcherWrapper.set(indexSearcherWrapperFactory);
-    }
 
     IndexEventListener freeze() { // pkg private for testing
         if (this.frozen.compareAndSet(false, true)) {
@@ -300,7 +234,7 @@ public final class IndexModule {
     public IndexService newIndexService(NodeEnvironment environment, NamedXContentRegistry xContentRegistry,
             IndexService.ShardStoreDeleter shardStoreDeleter, CircuitBreakerService circuitBreakerService, BigArrays bigArrays,
             ThreadPool threadPool,
-            ClusterService clusterService, Client client, IndicesQueryCache indicesQueryCache, MapperRegistry mapperRegistry,
+            Client client, IndicesQueryCache indicesQueryCache, MapperRegistry mapperRegistry,
             IndicesFieldDataCache indicesFieldDataCache) throws IOException {
         final IndexEventListener eventListener = freeze();
         IndexSearcherWrapperFactory searcherWrapperFactory = indexSearcherWrapper.get() == null
@@ -336,7 +270,7 @@ public final class IndexModule {
         }
         return new IndexService(indexSettings, environment, xContentRegistry,
                 shardStoreDeleter, analysisRegistry, engineFactory.get(), circuitBreakerService, bigArrays, threadPool,
-                clusterService, client, queryCache, store, eventListener, searcherWrapperFactory, mapperRegistry,
+                client, queryCache, store, eventListener, searcherWrapperFactory, mapperRegistry,
                 indicesFieldDataCache, searchOperationListeners, indexOperationListeners);
     }
 
@@ -348,19 +282,6 @@ public final class IndexModule {
         return new MapperService(indexSettings, analysisRegistry.build(indexSettings), xContentRegistry,
             mapperRegistry,
             () -> { throw new UnsupportedOperationException("no index query shard context available"); });
-    }
-
-    /**
-     * Forces a certain query cache to use instead of the default one. If this is set
-     * and query caching is not disabled with {@code index.queries.cache.enabled}, then
-     * the given provider will be used.
-     * NOTE: this can only be set once
-     *
-     * @see #INDEX_QUERY_CACHE_ENABLED_SETTING
-     */
-    public void forceQueryCacheProvider(BiFunction<IndexSettings, IndicesQueryCache, QueryCache> queryCacheProvider) {
-        ensureNotFrozen();
-        this.forceQueryCacheProvider.set(queryCacheProvider);
     }
 
     private void ensureNotFrozen() {

@@ -26,7 +26,6 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Streamable;
 import org.elasticsearch.common.lucene.Lucene;
-import org.elasticsearch.common.unit.ByteSizeValue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -78,10 +77,6 @@ public class Segment implements Streamable {
 
     public int getDeletedDocs() {
         return this.delDocCount;
-    }
-
-    public ByteSizeValue getSize() {
-        return new ByteSizeValue(sizeInBytes);
     }
 
     public long getSizeInBytes() {
@@ -167,7 +162,7 @@ public class Segment implements Streamable {
         out.writeOptionalBoolean(compound);
         out.writeOptionalString(mergeId);
         out.writeLong(memoryInBytes);
-        
+
         boolean verbose = ramTree != null;
         out.writeBoolean(verbose);
         if (verbose) {
@@ -188,7 +183,7 @@ public class Segment implements Streamable {
         }
         return Accountables.namedAccountable(name, children, bytes);
     }
-    
+
     // the ram tree is written recursively since the depth is fairly low (5 or 6)
     void writeRamTree(StreamOutput out, Accountable tree) throws IOException {
         out.writeString(tree.toString());

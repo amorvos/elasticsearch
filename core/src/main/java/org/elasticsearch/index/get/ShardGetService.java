@@ -90,33 +90,6 @@ public final class ShardGetService extends AbstractIndexShardComponent {
         }
     }
 
-    /**
-     * Returns {@link GetResult} based on the specified {@link org.elasticsearch.index.engine.Engine.GetResult} argument.
-     * This method basically loads specified fields for the associated document in the engineGetResult.
-     * This method load the fields from the Lucene index and not from transaction log and therefore isn't realtime.
-     * <p>
-     * Note: Call <b>must</b> release engine searcher associated with engineGetResult!
-     */
-    public GetResult get(Engine.GetResult engineGetResult, String id, String type, String[] fields, FetchSourceContext fetchSourceContext) {
-        if (!engineGetResult.exists()) {
-            return new GetResult(shardId.getIndexName(), type, id, -1, false, null, null);
-        }
-
-        currentMetric.inc();
-        try {
-            long now = System.nanoTime();
-            fetchSourceContext = normalizeFetchSourceContent(fetchSourceContext, fields);
-            GetResult getResult = innerGetLoadFromStoredFields(type, id, fields, fetchSourceContext, engineGetResult, mapperService);
-            if (getResult.isExists()) {
-                existsMetric.inc(System.nanoTime() - now);
-            } else {
-                missingMetric.inc(System.nanoTime() - now); // This shouldn't happen...
-            }
-            return getResult;
-        } finally {
-            currentMetric.dec();
-        }
-    }
 
     /**
      * decides what needs to be done based on the request input and always returns a valid non-null FetchSourceContext

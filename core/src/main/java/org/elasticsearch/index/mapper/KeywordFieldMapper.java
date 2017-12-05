@@ -78,7 +78,6 @@ public final class KeywordFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder<Builder, KeywordFieldMapper> {
 
-        protected String nullValue = Defaults.NULL_VALUE;
         protected int ignoreAbove = Defaults.IGNORE_ABOVE;
 
         public Builder(String name) {
@@ -301,13 +300,6 @@ public final class KeywordFieldMapper extends FieldMapper {
         this.includeInAll = includeInAll;
     }
 
-    /** Values that have more chars than the return value of this method will
-     *  be skipped at parsing time. */
-    // pkg-private for testing
-    int ignoreAbove() {
-        return ignoreAbove;
-    }
-
     @Override
     protected KeywordFieldMapper clone() {
         return (KeywordFieldMapper) super.clone();
@@ -316,11 +308,6 @@ public final class KeywordFieldMapper extends FieldMapper {
     @Override
     public KeywordFieldType fieldType() {
         return (KeywordFieldType) super.fieldType();
-    }
-
-    // pkg-private for testing
-    Boolean includeInAll() {
-        return includeInAll;
     }
 
     @Override

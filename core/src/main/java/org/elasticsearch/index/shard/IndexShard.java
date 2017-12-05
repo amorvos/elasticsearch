@@ -302,10 +302,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         return mapperService;
     }
 
-    public SearchOperationListener getSearchOperationListener() {
-        return this.searchOperationListener;
-    }
-
     public ShardIndexWarmerService warmerService() {
         return this.shardWarmerService;
     }
@@ -1076,15 +1072,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         engine.config().setEnableGcDeletes(true);
     }
 
-    /**
-     * Returns <tt>true</tt> if this shard can ignore a recovery attempt made to it (since the already doing/done it)
-     */
-    public boolean ignoreRecoveryAttempt() {
-        IndexShardState state = state(); // one time volatile read
-        return state == IndexShardState.POST_RECOVERY || state == IndexShardState.RECOVERING || state == IndexShardState.STARTED ||
-            state == IndexShardState.RELOCATED || state == IndexShardState.CLOSED;
-    }
-
     public void readAllowed() throws IllegalIndexShardStateException {
         IndexShardState state = this.state; // one time volatile read
         if (readAllowedStates.contains(state) == false) {
@@ -1185,10 +1172,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
                 }
             }
         }
-    }
-
-    public boolean isActive() {
-        return active.get();
     }
 
     public ShardPath shardPath() {
@@ -1341,16 +1324,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
             handleRefreshException(e);
         }
     }
-
-    /**
-     * Should be called for each no-op update operation to increment relevant statistics.
-     *
-     * @param type the doc type of the update
-     */
-    public void noopUpdate(String type) {
-        internalIndexingStats.noopUpdate(type);
-    }
-
 
     private void checkIndex() throws IOException {
         if (store.tryIncRef()) {
@@ -1776,10 +1749,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
             this.reason = reason;
             this.cause = cause;
         }
-    }
-
-    EngineFactory getEngineFactory() {
-        return engineFactory;
     }
 
     /**

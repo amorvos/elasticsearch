@@ -20,12 +20,10 @@
 package org.elasticsearch.index.engine;
 
 import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
-
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Streamable;
-import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
@@ -158,98 +156,18 @@ public class SegmentsStats implements Streamable, ToXContent {
     }
 
     /**
-     * The number of segments.
-     */
-    public long getCount() {
-        return this.count;
-    }
-
-    /**
      * Estimation of the memory usage used by a segment.
      */
     public long getMemoryInBytes() {
         return this.memoryInBytes;
     }
 
-    public ByteSizeValue getMemory() {
-        return new ByteSizeValue(memoryInBytes);
-    }
-
-    /**
-     * Estimation of the terms dictionary memory usage by a segment.
-     */
-    public long getTermsMemoryInBytes() {
-        return this.termsMemoryInBytes;
-    }
-
-    public ByteSizeValue getTermsMemory() {
-        return new ByteSizeValue(termsMemoryInBytes);
-    }
-
-    /**
-     * Estimation of the stored fields memory usage by a segment.
-     */
-    public long getStoredFieldsMemoryInBytes() {
-        return this.storedFieldsMemoryInBytes;
-    }
-
-    public ByteSizeValue getStoredFieldsMemory() {
-        return new ByteSizeValue(storedFieldsMemoryInBytes);
-    }
-
-    /**
-     * Estimation of the term vectors memory usage by a segment.
-     */
-    public long getTermVectorsMemoryInBytes() {
-        return this.termVectorsMemoryInBytes;
-    }
-
-    public ByteSizeValue getTermVectorsMemory() {
-        return new ByteSizeValue(termVectorsMemoryInBytes);
-    }
-
-    /**
-     * Estimation of the norms memory usage by a segment.
-     */
-    public long getNormsMemoryInBytes() {
-        return this.normsMemoryInBytes;
-    }
-
-    public ByteSizeValue getNormsMemory() {
-        return new ByteSizeValue(normsMemoryInBytes);
-    }
-
-    /**
-     * Estimation of the points memory usage by a segment.
-     */
-    public long getPointsMemoryInBytes() {
-        return this.pointsMemoryInBytes;
-    }
-
-    public ByteSizeValue getPointsMemory() {
-        return new ByteSizeValue(pointsMemoryInBytes);
-    }
-
-    /**
-     * Estimation of the doc values memory usage by a segment.
-     */
-    public long getDocValuesMemoryInBytes() {
-        return this.docValuesMemoryInBytes;
-    }
-
-    public ByteSizeValue getDocValuesMemory() {
-        return new ByteSizeValue(docValuesMemoryInBytes);
-    }
 
     /**
      * Estimation of the memory usage by index writer
      */
     public long getIndexWriterMemoryInBytes() {
         return this.indexWriterMemoryInBytes;
-    }
-
-    public ByteSizeValue getIndexWriterMemory() {
-        return new ByteSizeValue(indexWriterMemoryInBytes);
     }
 
     /**
@@ -259,10 +177,6 @@ public class SegmentsStats implements Streamable, ToXContent {
         return this.versionMapMemoryInBytes;
     }
 
-    public ByteSizeValue getVersionMapMemory() {
-        return new ByteSizeValue(versionMapMemoryInBytes);
-    }
-
     /**
      * Estimation of how much the cached bit sets are taking. (which nested and p/c rely on)
      */
@@ -270,13 +184,6 @@ public class SegmentsStats implements Streamable, ToXContent {
         return bitsetMemoryInBytes;
     }
 
-    public ByteSizeValue getBitsetMemory() {
-        return new ByteSizeValue(bitsetMemoryInBytes);
-    }
-
-    public ImmutableOpenMap<String, Long> getFileSizes() {
-        return fileSizes;
-    }
 
     /**
      * Returns the max timestamp that is used to de-optimize documents with auto-generated IDs in the engine.

@@ -29,11 +29,9 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
-import org.apache.lucene.search.join.BitSetProducer;
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.BitDocIdSet;
 import org.apache.lucene.util.BitSet;
-import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.cache.Cache;
 import org.elasticsearch.common.cache.CacheBuilder;
 import org.elasticsearch.common.cache.RemovalListener;
@@ -58,7 +56,6 @@ import org.elasticsearch.threadpool.ThreadPool;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -94,10 +91,6 @@ public final class BitsetFilterCache extends AbstractIndexComponent implements L
         return new BitSetProducerWarmer(threadPool);
     }
 
-
-    public BitSetProducer getBitSetProducer(Query query) {
-        return new QueryWrapperBitSetProducer(query);
-    }
 
     @Override
     public void onClose(Object ownerCoreCacheKey) {
@@ -174,40 +167,6 @@ public final class BitsetFilterCache extends AbstractIndexComponent implements L
         }
     }
 
-    final class QueryWrapperBitSetProducer implements BitSetProducer {
-
-        final Query query;
-
-        QueryWrapperBitSetProducer(Query query) {
-            this.query = Objects.requireNonNull(query);
-        }
-
-        @Override
-        public BitSet getBitSet(LeafReaderContext context) throws IOException {
-            try {
-                return getAndLoadIfNotPresent(query, context);
-            } catch (ExecutionException e) {
-                throw ExceptionsHelper.convertToElastic(e);
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "random_access(" + query + ")";
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof QueryWrapperBitSetProducer)) return false;
-            return this.query.equals(((QueryWrapperBitSetProducer) o).query);
-        }
-
-        @Override
-        public int hashCode() {
-            return 31 * getClass().hashCode() + query.hashCode();
-        }
-    }
-
     final class BitSetProducerWarmer implements IndexWarmer.Listener {
 
         private final Executor executor;
@@ -269,10 +228,6 @@ public final class BitsetFilterCache extends AbstractIndexComponent implements L
             return () -> latch.await();
         }
 
-    }
-
-    Cache<Object, Cache<Query, Value>> getLoadedFilters() {
-        return loadedFilters;
     }
 
     /**

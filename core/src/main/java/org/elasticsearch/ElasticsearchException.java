@@ -862,8 +862,6 @@ public class ElasticsearchException extends RuntimeException implements ToXConte
                 org.elasticsearch.action.TimestampParsingException::new, 78, UNKNOWN_VERSION_ADDED),
         ROUTING_MISSING_EXCEPTION(org.elasticsearch.action.RoutingMissingException.class,
                 org.elasticsearch.action.RoutingMissingException::new, 79, UNKNOWN_VERSION_ADDED),
-        INDEX_FAILED_ENGINE_EXCEPTION(org.elasticsearch.index.engine.IndexFailedEngineException.class,
-                org.elasticsearch.index.engine.IndexFailedEngineException::new, 80, UNKNOWN_VERSION_ADDED),
         INDEX_SHARD_RESTORE_FAILED_EXCEPTION(org.elasticsearch.index.snapshots.IndexShardRestoreFailedException.class,
                 org.elasticsearch.index.snapshots.IndexShardRestoreFailedException::new, 81, UNKNOWN_VERSION_ADDED),
         REPOSITORY_EXCEPTION(org.elasticsearch.repositories.RepositoryException.class,

@@ -362,15 +362,6 @@ public class TextFieldMapper extends FieldMapper {
         return (TextFieldMapper) super.clone();
     }
 
-    // pkg-private for testing
-    Boolean includeInAll() {
-        return includeInAll;
-    }
-
-    public int getPositionIncrementGap() {
-        return this.positionIncrementGap;
-    }
-
     @Override
     protected void parseCreateField(ParseContext context, List<IndexableField> fields) throws IOException {
         final String value;

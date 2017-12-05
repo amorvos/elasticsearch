@@ -21,10 +21,7 @@ package org.elasticsearch.index.query;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.queryparser.classic.MapperQueryParser;
-import org.apache.lucene.queryparser.classic.QueryParserSettings;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.join.BitSetProducer;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.Version;
 import org.elasticsearch.client.Client;
@@ -34,10 +31,8 @@ import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
 import org.elasticsearch.index.cache.bitset.BitsetFilterCache;
-import org.elasticsearch.index.fielddata.IndexFieldData;
 import org.elasticsearch.index.fielddata.IndexFieldDataService;
 import org.elasticsearch.index.mapper.ContentPath;
-import org.elasticsearch.index.mapper.DocumentMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperService;
@@ -50,8 +45,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.LongSupplier;
-
-import static java.util.Collections.unmodifiableMap;
 
 /**
  * Context object used to create lucene queries on the shard level.
@@ -76,7 +69,6 @@ public class QueryShardContext extends QueryRewriteContext {
     }
 
     private final Map<String, Query> namedQueries = new HashMap<>();
-    private final MapperQueryParser queryParser = new MapperQueryParser(this);
     private boolean allowUnmappedFields;
     private boolean mapUnmappedFieldAsString;
     private boolean isFilter;
@@ -101,55 +93,14 @@ public class QueryShardContext extends QueryRewriteContext {
         this.types = source.getTypes();
     }
 
-    private void reset() {
-        allowUnmappedFields = indexSettings.isDefaultAllowUnmappedFields();
-        this.lookup = null;
-        this.namedQueries.clear();
-        this.isFilter = false;
-    }
-
     public IndexAnalyzers getIndexAnalyzers() {
         return mapperService.getIndexAnalyzers();
-    }
-
-    public String defaultField() {
-        return indexSettings.getDefaultField();
-    }
-
-    public boolean queryStringLenient() {
-        return indexSettings.isQueryStringLenient();
-    }
-
-    public boolean queryStringAnalyzeWildcard() {
-        return indexSettings.isQueryStringAnalyzeWildcard();
-    }
-
-    public boolean queryStringAllowLeadingWildcard() {
-        return indexSettings.isQueryStringAllowLeadingWildcard();
-    }
-
-    public MapperQueryParser queryParser(QueryParserSettings settings) {
-        queryParser.reset(settings);
-        return queryParser;
-    }
-
-    public BitSetProducer bitsetFilter(Query filter) {
-        return bitsetFilterCache.getBitSetProducer(filter);
-    }
-
-    public <IFD extends IndexFieldData<?>> IFD getForField(MappedFieldType mapper) {
-        return indexFieldDataService.getForField(mapper);
     }
 
     public void addNamedQuery(String name, Query query) {
         if (query != null) {
             namedQueries.put(name, query);
         }
-    }
-
-    public Map<String, Query> copyNamedQueries() {
-        // This might be a good use case for CopyOnWriteHashMap
-        return unmodifiableMap(new HashMap<>(namedQueries));
     }
 
     /**
@@ -184,13 +135,6 @@ public class QueryShardContext extends QueryRewriteContext {
         return mapperService.getObjectMapper(name);
     }
 
-    /**
-     * Returns s {@link DocumentMapper} instance for the given type.
-     * Delegates to {@link MapperService#documentMapper(String)}
-     */
-    public DocumentMapper documentMapper(String type) {
-        return mapperService.documentMapper(type);
-    }
 
     /**
      * Gets the search analyzer for the given field, or the default if there is none present for the field
@@ -214,13 +158,6 @@ public class QueryShardContext extends QueryRewriteContext {
         return getMapperService().searchQuoteAnalyzer();
     }
 
-    public void setAllowUnmappedFields(boolean allowUnmappedFields) {
-        this.allowUnmappedFields = allowUnmappedFields;
-    }
-
-    public void setMapUnmappedFieldAsString(boolean mapUnmappedFieldAsString) {
-        this.mapUnmappedFieldAsString = mapUnmappedFieldAsString;
-    }
 
     MappedFieldType failIfFieldMappingNotFound(String name, MappedFieldType fieldMapping) {
         if (fieldMapping != null || allowUnmappedFields) {
@@ -260,31 +197,14 @@ public class QueryShardContext extends QueryRewriteContext {
         return indexSettings.getIndexVersionCreated();
     }
 
-    public boolean matchesIndices(String... indices) {
-        for (String index : indices) {
-            if (indexSettings.matchesIndexName(index)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
     public final Index index() {
         return indexSettings.getIndex();
     }
 
 
-    /**
-     * if this method is called the query context will throw exception if methods are accessed
-     * that could yield different results across executions like #getTemplateBytes(Script)
-     */
-    public final void freezeContext() {
-        this.frozen.set(Boolean.TRUE);
-    }
 
     /**
-     * This method fails if {@link #freezeContext()} is called before on this
+     * This method fails if#freezeContext()} is called before on this
      * context. This is used to <i>seal</i>.
      *
      * This methods and all methods that call it should be final to ensure that
@@ -299,13 +219,6 @@ public class QueryShardContext extends QueryRewriteContext {
         } else {
             assert frozen.get() == null : frozen.get();
         }
-    }
-
-    /**
-     * Returns <code>true</code> iff the result of the processed search request is cachable. Otherwise <code>false</code>
-     */
-    public final boolean isCachable() {
-        return cachable;
     }
 
     /**

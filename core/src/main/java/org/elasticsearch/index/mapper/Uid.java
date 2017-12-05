@@ -24,7 +24,6 @@ import org.apache.lucene.util.BytesRefBuilder;
 import org.elasticsearch.common.lucene.BytesRefs;
 
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  *
@@ -89,10 +88,6 @@ public final class Uid {
         return createUidAsBytes(new BytesRef(type), new BytesRef(id));
     }
 
-    public static BytesRef createUidAsBytes(String type, BytesRef id) {
-        return createUidAsBytes(new BytesRef(type), id);
-    }
-
     public static BytesRef createUidAsBytes(BytesRef type, BytesRef id) {
         final BytesRef ref = new BytesRef(type.length + 1 + id.length);
         System.arraycopy(type.bytes, type.offset, ref.bytes, 0, type.length);
@@ -102,10 +97,6 @@ public final class Uid {
         ref.offset = 0;
         ref.length = ref.bytes.length;
         return ref;
-    }
-
-    public static BytesRef[] createUidsForTypesAndId(Collection<String> types, Object id) {
-        return createUidsForTypesAndIds(types, Collections.singletonList(id));
     }
 
     public static BytesRef[] createUidsForTypesAndIds(Collection<String> types, Collection<?> ids) {

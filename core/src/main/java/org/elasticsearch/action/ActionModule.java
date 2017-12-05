@@ -132,7 +132,6 @@ import org.elasticsearch.action.admin.indices.upgrade.post.TransportUpgradeSetti
 import org.elasticsearch.action.admin.indices.upgrade.post.UpgradeAction;
 import org.elasticsearch.action.admin.indices.upgrade.post.UpgradeSettingsAction;
 import org.elasticsearch.action.fieldstats.FieldStatsAction;
-import org.elasticsearch.action.fieldstats.TransportFieldStatsAction;
 import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.MultiGetAction;
 import org.elasticsearch.action.get.TransportGetAction;
@@ -303,7 +302,6 @@ public class ActionModule extends AbstractModule {
                 TransportShardMultiGetAction.class);
         actions.register(RecoveryAction.INSTANCE, TransportRecoveryAction.class);
 
-        actions.register(FieldStatsAction.INSTANCE, TransportFieldStatsAction.class);
 
         actionPlugins.stream().flatMap(p -> p.getActions().stream()).forEach(actions::register);
 

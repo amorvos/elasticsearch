@@ -23,7 +23,6 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Streamable;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
@@ -101,69 +100,8 @@ public class MergeStats implements Streamable, ToXContent {
         }
     }
 
-    /**
-     * The total number of merges executed.
-     */
-    public long getTotal() {
-        return this.total;
-    }
-
-    /**
-     * The total time merges have been executed (in milliseconds).
-     */
-    public long getTotalTimeInMillis() {
-        return this.totalTimeInMillis;
-    }
-
-    /**
-     * The total time large merges were stopped so smaller merges could finish.
-     */
-    public long getTotalStoppedTimeInMillis() {
-        return this.totalStoppedTimeInMillis;
-    }
-
-    /**
-     * The total time large merges were stopped so smaller merges could finish.
-     */
-    public TimeValue getTotalStoppedTime() {
-        return new TimeValue(totalStoppedTimeInMillis);
-    }
-
-    /**
-     * The total time merge IO writes were throttled.
-     */
-    public long getTotalThrottledTimeInMillis() {
-        return this.totalThrottledTimeInMillis;
-    }
-
-    /**
-     * The total time merge IO writes were throttled.
-     */
-    public TimeValue getTotalThrottledTime() {
-        return new TimeValue(totalThrottledTimeInMillis);
-    }
-
-    /**
-     * The total time merges have been executed.
-     */
-    public TimeValue getTotalTime() {
-        return new TimeValue(totalTimeInMillis);
-    }
-
-    public long getTotalNumDocs() {
-        return this.totalNumDocs;
-    }
-
-    public long getTotalSizeInBytes() {
-        return this.totalSizeInBytes;
-    }
-
     public ByteSizeValue getTotalSize() {
         return new ByteSizeValue(totalSizeInBytes);
-    }
-
-    public long getTotalBytesPerSecAutoThrottle() {
-        return totalBytesPerSecAutoThrottle;
     }
 
     /**
@@ -171,18 +109,6 @@ public class MergeStats implements Streamable, ToXContent {
      */
     public long getCurrent() {
         return this.current;
-    }
-
-    public long getCurrentNumDocs() {
-        return this.currentNumDocs;
-    }
-
-    public long getCurrentSizeInBytes() {
-        return this.currentSizeInBytes;
-    }
-
-    public ByteSizeValue getCurrentSize() {
-        return new ByteSizeValue(currentSizeInBytes);
     }
 
     @Override

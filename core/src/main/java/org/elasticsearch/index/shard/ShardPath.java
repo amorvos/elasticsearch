@@ -68,10 +68,6 @@ public final class ShardPath {
         return path;
     }
 
-    public boolean exists() {
-        return Files.exists(path);
-    }
-
     public ShardId getShardId() {
         return shardId;
     }

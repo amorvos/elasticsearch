@@ -22,7 +22,6 @@ package org.elasticsearch.index.flush;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Streamable;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
@@ -43,11 +42,6 @@ public class FlushStats implements Streamable, ToXContent {
         this.totalTimeInMillis = totalTimeInMillis;
     }
 
-    public void add(long total, long totalTimeInMillis) {
-        this.total += total;
-        this.totalTimeInMillis += totalTimeInMillis;
-    }
-
     public void add(FlushStats flushStats) {
         addTotals(flushStats);
     }
@@ -58,27 +52,6 @@ public class FlushStats implements Streamable, ToXContent {
         }
         this.total += flushStats.total;
         this.totalTimeInMillis += flushStats.totalTimeInMillis;
-    }
-
-    /**
-     * The total number of flush executed.
-     */
-    public long getTotal() {
-        return this.total;
-    }
-
-    /**
-     * The total time merges have been executed (in milliseconds).
-     */
-    public long getTotalTimeInMillis() {
-        return this.totalTimeInMillis;
-    }
-
-    /**
-     * The total time merges have been executed.
-     */
-    public TimeValue getTotalTime() {
-        return new TimeValue(totalTimeInMillis);
     }
 
     @Override

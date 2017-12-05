@@ -47,10 +47,6 @@ public class StoreFileMetaData implements Writeable {
 
     private final BytesRef hash;
 
-    public StoreFileMetaData(String name, long length, String checksum) {
-        this(name, length, checksum, FIRST_LUCENE_CHECKSUM_VERSION);
-    }
-
     public StoreFileMetaData(String name, long length, String checksum, Version writtenBy) {
         this(name, length, checksum, writtenBy, null);
     }

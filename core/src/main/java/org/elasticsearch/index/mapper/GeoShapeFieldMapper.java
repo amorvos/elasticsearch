@@ -76,7 +76,6 @@ public class GeoShapeFieldMapper extends FieldMapper {
     public static class Names {
         public static final String TREE = "tree";
         public static final String TREE_GEOHASH = "geohash";
-        public static final String TREE_QUADTREE = "quadtree";
         public static final String TREE_LEVELS = "tree_levels";
         public static final String TREE_PRESISION = "precision";
         public static final String DISTANCE_ERROR_PCT = "distance_error_pct";
@@ -394,10 +393,6 @@ public class GeoShapeFieldMapper extends FieldMapper {
 
         public PrefixTreeStrategy defaultStrategy() {
             return this.defaultStrategy;
-        }
-
-        public PrefixTreeStrategy resolveStrategy(SpatialStrategy strategy) {
-            return resolveStrategy(strategy.getStrategyName());
         }
 
         public PrefixTreeStrategy resolveStrategy(String strategyName) {

@@ -22,7 +22,6 @@ package org.elasticsearch.index.get;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Streamable;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
@@ -74,38 +73,6 @@ public class GetStats implements Streamable, ToXContent {
 
     public long getTimeInMillis() {
         return existsTimeInMillis + missingTimeInMillis;
-    }
-
-    public TimeValue getTime() {
-        return new TimeValue(getTimeInMillis());
-    }
-
-    public long getExistsCount() {
-        return this.existsCount;
-    }
-
-    public long getExistsTimeInMillis() {
-        return this.existsTimeInMillis;
-    }
-
-    public TimeValue getExistsTime() {
-        return new TimeValue(existsTimeInMillis);
-    }
-
-    public long getMissingCount() {
-        return this.missingCount;
-    }
-
-    public long getMissingTimeInMillis() {
-        return this.missingTimeInMillis;
-    }
-
-    public TimeValue getMissingTime() {
-        return new TimeValue(missingTimeInMillis);
-    }
-
-    public long current() {
-        return this.current;
     }
 
     @Override

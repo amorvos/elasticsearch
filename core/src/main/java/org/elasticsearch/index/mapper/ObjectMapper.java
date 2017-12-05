@@ -119,11 +119,6 @@ public class ObjectMapper extends Mapper implements Cloneable {
             return builder;
         }
 
-        public T nested(Nested nested) {
-            this.nested = nested;
-            return builder;
-        }
-
         public T includeInAll(boolean includeInAll) {
             this.includeInAll = includeInAll;
             return builder;
@@ -421,21 +416,6 @@ public class ObjectMapper extends Mapper implements Cloneable {
         } else {
             return null;
         }
-    }
-
-    /**
-     * Returns whether all parent objects fields are nested too.
-     */
-    public boolean parentObjectMapperAreNested(MapperService mapperService) {
-        for (ObjectMapper parent = getParentObjectMapper(mapperService);
-             parent != null;
-             parent = parent.getParentObjectMapper(mapperService)) {
-
-            if (parent.nested().isNested() == false) {
-                return false;
-            }
-        }
-        return true;
     }
 
     @Override

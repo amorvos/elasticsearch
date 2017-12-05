@@ -45,7 +45,7 @@ import java.util.function.Predicate;
  * This class encapsulates all index level settings and handles settings updates.
  * It's created per index and available to all index level classes and allows them to retrieve
  * the latest updated settings instance. Classes that need to listen to settings updates can register
- * a settings consumer at index creation via {@link IndexModule#addSettingsUpdateConsumer(Setting, Consumer)} that will
+ * a settings consumer at index creation via IndexModule#addSettingsUpdateConsumer(Setting, Consumer)} that will
  * be called for each settings update.
  */
 public final class IndexSettings {
@@ -100,11 +100,11 @@ public final class IndexSettings {
             Setting.intSetting("index.max_rescore_window", MAX_RESULT_WINDOW_SETTING, 1, Property.Dynamic, Property.IndexScope);
     /**
      * Index setting describing the maximum number of filters clauses that can be used
-     * in an adjacency_matrix aggregation. The max number of buckets produced by  
+     * in an adjacency_matrix aggregation. The max number of buckets produced by
      * N filters is (N*N)/2 so a limit of 100 filters is imposed by default.
      */
     public static final Setting<Integer> MAX_ADJACENCY_MATRIX_FILTERS_SETTING =
-        Setting.intSetting("index.max_adjacency_matrix_filters", 100, 2, Property.Dynamic, Property.IndexScope);    
+        Setting.intSetting("index.max_adjacency_matrix_filters", 100, 2, Property.Dynamic, Property.IndexScope);
     public static final TimeValue DEFAULT_REFRESH_INTERVAL = new TimeValue(1, TimeUnit.SECONDS);
     public static final Setting<TimeValue> INDEX_REFRESH_INTERVAL_SETTING =
         Setting.timeSetting("index.refresh_interval", DEFAULT_REFRESH_INTERVAL, new TimeValue(-1, TimeUnit.MILLISECONDS),
@@ -159,18 +159,10 @@ public final class IndexSettings {
     private final IndexScopedSettings scopedSettings;
     private long gcDeletesInMillis = DEFAULT_GC_DELETES.millis();
     private volatile boolean warmerEnabled;
-    private volatile int maxResultWindow;
-    private volatile int maxAdjacencyMatrixFilters;
-    private volatile int maxRescoreWindow;
-    private volatile boolean TTLPurgeDisabled;
     /**
      * The maximum number of refresh listeners allows on this shard.
      */
     private volatile int maxRefreshListeners;
-    /**
-     * The maximum number of slices allowed in a scroll request.
-     */
-    private volatile int maxSlicesPerScroll;
     /**
      * Whether the index is required to have at most one type.
      */
@@ -255,12 +247,7 @@ public final class IndexSettings {
         mergeSchedulerConfig = new MergeSchedulerConfig(this);
         gcDeletesInMillis = scopedSettings.get(INDEX_GC_DELETES_SETTING).getMillis();
         warmerEnabled = scopedSettings.get(INDEX_WARMER_ENABLED_SETTING);
-        maxResultWindow = scopedSettings.get(MAX_RESULT_WINDOW_SETTING);
-        maxAdjacencyMatrixFilters = scopedSettings.get(MAX_ADJACENCY_MATRIX_FILTERS_SETTING);
-        maxRescoreWindow = scopedSettings.get(MAX_RESCORE_WINDOW_SETTING);
-        TTLPurgeDisabled = scopedSettings.get(INDEX_TTL_DISABLE_PURGE_SETTING);
         maxRefreshListeners = scopedSettings.get(MAX_REFRESH_LISTENERS_PER_SHARD);
-        maxSlicesPerScroll = scopedSettings.get(MAX_SLICES_PER_SCROLL);
         this.mergePolicyConfig = new MergePolicyConfig(logger, this);
         singleType = scopedSettings.get(MapperService.INDEX_MAPPING_SINGLE_TYPE_SETTING);
 
@@ -277,16 +264,11 @@ public final class IndexSettings {
             mergeSchedulerConfig::setMaxThreadAndMergeCount);
         scopedSettings.addSettingsUpdateConsumer(MergeSchedulerConfig.AUTO_THROTTLE_SETTING, mergeSchedulerConfig::setAutoThrottle);
         scopedSettings.addSettingsUpdateConsumer(INDEX_TRANSLOG_DURABILITY_SETTING, this::setTranslogDurability);
-        scopedSettings.addSettingsUpdateConsumer(INDEX_TTL_DISABLE_PURGE_SETTING, this::setTTLPurgeDisabled);
-        scopedSettings.addSettingsUpdateConsumer(MAX_RESULT_WINDOW_SETTING, this::setMaxResultWindow);
-        scopedSettings.addSettingsUpdateConsumer(MAX_ADJACENCY_MATRIX_FILTERS_SETTING, this::setMaxAdjacencyMatrixFilters);
-        scopedSettings.addSettingsUpdateConsumer(MAX_RESCORE_WINDOW_SETTING, this::setMaxRescoreWindow);
         scopedSettings.addSettingsUpdateConsumer(INDEX_WARMER_ENABLED_SETTING, this::setEnableWarmer);
         scopedSettings.addSettingsUpdateConsumer(INDEX_GC_DELETES_SETTING, this::setGCDeletes);
         scopedSettings.addSettingsUpdateConsumer(INDEX_TRANSLOG_FLUSH_THRESHOLD_SIZE_SETTING, this::setTranslogFlushThresholdSize);
         scopedSettings.addSettingsUpdateConsumer(INDEX_REFRESH_INTERVAL_SETTING, this::setRefreshInterval);
         scopedSettings.addSettingsUpdateConsumer(MAX_REFRESH_LISTENERS_PER_SHARD, this::setMaxRefreshListeners);
-        scopedSettings.addSettingsUpdateConsumer(MAX_SLICES_PER_SCROLL, this::setMaxSlicesPerScroll);
 
     }
 
@@ -476,39 +458,6 @@ public final class IndexSettings {
     public MergeSchedulerConfig getMergeSchedulerConfig() { return mergeSchedulerConfig; }
 
     /**
-     * Returns the max result window for search requests, describing the maximum value of from + size on a query.
-     */
-    public int getMaxResultWindow() {
-        return this.maxResultWindow;
-    }
-
-    private void setMaxResultWindow(int maxResultWindow) {
-        this.maxResultWindow = maxResultWindow;
-    }
-    
-    /**
-     * Returns the max number of filters in adjacency_matrix aggregation search requests
-     */
-    public int getMaxAdjacencyMatrixFilters() {
-        return this.maxAdjacencyMatrixFilters;
-    }
-
-    private void setMaxAdjacencyMatrixFilters(int maxAdjacencyFilters) {
-        this.maxAdjacencyMatrixFilters = maxAdjacencyFilters;
-    }    
-
-    /**
-     * Returns the maximum rescore window for search requests.
-     */
-    public int getMaxRescoreWindow() {
-        return maxRescoreWindow;
-    }
-
-    private void setMaxRescoreWindow(int maxRescoreWindow) {
-        this.maxRescoreWindow = maxRescoreWindow;
-    }
-
-    /**
      * Returns the GC deletes cycle in milliseconds.
      */
     public long getGcDeletesInMillis() {
@@ -521,18 +470,6 @@ public final class IndexSettings {
     public MergePolicy getMergePolicy() {
         return mergePolicyConfig.getMergePolicy();
     }
-
-    /**
-     * Returns <code>true</code> if the TTL purge is disabled for this index. Default is <code>false</code>
-     */
-    public boolean isTTLPurgeDisabled() {
-        return TTLPurgeDisabled;
-    }
-
-    private  void setTTLPurgeDisabled(boolean ttlPurgeDisabled) {
-        this.TTLPurgeDisabled = ttlPurgeDisabled;
-    }
-
 
     public <T> T getValue(Setting<T> setting) {
         return scopedSettings.get(setting);
@@ -547,17 +484,6 @@ public final class IndexSettings {
 
     private void setMaxRefreshListeners(int maxRefreshListeners) {
         this.maxRefreshListeners = maxRefreshListeners;
-    }
-
-    /**
-     * The maximum number of slices allowed in a scroll request.
-     */
-    public int getMaxSlicesPerScroll() {
-        return maxSlicesPerScroll;
-    }
-
-    private void setMaxSlicesPerScroll(int value) {
-        this.maxSlicesPerScroll = value;
     }
 
     public IndexScopedSettings getScopedSettings() { return scopedSettings;}

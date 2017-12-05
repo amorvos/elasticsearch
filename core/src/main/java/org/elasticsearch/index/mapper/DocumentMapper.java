@@ -19,10 +19,6 @@
 
 package org.elasticsearch.index.mapper;
 
-import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.Scorer;
-import org.apache.lucene.search.Weight;
 import org.elasticsearch.ElasticsearchGenerationException;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
@@ -34,8 +30,6 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
 import org.elasticsearch.index.mapper.MetadataFieldMapper.TypeParser;
-import org.elasticsearch.index.query.QueryShardContext;
-import org.elasticsearch.search.internal.SearchContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -187,14 +181,6 @@ public class DocumentMapper implements ToXContent {
         return this.type;
     }
 
-    public Text typeText() {
-        return this.typeText;
-    }
-
-    public Map<String, Object> meta() {
-        return mapping.meta;
-    }
-
     public CompressedXContent mappingSource() {
         return this.mappingSource;
     }
@@ -203,25 +189,13 @@ public class DocumentMapper implements ToXContent {
         return mapping.root;
     }
 
-    public UidFieldMapper uidMapper() {
-        return metadataMapper(UidFieldMapper.class);
-    }
-
     @SuppressWarnings({"unchecked"})
     public <T extends MetadataFieldMapper> T metadataMapper(Class<T> type) {
         return mapping.metadataMapper(type);
     }
 
-    public IndexFieldMapper indexMapper() {
-        return metadataMapper(IndexFieldMapper.class);
-    }
-
     public TypeFieldMapper typeMapper() {
         return metadataMapper(TypeFieldMapper.class);
-    }
-
-    public SourceFieldMapper sourceMapper() {
-        return metadataMapper(SourceFieldMapper.class);
     }
 
     public AllFieldMapper allFieldMapper() {
@@ -244,18 +218,6 @@ public class DocumentMapper implements ToXContent {
         return metadataMapper(TimestampFieldMapper.class);
     }
 
-    public TTLFieldMapper TTLFieldMapper() {
-        return metadataMapper(TTLFieldMapper.class);
-    }
-
-    public IndexFieldMapper IndexFieldMapper() {
-        return metadataMapper(IndexFieldMapper.class);
-    }
-
-    public Query typeFilter(QueryShardContext context) {
-        return typeMapper().fieldType().termQuery(type, context);
-    }
-
     public boolean hasNestedObjects() {
         return hasNestedObjects;
     }
@@ -275,41 +237,6 @@ public class DocumentMapper implements ToXContent {
 
     public ParsedDocument parse(SourceToParse source) throws MapperParsingException {
         return documentParser.parseDocument(source);
-    }
-
-    /**
-     * Returns the best nested {@link ObjectMapper} instances that is in the scope of the specified nested docId.
-     */
-    public ObjectMapper findNestedObjectMapper(int nestedDocId, SearchContext sc, LeafReaderContext context) throws IOException {
-        ObjectMapper nestedObjectMapper = null;
-        for (ObjectMapper objectMapper : objectMappers().values()) {
-            if (!objectMapper.nested().isNested()) {
-                continue;
-            }
-
-            Query filter = objectMapper.nestedTypeFilter();
-            if (filter == null) {
-                continue;
-            }
-            // We can pass down 'null' as acceptedDocs, because nestedDocId is a doc to be fetched and
-            // therefor is guaranteed to be a live doc.
-            final Weight nestedWeight = filter.createWeight(sc.searcher(), false);
-            Scorer scorer = nestedWeight.scorer(context);
-            if (scorer == null) {
-                continue;
-            }
-
-            if (scorer.iterator().advance(nestedDocId) == nestedDocId) {
-                if (nestedObjectMapper == null) {
-                    nestedObjectMapper = objectMapper;
-                } else {
-                    if (nestedObjectMapper.fullPath().length() < objectMapper.fullPath().length()) {
-                        nestedObjectMapper = objectMapper;
-                    }
-                }
-            }
-        }
-        return nestedObjectMapper;
     }
 
     public boolean isParent(String type) {

@@ -28,7 +28,6 @@ import org.apache.lucene.util.IOUtils;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.routing.ShardRouting;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
@@ -111,7 +110,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     private volatile AsyncTranslogFSync fsyncTask;
     private final ThreadPool threadPool;
     private final BigArrays bigArrays;
-    private final ClusterService clusterService;
     private final Client client;
 
     public IndexService(IndexSettings indexSettings, NodeEnvironment nodeEnv,
@@ -122,7 +120,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                         CircuitBreakerService circuitBreakerService,
                         BigArrays bigArrays,
                         ThreadPool threadPool,
-                        ClusterService clusterService,
                         Client client,
                         QueryCache queryCache,
                         IndexStore indexStore,
@@ -143,7 +140,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         this.shardStoreDeleter = shardStoreDeleter;
         this.bigArrays = bigArrays;
         this.threadPool = threadPool;
-        this.clusterService = clusterService;
         this.client = client;
         this.eventListener = eventListener;
         this.nodeEnv = nodeEnv;
@@ -161,10 +157,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         // kick off async ops for the first shard in this index
         this.refreshTask = new AsyncRefreshTask(this);
         rescheduleFsyncTask(indexSettings.getTranslogDurability());
-    }
-
-    public int numberOfShards() {
-        return shards.size();
     }
 
     public IndexEventListener getIndexEventListener() {
@@ -218,10 +210,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
 
     public MapperService mapperService() {
         return mapperService;
-    }
-
-    public NamedXContentRegistry xContentRegistry() {
-        return xContentRegistry;
     }
 
     public synchronized void close(final String reason, boolean delete) throws IOException {
@@ -471,14 +459,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         return bigArrays;
     }
 
-    List<IndexingOperationListener> getIndexOperationListeners() { // pkg private for testing
-        return indexingOperationListeners;
-    }
-
-    List<SearchOperationListener> getSearchOperationListener() { // pkg private for testing
-        return searchOperationListeners;
-    }
-
     @Override
     public boolean updateMapping(IndexMetaData indexMetaData) throws IOException {
         return mapperService().updateMapping(indexMetaData);
@@ -626,18 +606,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         void addPendingDelete(ShardId shardId, IndexSettings indexSettings);
     }
 
-    final EngineFactory getEngineFactory() {
-        return engineFactory;
-    } // pkg private for testing
-
-    final IndexSearcherWrapper getSearcherWrapper() {
-        return searcherWrapper;
-    } // pkg private for testing
-
-    final IndexStore getIndexStore() {
-        return indexStore;
-    } // pkg private for testing
-
     private void maybeFSyncTranslogs() {
         if (indexSettings.getTranslogDurability() == Translog.Durability.ASYNC) {
             for (IndexShard shard : this.shards.values()) {
@@ -714,10 +682,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
             }
         }
 
-        boolean isScheduled() {
-            return scheduledFuture != null;
-        }
-
         @Override
         public final void run() {
             try {
@@ -772,10 +736,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         TimeValue getInterval() {
             return interval;
         }
-
-        boolean isClosed() {
-            return this.closed.get();
-        }
     }
 
     /**
@@ -822,13 +782,5 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         public String toString() {
             return "refresh";
         }
-    }
-
-    AsyncRefreshTask getRefreshTask() { // for tests
-        return refreshTask;
-    }
-
-    AsyncTranslogFSync getFsyncTask() { // for tests
-        return fsyncTask;
     }
 }

@@ -193,10 +193,6 @@ public class SourceFieldMapper extends MetadataFieldMapper {
         this.complete = enabled && includes == null && excludes == null;
     }
 
-    public boolean enabled() {
-        return enabled;
-    }
-
     public String[] excludes() {
         return this.excludes != null ? this.excludes : Strings.EMPTY_ARRAY;
 
@@ -204,10 +200,6 @@ public class SourceFieldMapper extends MetadataFieldMapper {
 
     public String[] includes() {
         return this.includes != null ? this.includes : Strings.EMPTY_ARRAY;
-    }
-
-    public boolean isComplete() {
-        return complete;
     }
 
     @Override

@@ -67,16 +67,8 @@ public class StoreStats implements Streamable, ToXContent {
         return new ByteSizeValue(sizeInBytes);
     }
 
-    public ByteSizeValue getSize() {
-        return size();
-    }
-
     public TimeValue throttleTime() {
         return TimeValue.timeValueNanos(throttleTimeInNanos);
-    }
-
-    public TimeValue getThrottleTime() {
-        return throttleTime();
     }
 
     @Override
