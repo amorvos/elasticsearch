@@ -239,10 +239,6 @@ public abstract class BlendedTermQuery extends Query {
         return newCtx;
     }
 
-    public List<Term> getTerms() {
-        return Arrays.asList(terms);
-    }
-
     @Override
     public String toString(String field) {
         StringBuilder builder = new StringBuilder("blended(terms:[");
@@ -294,10 +290,6 @@ public abstract class BlendedTermQuery extends Query {
     @Override
     public int hashCode() {
         return Objects.hash(classHash(), Arrays.hashCode(equalsTerms()));
-    }
-
-    public static BlendedTermQuery booleanBlendedQuery(Term[] terms, final boolean disableCoord) {
-        return booleanBlendedQuery(terms, null, disableCoord);
     }
 
     public static BlendedTermQuery booleanBlendedQuery(Term[] terms, final float[] boosts, final boolean disableCoord) {
@@ -359,10 +351,6 @@ public abstract class BlendedTermQuery extends Query {
                 }
             }
         };
-    }
-
-    public static BlendedTermQuery dismaxBlendedQuery(Term[] terms, final float tieBreakerMultiplier) {
-        return dismaxBlendedQuery(terms, null, tieBreakerMultiplier);
     }
 
     public static BlendedTermQuery dismaxBlendedQuery(Term[] terms, final float[] boosts, final float tieBreakerMultiplier) {

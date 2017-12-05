@@ -61,11 +61,6 @@ public class NodesStatsRequestBuilder extends NodesOperationRequestBuilder<Nodes
         return this;
     }
 
-    public NodesStatsRequestBuilder setScript(boolean script) {
-        request.script(script);
-        return this;
-    }
-
     /**
      * Should the node indices stats be returned.
      */
@@ -135,14 +130,6 @@ public class NodesStatsRequestBuilder extends NodesOperationRequestBuilder<Nodes
      */
     public NodesStatsRequestBuilder setDiscovery(boolean discovery) {
         request.discovery(discovery);
-        return this;
-    }
-
-    /**
-     * Should ingest statistics be returned.
-     */
-    public NodesStatsRequestBuilder ingest(boolean ingest) {
-        request.ingest(ingest);
         return this;
     }
 }

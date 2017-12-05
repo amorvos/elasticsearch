@@ -391,7 +391,7 @@ public class Node implements Closeable {
                 namedWriteableRegistry, networkService, clusterService, pluginsService.filterPlugins(DiscoveryPlugin.class));
             NodeService nodeService = new NodeService(settings, threadPool, monitorService, discoveryModule.getDiscovery(),
                 transportService, indicesService, pluginsService, circuitBreakerService,
-                httpServerTransport, clusterService, settingsModule.getSettingsFilter());
+                httpServerTransport, settingsModule.getSettingsFilter());
 
             modules.add(b -> {
                     b.bind(NodeService.class).toInstance(nodeService);
@@ -939,11 +939,6 @@ public class Node implements Closeable {
             }
         }
         return customNameResolvers;
-    }
-
-    /** Constructs an internal node used as a client into a cluster fronted by this tribe node. */
-    protected Node newTribeClientNode(Settings settings, Collection<Class<? extends Plugin>> classpathPlugins) {
-        return new Node(new Environment(settings), classpathPlugins);
     }
 
     /** Constructs a ClusterInfoService which may be mocked for tests. */

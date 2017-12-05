@@ -22,7 +22,6 @@ package org.elasticsearch.env;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -56,13 +55,6 @@ public abstract class ShardLock implements Closeable {
     }
 
     protected  abstract void closeInternal();
-
-    /**
-     * Returns true if this lock is still open ie. has not been closed yet.
-     */
-    public final boolean isOpen() {
-        return closed.get() == false;
-    }
 
     @Override
     public String toString() {

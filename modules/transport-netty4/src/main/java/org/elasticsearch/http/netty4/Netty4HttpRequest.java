@@ -23,14 +23,12 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
-
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.transport.netty4.Netty4Utils;
 
-import java.net.SocketAddress;
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Collections;
@@ -99,28 +97,6 @@ public class Netty4HttpRequest extends RestRequest {
     @Override
     public BytesReference content() {
         return content;
-    }
-
-    /**
-     * Returns the remote address where this rest request channel is "connected to".  The
-     * returned {@link SocketAddress} is supposed to be down-cast into more
-     * concrete type such as {@link java.net.InetSocketAddress} to retrieve
-     * the detailed information.
-     */
-    @Override
-    public SocketAddress getRemoteAddress() {
-        return channel.remoteAddress();
-    }
-
-    /**
-     * Returns the local address where this request channel is bound to.  The returned
-     * {@link SocketAddress} is supposed to be down-cast into more concrete
-     * type such as {@link java.net.InetSocketAddress} to retrieve the detailed
-     * information.
-     */
-    @Override
-    public SocketAddress getLocalAddress() {
-        return channel.localAddress();
     }
 
     public Channel getChannel() {

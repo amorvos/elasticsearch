@@ -112,14 +112,6 @@ public class NodesInfoRequestBuilder extends NodesOperationRequestBuilder<NodesI
     }
 
     /**
-     * Should the node ingest info be returned.
-     */
-    public NodesInfoRequestBuilder setIngest(boolean ingest) {
-        request().ingest(ingest);
-        return this;
-    }
-
-    /**
      * Should the node indices info be returned.
      */
     public NodesInfoRequestBuilder setIndices(boolean indices) {

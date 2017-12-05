@@ -30,8 +30,6 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -39,7 +37,6 @@ import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,9 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static org.elasticsearch.common.unit.ByteSizeValue.parseBytesSizeValue;
-import static org.elasticsearch.common.unit.TimeValue.parseTimeValue;
 
 public abstract class RestRequest implements ToXContent.Params {
 
@@ -175,12 +169,6 @@ public abstract class RestRequest implements ToXContent.Params {
         return null;
     }
 
-    /**
-     * Get all of the headers and values associated with the headers. Modifications of this map are not supported.
-     */
-    public final Map<String, List<String>> getHeaders() {
-        return headers;
-    }
 
     /**
      * The {@link XContentType} that was parsed from the {@code Content-Type} header. This value will be {@code null} in the case of
@@ -196,16 +184,6 @@ public abstract class RestRequest implements ToXContent.Params {
      */
     final void setXContentType(XContentType xContentType) {
         this.xContentType.set(xContentType);
-    }
-
-    @Nullable
-    public SocketAddress getRemoteAddress() {
-        return null;
-    }
-
-    @Nullable
-    public SocketAddress getLocalAddress() {
-        return null;
     }
 
     public final boolean hasParam(String key) {
@@ -256,30 +234,6 @@ public abstract class RestRequest implements ToXContent.Params {
             .collect(Collectors.toList());
     }
 
-    public float paramAsFloat(String key, float defaultValue) {
-        String sValue = param(key);
-        if (sValue == null) {
-            return defaultValue;
-        }
-        try {
-            return Float.parseFloat(sValue);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Failed to parse float parameter [" + key + "] with value [" + sValue + "]", e);
-        }
-    }
-
-    public int paramAsInt(String key, int defaultValue) {
-        String sValue = param(key);
-        if (sValue == null) {
-            return defaultValue;
-        }
-        try {
-            return Integer.parseInt(sValue);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Failed to parse int parameter [" + key + "] with value [" + sValue + "]", e);
-        }
-    }
-
     public long paramAsLong(String key, long defaultValue) {
         String sValue = param(key);
         if (sValue == null) {
@@ -311,35 +265,12 @@ public abstract class RestRequest implements ToXContent.Params {
         }
     }
 
-    public TimeValue paramAsTime(String key, TimeValue defaultValue) {
-        return parseTimeValue(param(key), defaultValue, key);
-    }
-
-    public ByteSizeValue paramAsSize(String key, ByteSizeValue defaultValue) {
-        return parseBytesSizeValue(param(key), defaultValue, key);
-    }
-
     public String[] paramAsStringArray(String key, String[] defaultValue) {
         String value = param(key);
         if (value == null) {
             return defaultValue;
         }
         return Strings.splitStringByCommaToArray(value);
-    }
-
-    public String[] paramAsStringArrayOrEmptyIfAll(String key) {
-        String[] params = paramAsStringArray(key, Strings.EMPTY_ARRAY);
-        if (Strings.isAllOrWildcard(params)) {
-            return Strings.EMPTY_ARRAY;
-        }
-        return params;
-    }
-
-    /**
-     * Get the {@link NamedXContentRegistry} that should be used to create parsers from this request.
-     */
-    public NamedXContentRegistry getXContentRegistry() {
-        return xContentRegistry;
     }
 
     /**

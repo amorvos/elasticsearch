@@ -40,9 +40,7 @@ public class NodesStatsRequest extends BaseNodesRequest<NodesStatsRequest> {
     private boolean transport;
     private boolean http;
     private boolean breaker;
-    private boolean script;
     private boolean discovery;
-    private boolean ingest;
 
     public NodesStatsRequest() {
     }
@@ -68,9 +66,7 @@ public class NodesStatsRequest extends BaseNodesRequest<NodesStatsRequest> {
         this.transport = true;
         this.http = true;
         this.breaker = true;
-        this.script = true;
         this.discovery = true;
-        this.ingest = true;
         return this;
     }
 
@@ -87,9 +83,7 @@ public class NodesStatsRequest extends BaseNodesRequest<NodesStatsRequest> {
         this.transport = false;
         this.http = false;
         this.breaker = false;
-        this.script = false;
         this.discovery = false;
-        this.ingest = false;
         return this;
     }
 
@@ -231,16 +225,6 @@ public class NodesStatsRequest extends BaseNodesRequest<NodesStatsRequest> {
         return this;
     }
 
-    public boolean script() {
-        return script;
-    }
-
-    public NodesStatsRequest script(boolean script) {
-        this.script = script;
-        return this;
-    }
-
-
     public boolean discovery() {
         return this.discovery;
     }
@@ -250,18 +234,6 @@ public class NodesStatsRequest extends BaseNodesRequest<NodesStatsRequest> {
      */
     public NodesStatsRequest discovery(boolean discovery) {
         this.discovery = discovery;
-        return this;
-    }
-
-    public boolean ingest() {
-        return ingest;
-    }
-
-    /**
-     * Should ingest statistics be returned.
-     */
-    public NodesStatsRequest ingest(boolean ingest) {
-        this.ingest = ingest;
         return this;
     }
 
@@ -277,9 +249,7 @@ public class NodesStatsRequest extends BaseNodesRequest<NodesStatsRequest> {
         transport = in.readBoolean();
         http = in.readBoolean();
         breaker = in.readBoolean();
-        script = in.readBoolean();
         discovery = in.readBoolean();
-        ingest = in.readBoolean();
     }
 
     @Override
@@ -294,8 +264,6 @@ public class NodesStatsRequest extends BaseNodesRequest<NodesStatsRequest> {
         out.writeBoolean(transport);
         out.writeBoolean(http);
         out.writeBoolean(breaker);
-        out.writeBoolean(script);
         out.writeBoolean(discovery);
-        out.writeBoolean(ingest);
     }
 }

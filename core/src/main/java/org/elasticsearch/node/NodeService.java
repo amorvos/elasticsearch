@@ -24,7 +24,6 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
 import org.elasticsearch.action.admin.cluster.node.stats.NodeStats;
 import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.settings.Settings;
@@ -58,7 +57,7 @@ public class NodeService extends AbstractComponent implements Closeable {
     NodeService(Settings settings, ThreadPool threadPool, MonitorService monitorService, Discovery discovery,
                        TransportService transportService, IndicesService indicesService, PluginsService pluginService,
                        CircuitBreakerService circuitBreakerService,
-                       @Nullable HttpServerTransport httpServerTransport, ClusterService clusterService,
+                       @Nullable HttpServerTransport httpServerTransport,
                        SettingsFilter settingsFilter) {
         super(settings);
         this.threadPool = threadPool;
@@ -73,7 +72,7 @@ public class NodeService extends AbstractComponent implements Closeable {
     }
 
     public NodeInfo info(boolean settings, boolean os, boolean process, boolean jvm, boolean threadPool,
-                boolean transport, boolean http, boolean plugin, boolean ingest, boolean indices) {
+                boolean transport, boolean http, boolean plugin, boolean indices) {
         return new NodeInfo(Version.CURRENT, Build.CURRENT, discovery.localNode(),
                 settings ? settingsFilter.filter(this.settings) : null,
                 os ? monitorService.osService().info() : null,
@@ -89,7 +88,7 @@ public class NodeService extends AbstractComponent implements Closeable {
 
     public NodeStats stats(CommonStatsFlags indices, boolean os, boolean process, boolean jvm, boolean threadPool,
                            boolean fs, boolean transport, boolean http, boolean circuitBreaker,
-                           boolean script, boolean discoveryStats, boolean ingest) {
+                           boolean discoveryStats) {
         // for indices stats we want to include previous allocated shards stats as well (it will
         // only be applied to the sensible ones to use, like refresh/merge/flush/indexing stats)
         return new NodeStats(discovery.localNode(), System.currentTimeMillis(),

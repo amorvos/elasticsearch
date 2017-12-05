@@ -42,7 +42,6 @@ import org.apache.lucene.index.SegmentCommitInfo;
 import org.apache.lucene.index.SegmentInfos;
 import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.LeafCollector;
@@ -52,23 +51,18 @@ import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.ScorerSupplier;
 import org.apache.lucene.search.SimpleCollector;
 import org.apache.lucene.search.SortField;
-import org.apache.lucene.search.TimeLimitingCollector;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.search.TwoPhaseIterator;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.search.grouping.CollapseTopFieldDocs;
-import org.apache.lucene.search.SortedNumericSortField;
-import org.apache.lucene.search.SortedSetSortField;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.Lock;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.Counter;
 import org.apache.lucene.util.Version;
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Strings;
@@ -78,7 +72,6 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
-import org.elasticsearch.index.fielddata.IndexFieldData;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -250,20 +243,6 @@ public class Lucene {
     }
 
     /**
-     * Wraps <code>delegate</code> with count based early termination collector with a threshold of <code>maxCountHits</code>
-     */
-    public static final EarlyTerminatingCollector wrapCountBasedEarlyTerminatingCollector(final Collector delegate, int maxCountHits) {
-        return new EarlyTerminatingCollector(delegate, maxCountHits);
-    }
-
-    /**
-     * Wraps <code>delegate</code> with a time limited collector with a timeout of <code>timeoutInMillis</code>
-     */
-    public static final TimeLimitingCollector wrapTimeLimitingCollector(final Collector delegate, final Counter counter, long timeoutInMillis) {
-        return new TimeLimitingCollector(delegate, counter, timeoutInMillis);
-    }
-
-    /**
      * Check whether there is one or more documents matching the provided query.
      */
     public static boolean exists(IndexSearcher searcher, Query query) throws IOException {
@@ -391,60 +370,8 @@ public class Lucene {
         }
     }
 
-    public static ScoreDoc readScoreDoc(StreamInput in) throws IOException {
-        return new ScoreDoc(in.readVInt(), in.readFloat());
-    }
-
     private static final Class<?> GEO_DISTANCE_SORT_TYPE_CLASS = LatLonDocValuesField.newDistanceSort("some_geo_field", 0, 0).getClass();
 
-    public static void writeTopDocs(StreamOutput out, TopDocs topDocs) throws IOException {
-        if (topDocs instanceof CollapseTopFieldDocs) {
-            out.writeByte((byte) 2);
-            CollapseTopFieldDocs collapseDocs = (CollapseTopFieldDocs) topDocs;
-
-            out.writeVInt(topDocs.totalHits);
-            out.writeFloat(topDocs.getMaxScore());
-
-            out.writeString(collapseDocs.field);
-
-            out.writeVInt(collapseDocs.fields.length);
-            for (SortField sortField : collapseDocs.fields) {
-               writeSortField(out, sortField);
-            }
-
-            out.writeVInt(topDocs.scoreDocs.length);
-            for (int i = 0; i < topDocs.scoreDocs.length; i++) {
-                ScoreDoc doc = collapseDocs.scoreDocs[i];
-                writeFieldDoc(out, (FieldDoc) doc);
-                writeSortValue(out, collapseDocs.collapseValues[i]);
-            }
-        } else if (topDocs instanceof TopFieldDocs) {
-            out.writeByte((byte) 1);
-            TopFieldDocs topFieldDocs = (TopFieldDocs) topDocs;
-
-            out.writeVInt(topDocs.totalHits);
-            out.writeFloat(topDocs.getMaxScore());
-
-            out.writeVInt(topFieldDocs.fields.length);
-            for (SortField sortField : topFieldDocs.fields) {
-              writeSortField(out, sortField);
-            }
-
-            out.writeVInt(topDocs.scoreDocs.length);
-            for (ScoreDoc doc : topFieldDocs.scoreDocs) {
-                writeFieldDoc(out, (FieldDoc) doc);
-            }
-        } else {
-            out.writeByte((byte) 0);
-            out.writeVInt(topDocs.totalHits);
-            out.writeFloat(topDocs.getMaxScore());
-
-            out.writeVInt(topDocs.scoreDocs.length);
-            for (ScoreDoc doc : topDocs.scoreDocs) {
-                writeScoreDoc(out, doc);
-            }
-        }
-    }
 
     private static void writeMissingValue(StreamOutput out, Object missingValue) throws IOException {
         if (missingValue == SortField.STRING_FIRST) {
@@ -510,22 +437,6 @@ public class Lucene {
         }
     }
 
-    public static void writeFieldDoc(StreamOutput out, FieldDoc fieldDoc) throws IOException {
-        out.writeVInt(fieldDoc.fields.length);
-        for (Object field : fieldDoc.fields) {
-            writeSortValue(out, field);
-        }
-        out.writeVInt(fieldDoc.doc);
-        out.writeFloat(fieldDoc.score);
-    }
-
-    public static void writeScoreDoc(StreamOutput out, ScoreDoc scoreDoc) throws IOException {
-        if (!scoreDoc.getClass().equals(ScoreDoc.class)) {
-            throw new IllegalArgumentException("This method can only be used to serialize a ScoreDoc, not a " + scoreDoc.getClass());
-        }
-        out.writeVInt(scoreDoc.doc);
-        out.writeFloat(scoreDoc.score);
-    }
 
     // LUCENE 4 UPGRADE: We might want to maintain our own ordinal, instead of Lucene's ordinal
     public static SortField.Type readSortType(StreamInput in) throws IOException {
@@ -545,145 +456,6 @@ public class Lucene {
             sortField.setMissingValue(missingValue);
         }
         return sortField;
-    }
-
-    public static void writeSortType(StreamOutput out, SortField.Type sortType) throws IOException {
-        out.writeVInt(sortType.ordinal());
-    }
-
-    public static void writeSortField(StreamOutput out, SortField sortField) throws IOException {
-        if (sortField.getClass() == GEO_DISTANCE_SORT_TYPE_CLASS) {
-            // for geo sorting, we replace the SortField with a SortField that assumes a double field.
-            // this works since the SortField is only used for merging top docs
-            SortField newSortField = new SortField(sortField.getField(), SortField.Type.DOUBLE);
-            newSortField.setMissingValue(sortField.getMissingValue());
-            sortField = newSortField;
-        } else if (sortField.getClass() == SortedSetSortField.class) {
-            // for multi-valued sort field, we replace the SortedSetSortField with a simple SortField.
-            // It works because the sort field is only used to merge results from different shards.
-            SortField newSortField = new SortField(sortField.getField(), SortField.Type.STRING, sortField.getReverse());
-            newSortField.setMissingValue(sortField.getMissingValue());
-            sortField = newSortField;
-        } else if (sortField.getClass() == SortedNumericSortField.class) {
-            // for multi-valued sort field, we replace the SortedSetSortField with a simple SortField.
-            // It works because the sort field is only used to merge results from different shards.
-            SortField newSortField = new SortField(sortField.getField(),
-                ((SortedNumericSortField) sortField).getNumericType(),
-                sortField.getReverse());
-            newSortField.setMissingValue(sortField.getMissingValue());
-            sortField = newSortField;
-        }
-
-        if (sortField.getClass() != SortField.class) {
-            throw new IllegalArgumentException("Cannot serialize SortField impl [" + sortField + "]");
-        }
-        if (sortField.getField() == null) {
-            out.writeBoolean(false);
-        } else {
-            out.writeBoolean(true);
-            out.writeString(sortField.getField());
-        }
-        if (sortField.getComparatorSource() != null) {
-            IndexFieldData.XFieldComparatorSource comparatorSource = (IndexFieldData.XFieldComparatorSource) sortField.getComparatorSource();
-            writeSortType(out, comparatorSource.reducedType());
-            writeMissingValue(out, comparatorSource.missingValue(sortField.getReverse()));
-        } else {
-            writeSortType(out, sortField.getType());
-            writeMissingValue(out, sortField.getMissingValue());
-        }
-        out.writeBoolean(sortField.getReverse());
-    }
-
-    public static Explanation readExplanation(StreamInput in) throws IOException {
-        boolean match = in.readBoolean();
-        String description = in.readString();
-        final Explanation[] subExplanations = new Explanation[in.readVInt()];
-        for (int i = 0; i < subExplanations.length; ++i) {
-            subExplanations[i] = readExplanation(in);
-        }
-        if (match) {
-            return Explanation.match(in.readFloat(), description, subExplanations);
-        } else {
-            return Explanation.noMatch(description, subExplanations);
-        }
-    }
-
-    public static void writeExplanation(StreamOutput out, Explanation explanation) throws IOException {
-        out.writeBoolean(explanation.isMatch());
-        out.writeString(explanation.getDescription());
-        Explanation[] subExplanations = explanation.getDetails();
-        out.writeVInt(subExplanations.length);
-        for (Explanation subExp : subExplanations) {
-            writeExplanation(out, subExp);
-        }
-        if (explanation.isMatch()) {
-            out.writeFloat(explanation.getValue());
-        }
-    }
-
-    /**
-     * This exception is thrown when {@link org.elasticsearch.common.lucene.Lucene.EarlyTerminatingCollector}
-     * reaches early termination
-     * */
-    public static final class EarlyTerminationException extends ElasticsearchException {
-
-        public EarlyTerminationException(String msg) {
-            super(msg);
-        }
-
-        public EarlyTerminationException(StreamInput in) throws IOException{
-            super(in);
-        }
-    }
-
-    /**
-     * A collector that terminates early by throwing {@link org.elasticsearch.common.lucene.Lucene.EarlyTerminationException}
-     * when count of matched documents has reached <code>maxCountHits</code>
-     */
-    public static final class EarlyTerminatingCollector extends SimpleCollector {
-
-        private final int maxCountHits;
-        private final Collector delegate;
-
-        private int count = 0;
-        private LeafCollector leafCollector;
-
-        EarlyTerminatingCollector(final Collector delegate, int maxCountHits) {
-            this.maxCountHits = maxCountHits;
-            this.delegate = Objects.requireNonNull(delegate);
-        }
-
-        public int count() {
-            return count;
-        }
-
-        public boolean exists() {
-            return count > 0;
-        }
-
-        @Override
-        public void setScorer(Scorer scorer) throws IOException {
-            leafCollector.setScorer(scorer);
-        }
-
-        @Override
-        public void collect(int doc) throws IOException {
-            leafCollector.collect(doc);
-
-            if (++count >= maxCountHits) {
-                throw new EarlyTerminationException("early termination [CountBased]");
-            }
-        }
-
-        @Override
-        public void doSetNextReader(LeafReaderContext atomicReaderContext) throws IOException {
-            leafCollector = delegate.getLeafCollector(atomicReaderContext);
-        }
-
-        @Override
-        public boolean needsScores() {
-            return delegate.needsScores();
-        }
     }
 
     private Lucene() {

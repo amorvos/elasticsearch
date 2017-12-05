@@ -48,14 +48,6 @@ public class HttpStats implements Writeable, ToXContent {
         out.writeVLong(totalOpen);
     }
 
-    public long getServerOpen() {
-        return this.serverOpen;
-    }
-
-    public long getTotalOpen() {
-        return this.totalOpen;
-    }
-
     static final class Fields {
         static final String HTTP = "http";
         static final String CURRENT_OPEN = "current_open";

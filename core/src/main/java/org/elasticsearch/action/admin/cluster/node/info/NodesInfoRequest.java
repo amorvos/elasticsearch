@@ -38,7 +38,6 @@ public class NodesInfoRequest extends BaseNodesRequest<NodesInfoRequest> {
     private boolean transport = true;
     private boolean http = true;
     private boolean plugins = true;
-    private boolean ingest = true;
     private boolean indices = true;
 
     public NodesInfoRequest() {
@@ -64,7 +63,6 @@ public class NodesInfoRequest extends BaseNodesRequest<NodesInfoRequest> {
         transport = false;
         http = false;
         plugins = false;
-        ingest = false;
         indices = false;
         return this;
     }
@@ -81,7 +79,6 @@ public class NodesInfoRequest extends BaseNodesRequest<NodesInfoRequest> {
         transport = true;
         http = true;
         plugins = true;
-        ingest = true;
         indices = true;
         return this;
     }
@@ -209,22 +206,6 @@ public class NodesInfoRequest extends BaseNodesRequest<NodesInfoRequest> {
     }
 
     /**
-     * Should information about ingest be returned
-     * @param ingest true if you want info
-     */
-    public NodesInfoRequest ingest(boolean ingest) {
-        this.ingest = ingest;
-        return this;
-    }
-
-    /**
-     * @return true if information about ingest is requested
-     */
-    public boolean ingest() {
-        return ingest;
-    }
-
-    /**
      * Should information about indices (currently just indexing buffers) be returned
      * @param indices true if you want info
      */
@@ -251,7 +232,6 @@ public class NodesInfoRequest extends BaseNodesRequest<NodesInfoRequest> {
         transport = in.readBoolean();
         http = in.readBoolean();
         plugins = in.readBoolean();
-        ingest = in.readBoolean();
         indices = in.readBoolean();
     }
 
@@ -266,7 +246,6 @@ public class NodesInfoRequest extends BaseNodesRequest<NodesInfoRequest> {
         out.writeBoolean(transport);
         out.writeBoolean(http);
         out.writeBoolean(plugins);
-        out.writeBoolean(ingest);
         out.writeBoolean(indices);
     }
 }

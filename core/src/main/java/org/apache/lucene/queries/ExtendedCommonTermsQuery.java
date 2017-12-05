@@ -60,20 +60,8 @@ public class ExtendedCommonTermsQuery extends CommonTermsQuery {
         return calcMinimumNumberShouldMatch(highFreqMinNumShouldMatchSpec, numOptional);
     }
 
-    public void setHighFreqMinimumNumberShouldMatch(String spec) {
-        this.highFreqMinNumShouldMatchSpec = spec;
-    }
-
-    public String getHighFreqMinimumNumberShouldMatchSpec() {
-        return highFreqMinNumShouldMatchSpec;
-    }
-
     public void setLowFreqMinimumNumberShouldMatch(String spec) {
         this.lowFreqMinNumShouldMatchSpec = spec;
-    }
-
-    public String getLowFreqMinimumNumberShouldMatchSpec() {
-        return lowFreqMinNumShouldMatchSpec;
     }
 
     public float getMaxTermFrequency() {

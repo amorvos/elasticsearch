@@ -23,7 +23,6 @@ import org.elasticsearch.action.support.replication.ReplicationOperation;
 import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -828,8 +827,6 @@ public class ElasticsearchException extends RuntimeException implements ToXConte
                 org.elasticsearch.transport.SendRequestTransportException::new, 58, UNKNOWN_VERSION_ADDED),
         ES_REJECTED_EXECUTION_EXCEPTION(org.elasticsearch.common.util.concurrent.EsRejectedExecutionException.class,
                 org.elasticsearch.common.util.concurrent.EsRejectedExecutionException::new, 59, UNKNOWN_VERSION_ADDED),
-        EARLY_TERMINATION_EXCEPTION(org.elasticsearch.common.lucene.Lucene.EarlyTerminationException.class,
-                org.elasticsearch.common.lucene.Lucene.EarlyTerminationException::new, 60, UNKNOWN_VERSION_ADDED),
         // 61 used to be for RoutingValidationException
         NOT_SERIALIZABLE_EXCEPTION_WRAPPER(org.elasticsearch.common.io.stream.NotSerializableExceptionWrapper.class,
                 org.elasticsearch.common.io.stream.NotSerializableExceptionWrapper::new, 62, UNKNOWN_VERSION_ADDED),
@@ -994,29 +991,6 @@ public class ElasticsearchException extends RuntimeException implements ToXConte
         }
     }
 
-    /**
-     * Returns an array of all registered handle IDs. These are the IDs for every registered
-     * exception.
-     *
-     * @return an array of all registered handle IDs
-     */
-    static int[] ids() {
-        return Arrays.stream(ElasticsearchExceptionHandle.values()).mapToInt(h -> h.id).toArray();
-    }
-
-    /**
-     * Returns an array of all registered pairs of handle IDs and exception classes. These pairs are
-     * provided for every registered exception.
-     *
-     * @return an array of all registered pairs of handle IDs and exception classes
-     */
-    static Tuple<Integer, Class<? extends ElasticsearchException>>[] classes() {
-        @SuppressWarnings("unchecked")
-        final Tuple<Integer, Class<? extends ElasticsearchException>>[] ts =
-                Arrays.stream(ElasticsearchExceptionHandle.values())
-                        .map(h -> Tuple.tuple(h.id, h.exceptionClass)).toArray(Tuple[]::new);
-        return ts;
-    }
 
     static {
         ID_TO_SUPPLIER = unmodifiableMap(Arrays
@@ -1067,19 +1041,6 @@ public class ElasticsearchException extends RuntimeException implements ToXConte
         assert type != null;
         addMetadata(RESOURCE_METADATA_ID_KEY, id);
         addMetadata(RESOURCE_METADATA_TYPE_KEY, type);
-    }
-
-    public List<String> getResourceId() {
-        return getMetadata(RESOURCE_METADATA_ID_KEY);
-    }
-
-    public String getResourceType() {
-        List<String> header = getMetadata(RESOURCE_METADATA_TYPE_KEY);
-        if (header != null && header.isEmpty() == false) {
-            assert header.size() == 1;
-            return header.get(0);
-        }
-        return null;
     }
 
     // lower cases and adds underscores to transitions in a name
