@@ -67,7 +67,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.instanceOf;
 
@@ -208,30 +207,6 @@ public class QueryPhaseTests extends IndexShardTestCase {
         QueryPhase.execute(context, contextSearcher, checkCancelled -> {}, null);
         assertEquals(0, context.queryResult().topDocs().totalHits);
         assertTrue(collected.get());
-    }
-
-    public void testQueryCapturesThreadPoolStats() throws Exception {
-        TestSearchContext context = new TestSearchContext(null, indexShard);
-        context.setTask(new SearchTask(123L, "", "", "", null));
-        context.parsedQuery(new ParsedQuery(new MatchAllDocsQuery()));
-
-        Directory dir = newDirectory();
-        IndexWriterConfig iwc = newIndexWriterConfig();
-        RandomIndexWriter w = new RandomIndexWriter(random(), dir, iwc);
-        final int numDocs = scaledRandomIntBetween(100, 200);
-        for (int i = 0; i < numDocs; ++i) {
-            w.addDocument(new Document());
-        }
-        w.close();
-        IndexReader reader = DirectoryReader.open(dir);
-        IndexSearcher contextSearcher = new IndexSearcher(reader);
-
-        QueryPhase.execute(context, contextSearcher, checkCancelled -> {}, null);
-        QuerySearchResult results = context.queryResult();
-        assertThat(results.serviceTimeEWMA(), greaterThan(0L));
-        assertThat(results.nodeQueueSize(), greaterThanOrEqualTo(0));
-        reader.close();
-        dir.close();
     }
 
     public void testInOrderScrollOptimization() throws Exception {
