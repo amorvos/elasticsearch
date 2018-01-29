@@ -162,25 +162,12 @@ public class NumberFieldMapper extends FieldMapper {
         HALF_FLOAT("half_float", NumericType.HALF_FLOAT) {
             @Override
             Float parse(Object value, boolean coerce) {
-                final float result;
-
-                if (value instanceof Number) {
-                    result = ((Number) value).floatValue();
-                } else {
-                    if (value instanceof BytesRef) {
-                        value = ((BytesRef) value).utf8ToString();
-                    }
-                    result = Float.parseFloat(value.toString());
-                }
-                validateParsed(result);
-                return result;
+                return (Float) FLOAT.parse(value, false);
             }
 
             @Override
             Float parse(XContentParser parser, boolean coerce) throws IOException {
-                float parsed = parser.floatValue(coerce);
-                validateParsed(parsed);
-                return parsed;
+                return parser.floatValue(coerce);
             }
 
             @Override
@@ -244,35 +231,22 @@ public class NumberFieldMapper extends FieldMapper {
                 }
                 return fields;
             }
-
-            private void validateParsed(float value) {
-                if (!Float.isFinite(HalfFloatPoint.sortableShortToHalfFloat(HalfFloatPoint.halfFloatToSortableShort(value)))) {
-                    throw new IllegalArgumentException("[half_float] supports only finite values, but got [" + value + "]");
-                }
-            }
         },
         FLOAT("float", NumericType.FLOAT) {
             @Override
             Float parse(Object value, boolean coerce) {
-                final float result;
-
                 if (value instanceof Number) {
-                    result = ((Number) value).floatValue();
-                } else {
-                    if (value instanceof BytesRef) {
-                        value = ((BytesRef) value).utf8ToString();
-                    }
-                    result = Float.parseFloat(value.toString());
+                    return ((Number) value).floatValue();
                 }
-                validateParsed(result);
-                return result;
+                if (value instanceof BytesRef) {
+                    value = ((BytesRef) value).utf8ToString();
+                }
+                return Float.parseFloat(value.toString());
             }
 
             @Override
             Float parse(XContentParser parser, boolean coerce) throws IOException {
-                float parsed = parser.floatValue(coerce);
-                validateParsed(parsed);
-                return parsed;
+                return parser.floatValue(coerce);
             }
 
             @Override
@@ -334,26 +308,16 @@ public class NumberFieldMapper extends FieldMapper {
                 }
                 return fields;
             }
-
-            private void validateParsed(float value) {
-                if (!Float.isFinite(value)) {
-                    throw new IllegalArgumentException("[float] supports only finite values, but got [" + value + "]");
-                }
-            }
         },
         DOUBLE("double", NumericType.DOUBLE) {
             @Override
             Double parse(Object value, boolean coerce) {
-                double parsed = objectToDouble(value);
-                validateParsed(parsed);
-                return parsed;
+                return objectToDouble(value);
             }
 
             @Override
             Double parse(XContentParser parser, boolean coerce) throws IOException {
-                double parsed = parser.doubleValue(coerce);
-                validateParsed(parsed);
-                return parsed;
+                return parser.doubleValue(coerce);
             }
 
             @Override
@@ -414,12 +378,6 @@ public class NumberFieldMapper extends FieldMapper {
                     fields.add(new StoredField(name, value.doubleValue()));
                 }
                 return fields;
-            }
-
-            private void validateParsed(double value) {
-                if (!Double.isFinite(value)) {
-                    throw new IllegalArgumentException("[double] supports only finite values, but got [" + value + "]");
-                }
             }
         },
         BYTE("byte", NumericType.BYTE) {
