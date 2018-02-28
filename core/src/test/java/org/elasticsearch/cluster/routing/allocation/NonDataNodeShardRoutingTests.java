@@ -72,8 +72,7 @@ public class NonDataNodeShardRoutingTests extends ESAllocationTestCase {
         Index index = clusterState.getMetaData().index("test").getIndex();
         MoveAllocationCommand command = new MoveAllocationCommand(index.getName(), 0, "node1", "node2");
         RoutingAllocation routingAllocation = new RoutingAllocation(new AllocationDeciders(Settings.EMPTY, Collections.emptyList()),
-            new RoutingNodes(clusterState, false), clusterState, ClusterInfo.EMPTY, System.nanoTime(), false
-        );
+            new RoutingNodes(clusterState, false), clusterState, ClusterInfo.EMPTY, System.nanoTime());
         logger.info("--> executing move allocation command to non-data node");
         command.execute(routingAllocation, false);
     }
@@ -101,8 +100,7 @@ public class NonDataNodeShardRoutingTests extends ESAllocationTestCase {
         Index index = clusterState.getMetaData().index("test").getIndex();
         MoveAllocationCommand command = new MoveAllocationCommand(index.getName(), 0, "node2", "node1");
         RoutingAllocation routingAllocation = new RoutingAllocation(new AllocationDeciders(Settings.EMPTY, Collections.emptyList()),
-            new RoutingNodes(clusterState, false), clusterState, ClusterInfo.EMPTY, System.nanoTime(), false
-        );
+            new RoutingNodes(clusterState, false), clusterState, ClusterInfo.EMPTY, System.nanoTime());
         logger.info("--> executing move allocation command from non-data node");
         command.execute(routingAllocation, false);
     }
