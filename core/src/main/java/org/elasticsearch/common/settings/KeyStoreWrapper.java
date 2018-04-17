@@ -88,7 +88,7 @@ public class KeyStoreWrapper implements SecureSettings {
     }
 
     /** The name of the keystore file to read and write. */
-    private static final String KEYSTORE_FILENAME = "elasticsearch.keystore";
+    private static final String KEYSTORE_FILENAME = "crate.keystore";
 
     /** The version of the metadata written before the keystore data. */
     private static final int FORMAT_VERSION = 2;
