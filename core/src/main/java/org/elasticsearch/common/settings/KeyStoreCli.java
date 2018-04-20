@@ -29,7 +29,7 @@ import org.elasticsearch.cli.Terminal;
 public class KeyStoreCli extends LoggingAwareMultiCommand {
 
     private KeyStoreCli() {
-        super("A tool for managing settings stored in the elasticsearch keystore");
+        super("A tool for managing settings stored in the crate keystore");
         subcommands.put("create", new CreateKeyStoreCommand());
         subcommands.put("list", new ListKeyStoreCommand());
         subcommands.put("add", new AddStringKeyStoreCommand());

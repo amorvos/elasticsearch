@@ -61,7 +61,7 @@ class AddFileKeyStoreCommand extends EnvironmentAwareCommand {
     protected void execute(Terminal terminal, OptionSet options, Environment env) throws Exception {
         KeyStoreWrapper keystore = KeyStoreWrapper.load(env.configFile());
         if (keystore == null) {
-            throw new UserException(ExitCodes.DATA_ERROR, "Elasticsearch keystore not found. Use 'create' command to create one.");
+            throw new UserException(ExitCodes.DATA_ERROR, "Crate keystore not found. Use 'create' command to create one.");
         }
 
         keystore.decrypt(new char[0] /* TODO: prompt for password when they are supported */);
