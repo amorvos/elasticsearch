@@ -574,7 +574,7 @@ public class SettingsTests extends ESTestCase {
         Setting<SecureString> setting = SecureSetting.secureString("something.secure", null);
         Settings settings = Settings.builder().put("something.secure", "notreallysecure").build();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> setting.get(settings));
-        assertTrue(e.getMessage().contains("must be stored inside the Elasticsearch keystore"));
+        assertTrue(e.getMessage().contains("must be stored inside the Crate keystore"));
     }
 
     public void testGetAsArrayFailsOnDuplicates() {

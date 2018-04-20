@@ -36,6 +36,6 @@ public class RepositorySettingsCredentialsTests extends ESTestCase {
         assertEquals("aws_secret", credentials.getAWSSecretKey());
         assertSettingDeprecationsAndWarnings(new Setting<?>[] { S3Repository.ACCESS_KEY_SETTING, S3Repository.SECRET_KEY_SETTING },
             "Using s3 access/secret key from repository settings. " +
-                "Instead store these in named clients and the elasticsearch keystore for secure settings.");
+                "Instead store these in named clients and the crate keystore for secure settings.");
     }
 }
