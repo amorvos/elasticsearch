@@ -33,14 +33,14 @@ import org.elasticsearch.env.Environment;
 class CreateKeyStoreCommand extends EnvironmentAwareCommand {
 
     CreateKeyStoreCommand() {
-        super("Creates a new elasticsearch keystore");
+        super("Creates a new crate keystore");
     }
 
     @Override
     protected void execute(Terminal terminal, OptionSet options, Environment env) throws Exception {
         Path keystoreFile = KeyStoreWrapper.keystorePath(env.configFile());
         if (Files.exists(keystoreFile)) {
-            if (terminal.promptYesNo("An elasticsearch keystore already exists. Overwrite?", false) == false) {
+            if (terminal.promptYesNo("A crate keystore already exists. Overwrite?", false) == false) {
                 terminal.println("Exiting without creating keystore.");
                 return;
             }
@@ -56,6 +56,6 @@ class CreateKeyStoreCommand extends EnvironmentAwareCommand {
 
         KeyStoreWrapper keystore = KeyStoreWrapper.create(password);
         keystore.save(env.configFile());
-        terminal.println("Created elasticsearch keystore in " + env.configFile());
+        terminal.println("Created crate keystore in " + env.configFile());
     }
 }
